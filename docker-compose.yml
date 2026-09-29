@@ -14,6 +14,10 @@ services:
       - DATABASE_USER=${DATABASE_USER:-postgres}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-postgres}
       - DATABASE_NAME=${DATABASE_NAME:-app}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - TSC_WATCHFILE=DynamicPriorityPolling
+      - TSC_WATCHDIRECTORY=FixedPollingInterval
     volumes:
       - ./backend:/app
       - /app/node_modules
