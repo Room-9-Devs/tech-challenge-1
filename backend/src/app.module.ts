@@ -17,6 +17,7 @@ import { ListItemsUseCase } from './application/use-cases/items/list-items/list-
 import { UpdateItemUseCase } from './application/use-cases/items/update-item/update-item.use-case';
 import { DeleteItemUseCase } from './application/use-cases/items/delete-item/delete-item.use-case';
 import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
+import { ItemSeedService } from './infrastructure/database/typeorm/seeds/item.seed';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/
     UpdateItemUseCase,
     DeleteItemUseCase,
     ServiceTypeSeedService,
+    ItemSeedService,
   ],
 })
 export class AppModule {}

@@ -116,7 +116,9 @@ describe('TypeOrmUserRepository (Integration)', () => {
   });
 
   it('should return null when user does not exist', async () => {
-    const foundUser = await repository.findById('non-existent-id');
+    const foundUser = await repository.findById(
+      '00000000-0000-0000-0000-000000000000',
+    );
 
     expect(foundUser).toBeNull();
   });

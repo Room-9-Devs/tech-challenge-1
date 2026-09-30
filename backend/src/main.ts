@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
 import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
+import { ItemSeedService } from './infrastructure/database/typeorm/seeds/item.seed';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -35,6 +36,9 @@ async function bootstrap() {
 
   const seedService = app.get(ServiceTypeSeedService);
   await seedService.run();
+
+  const itemSeedService = app.get(ItemSeedService);
+  await itemSeedService.run();
 
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/docs`);
