@@ -358,6 +358,36 @@ npm run test:integration
 
 **Nota**: Certifique-se de que o PostgreSQL está acessível com as credenciais de teste configuradas.
 
+### tsconfig.test.json
+
+O projeto possui um `tsconfig.json` com a opção `watchOptions` configurada para melhorar o comportamento do `tsc --watch` dentro do container Docker:
+
+```json
+"watchOptions": {
+  "watchFile": "fixedPollingInterval",
+  "watchDirectory": "fixedPollingInterval",
+  "fallbackPolling": "fixedInterval"
+}
+```
+
+Embora válida para o compilador em modo watch, essa opção não é reconhecida por ferramentas como `ts-jest`, `ts-node` e o parser do ESLint, causando o erro:
+
+```
+error TS5023: Unknown compiler option 'watchOptions'
+```
+
+Para resolver isso sem alterar o `tsconfig.json` principal, foi criado o `tsconfig.test.json`, uma configuração idêntica, mas sem a opção `watchOptions`. Ele é usado por:
+
+- **Jest**: via `jest.config.js`
+- **ESLint**: via `eslint.config.mjs`
+- **TypeORM CLI**: via variável de ambiente `TS_NODE_PROJECT`
+
+Exemplo:
+
+```bash
+TS_NODE_PROJECT=tsconfig.test.json npm run migration:run
+```
+
 ## Swagger / OpenAPI
 
 A documentação da API está disponível em:
