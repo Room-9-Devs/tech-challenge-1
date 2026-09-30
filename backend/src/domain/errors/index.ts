@@ -5,3 +5,7 @@ export * from './user-already-exists.error';
 export * from './invalid-service-type.error';
 export * from './service-type-not-found.error';
 export * from './service-type-already-exists.error';
+export * from './invalid-item.error';
+export * from './item-not-found.error';
+export * from './item-already-exists.error';
+export * from './item-has-stock.error';
