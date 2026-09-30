@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { UserOrmEntity } from './entities/user.orm-entity';
-import { CreateUsersTable1704067200000 } from './migrations/1704067200000-create-users-table';
+import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -9,8 +9,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'app',
-  entities: [UserOrmEntity],
-  migrations: [CreateUsersTable1704067200000],
+  entities: [UserOrmEntity, ServiceTypeOrmEntity],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
   synchronize: false,
 });
