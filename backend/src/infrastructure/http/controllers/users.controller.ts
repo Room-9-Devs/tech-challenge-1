@@ -60,18 +60,24 @@ export class UsersController {
     return this.createUserUseCase.execute(dto);
   }
 
-  @Post('employees')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @HttpCode(HttpStatus.CREATED)
-  async createEmployee(@Body() dto: CreateUserRequestDto): Promise<UserResponseDto> {
-    if (dto.entityType !== 'employee') throw new BadRequestException('This endpoint only creates employees');
-    return this.createUserUseCase.execute(dto);
-  }
+  // @Post('employees')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('admin')
+  // @HttpCode(HttpStatus.CREATED)
+  // async createEmployee(@Body() dto: CreateUserRequestDto): Promise<UserResponseDto> {
+  //   if (dto.entityType !== 'employee') throw new BadRequestException('This endpoint only creates employees');
+  //   return this.createUserUseCase.execute(dto);
+  // }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Dados do usuário logado' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Dados do usuário logado',
+    type: UserResponseDto,
+  })
   async me(@Req() request: { user: { sub: string } }): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id: request.user.sub });
   }
@@ -107,6 +113,10 @@ export class UsersController {
     status: HttpStatus.OK,
     description: 'Lista de usuários',
     type: ListUsersResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Usuário não autorizado a listar usuários'
   })
   async findAll(@Query('type') type?: 'client' | 'employee'): Promise<ListUsersResponseDto> {
     return this.listUsersUseCase.execute({ entityType: type });

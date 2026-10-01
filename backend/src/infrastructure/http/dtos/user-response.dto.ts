@@ -19,9 +19,36 @@ export class UserResponseDto {
   })
   email: string;
 
+  @ApiProperty({
+    description: 'Tipo da entidade associada ao usuário',
+    example: 'client',
+  })
   entityType: 'client' | 'employee';
+
+  @ApiProperty({
+    description: 'ID da entidade associada',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   entityId: string;
+
+  @ApiProperty({
+    description: 'Role do usuário',
+    example: 'employee',
+  })
   role: string;
+
+  @ApiProperty({
+    description: 'Perfil de funcionário ou cliente associado ao usuário',
+    example: {
+      id: '550e8400-e29b-41d4-a716-446655440001',
+      name: 'José Silveira',
+      type: 'employee',
+      documentType: 'CPF',
+      document: '123.456.789-00',
+      phone: '(20) 99999-9999',
+      jobTitle: 'Mêcanico'
+    }
+  })
   profile: object;
 
   @ApiProperty({
