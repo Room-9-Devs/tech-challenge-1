@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientOrmEntity } from './typeorm/entities/client.orm-entity';
+import { EmployeeOrmEntity } from './typeorm/entities/employee.orm-entity';
+import { RefreshTokenOrmEntity } from './typeorm/entities/refresh-token.orm-entity';
+import { RoleOrmEntity } from './typeorm/entities/role.orm-entity';
 import { UserOrmEntity } from './typeorm/entities/user.orm-entity';
 import { TypeOrmUserRepository } from './typeorm/repositories/typeorm-user.repository';
 import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/create-user.use-case';
@@ -17,13 +21,25 @@ import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/creat
         username: configService.get<string>('DATABASE_USER'),
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
-        entities: [UserOrmEntity],
+        entities: [
+          UserOrmEntity,
+          RoleOrmEntity,
+          ClientOrmEntity,
+          EmployeeOrmEntity,
+          RefreshTokenOrmEntity,
+        ],
         migrations: [__dirname + '/typeorm/migrations/*.{ts,js}'],
         migrationsRun: true,
         synchronize: false,
       }),
     }),
-    TypeOrmModule.forFeature([UserOrmEntity]),
+    TypeOrmModule.forFeature([
+      UserOrmEntity,
+      RoleOrmEntity,
+      ClientOrmEntity,
+      EmployeeOrmEntity,
+      RefreshTokenOrmEntity,
+    ]),
   ],
   providers: [
     {
@@ -33,4 +49,4 @@ import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/creat
   ],
   exports: [USER_REPOSITORY],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }

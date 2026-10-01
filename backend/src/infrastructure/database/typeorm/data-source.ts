@@ -1,6 +1,13 @@
 import { DataSource } from 'typeorm';
+import { loadEnvironment } from '../../../config/environment';
+import { ClientOrmEntity } from './entities/client.orm-entity';
+import { EmployeeOrmEntity } from './entities/employee.orm-entity';
+import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
+import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
-import { CreateUsersTable1704067200000 } from './migrations/1704067200000-create-users-table';
+import { CreateAuthUsersSchema1704067200000 } from './migrations/1704067200000-create-auth-users-schema';
+
+loadEnvironment();
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -9,8 +16,14 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'app',
-  entities: [UserOrmEntity],
-  migrations: [CreateUsersTable1704067200000],
+  entities: [
+    UserOrmEntity,
+    RoleOrmEntity,
+    ClientOrmEntity,
+    EmployeeOrmEntity,
+    RefreshTokenOrmEntity,
+  ],
+  migrations: [CreateAuthUsersSchema1704067200000],
   migrationsRun: false,
   synchronize: false,
 });
