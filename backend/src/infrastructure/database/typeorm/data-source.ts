@@ -6,6 +6,7 @@ import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
 import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
 import { CreateAuthUsersSchema1704067200000 } from './migrations/1704067200000-create-auth-users-schema';
+import { AddEmployeeDocuments1704067201000 } from './migrations/1704067201000-add-employee-documents';
 
 loadEnvironment();
 
@@ -23,7 +24,7 @@ export const AppDataSource = new DataSource({
     EmployeeOrmEntity,
     RefreshTokenOrmEntity,
   ],
-  migrations: [CreateAuthUsersSchema1704067200000],
+  migrations: [CreateAuthUsersSchema1704067200000, AddEmployeeDocuments1704067201000],
   migrationsRun: false,
   synchronize: false,
 });

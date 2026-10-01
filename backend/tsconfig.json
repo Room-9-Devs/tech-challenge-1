@@ -8,8 +8,8 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -19,10 +19,15 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },
+  "exclude": [
+    "test",
+    "dist",
+    "node_modules"
+  ],
   "watchOptions": {
     "watchFile": "fixedPollingInterval",
     "watchDirectory": "fixedPollingInterval",

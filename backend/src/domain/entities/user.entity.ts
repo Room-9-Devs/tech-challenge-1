@@ -1,33 +1,45 @@
 import { randomUUID } from 'crypto';
 import { InvalidUserError } from '../errors/invalid-user.error';
 
+export type UserEntityType = 'client' | 'employee';
+
 export interface UserProps {
   id?: string;
-  name: string;
+  username: string;
   email: string;
+  password: string;
+  entityType: UserEntityType;
+  entityId: string;
+  roleId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export class User {
   private readonly _id: string;
-  private _name: string;
-  private _email: string;
+  private readonly _username: string;
+  private readonly _email: string;
+  private _password: string;
+  private readonly _entityType: UserEntityType;
+  private readonly _entityId: string;
+  private readonly _roleId: string;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
   private constructor(props: UserProps) {
     this._id = props.id ?? randomUUID();
-    this._name = props.name;
-    this._email = props.email;
+    this._username = props.username;
+    this._email = props.email.toLowerCase();
+    this._password = props.password;
+    this._entityType = props.entityType;
+    this._entityId = props.entityId;
+    this._roleId = props.roleId;
     this._createdAt = props.createdAt ?? new Date();
     this._updatedAt = props.updatedAt ?? new Date();
   }
 
   public static create(props: UserProps): User {
-    User.validateName(props.name);
-    User.validateEmail(props.email);
-
+    User.validate(props);
     return new User(props);
   }
 
@@ -35,58 +47,36 @@ export class User {
     return new User(props);
   }
 
-  get id(): string {
-    return this._id;
-  }
+  get id(): string { return this._id; }
+  get username(): string { return this._username; }
+  get email(): string { return this._email; }
+  get password(): string { return this._password; }
+  get entityType(): UserEntityType { return this._entityType; }
+  get entityId(): string { return this._entityId; }
+  get roleId(): string { return this._roleId; }
+  get createdAt(): Date { return this._createdAt; }
+  get updatedAt(): Date { return this._updatedAt; }
 
-  get name(): string {
-    return this._name;
-  }
-
-  get email(): string {
-    return this._email;
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  public changeName(name: string): void {
-    User.validateName(name);
-    this._name = name;
+  public changePassword(password: string): void {
+    if (!password) throw new InvalidUserError('Password is required');
+    this._password = password;
     this._updatedAt = new Date();
   }
 
-  public changeEmail(email: string): void {
-    User.validateEmail(email);
-    this._email = email;
-    this._updatedAt = new Date();
-  }
-
-  private static validateName(name: string): void {
-    if (!name || name.trim().length === 0) {
-      throw new InvalidUserError('Name is required');
+  private static validate(props: UserProps): void {
+    if (!props.username || props.username.trim().length < 3) {
+      throw new InvalidUserError('Username must be at least 3 characters long');
     }
-    if (name.trim().length < 2) {
-      throw new InvalidUserError('Name must be at least 2 characters long');
+    if (!props.email || !/^\S+@\S+\.\S+$/.test(props.email)) {
+      throw new InvalidUserError('Invalid email');
     }
-    if (name.trim().length > 100) {
-      throw new InvalidUserError('Name must be at most 100 characters long');
+    if (!props.password) throw new InvalidUserError('Password is required');
+    if (!['client', 'employee'].includes(props.entityType)) {
+      throw new InvalidUserError('Invalid entity type');
+    }
+    if (!props.entityId || !props.roleId) {
+      throw new InvalidUserError('Entity and role are required');
     }
   }
 
-  private static validateEmail(email: string): void {
-    if (!email || email.trim().length === 0) {
-      throw new InvalidUserError('Email is required');
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new InvalidUserError('Invalid email format');
-    }
-  }
 }

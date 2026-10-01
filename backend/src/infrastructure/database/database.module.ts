@@ -8,6 +8,12 @@ import { RoleOrmEntity } from './typeorm/entities/role.orm-entity';
 import { UserOrmEntity } from './typeorm/entities/user.orm-entity';
 import { TypeOrmUserRepository } from './typeorm/repositories/typeorm-user.repository';
 import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/create-user.use-case';
+import { TypeOrmRoleRepository } from './typeorm/repositories/typeorm-role.repository';
+import { TypeOrmProfileRepository } from './typeorm/repositories/typeorm-profile.repository';
+import { TypeOrmRefreshTokenRepository } from './typeorm/repositories/typeorm-refresh-token.repository';
+import { ROLE_REPOSITORY } from '@/application/ports/role.repository';
+import { PROFILE_REPOSITORY } from '@/application/ports/profile.repository';
+import { REFRESH_TOKEN_REPOSITORY } from '@/application/ports/refresh-token.repository';
 
 @Module({
   imports: [
@@ -46,7 +52,10 @@ import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/creat
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,
     },
+    { provide: ROLE_REPOSITORY, useClass: TypeOrmRoleRepository },
+    { provide: PROFILE_REPOSITORY, useClass: TypeOrmProfileRepository },
+    { provide: REFRESH_TOKEN_REPOSITORY, useClass: TypeOrmRefreshTokenRepository },
   ],
-  exports: [USER_REPOSITORY],
+  exports: [USER_REPOSITORY, ROLE_REPOSITORY, PROFILE_REPOSITORY, REFRESH_TOKEN_REPOSITORY],
 })
 export class DatabaseModule { }

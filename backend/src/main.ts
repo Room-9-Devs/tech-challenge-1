@@ -18,10 +18,22 @@ async function bootstrap() {
   app.useGlobalFilters(new DomainExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('Clean Architecture API')
-    .setDescription('NestJS Clean Architecture Template API')
+    .setTitle('API da Oficina Mecânica')
+    .setDescription('API da oficina mecânica com autenticação, usuários e controle de acesso.')
     .setVersion('1.0.0')
     .addTag('Users')
+    .addTag('Auth')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Informe o token JWT de acesso.',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

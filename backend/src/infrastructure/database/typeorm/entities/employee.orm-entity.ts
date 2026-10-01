@@ -14,8 +14,14 @@ export class EmployeeOrmEntity {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 
-  @Column({ name: 'job_title', type: 'varchar', length: 150 })
-  jobTitle: string;
+  @Column({ name: 'document_type', type: 'enum', enum: ['CPF', 'CNPJ'] })
+  documentType: 'CPF' | 'CNPJ';
+
+  @Column({ type: 'varchar', length: 14, unique: true })
+  document: string;
+
+  @Column({ name: 'job_title', type: 'varchar', length: 150, nullable: true })
+  jobTitle: string | null;
 
   @Column({ type: 'varchar', length: 11 })
   phone: string;
