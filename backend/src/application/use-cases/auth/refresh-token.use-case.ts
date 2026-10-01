@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { RefreshTokenInvalidError } from '@/domain/errors/refresh-token-invalid.error';
-import { USER_REPOSITORY } from '../../users/create-user/create-user.use-case';
+import { USER_REPOSITORY } from '../users/create-user/create-user.use-case';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
 import { REFRESH_TOKEN_REPOSITORY, RefreshTokenRepository } from '@/application/ports/refresh-token.repository';

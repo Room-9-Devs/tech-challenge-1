@@ -1,10 +1,10 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import { LoginUseCase } from '@/application/use-cases/auth/login/login.use-case';
-import { LogoutUseCase } from '@/application/use-cases/auth/logout/logout.use-case';
-import { RefreshTokenUseCase } from '@/application/use-cases/auth/refresh-token/refresh-token.use-case';
-import { ChangePasswordUseCase } from '@/application/use-cases/auth/change-password/change-password.use-case';
+import { LoginUseCase } from '@/application/use-cases/auth/login.use-case';
+import { LogoutUseCase } from '@/application/use-cases/auth/logout.use-case';
+import { RefreshTokenUseCase } from '@/application/use-cases/auth/refresh-token.use-case';
+import { ChangePasswordUseCase } from '@/application/use-cases/auth/change-password.use-case';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginRequestDto, RefreshTokenRequestDto, ChangePasswordRequestDto } from './auth.dto';
 import { AccessTokenPayload } from '@/application/ports/token-service.port';

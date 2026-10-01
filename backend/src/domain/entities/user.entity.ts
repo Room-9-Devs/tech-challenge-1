@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { InvalidUserError } from '../errors/invalid-user.error';
+import { InvalidRoleAssignmentError } from '../errors/invalid-role-assignment.error';
 
 export type UserEntityType = 'client' | 'employee';
 
@@ -22,7 +23,7 @@ export class User {
   private _password: string;
   private readonly _entityType: UserEntityType;
   private readonly _entityId: string;
-  private readonly _roleId: string;
+  private _roleId: string;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -61,6 +62,20 @@ export class User {
     if (!password) throw new InvalidUserError('Password is required');
     this._password = password;
     this._updatedAt = new Date();
+  }
+
+  public changeRole(roleId: string, roleSlug: string): void {
+    if (!roleId) throw new InvalidUserError('Role is required');
+    if (!User.isRoleAllowed(this._entityType, roleSlug)) {
+      throw new InvalidRoleAssignmentError(this._entityType, roleSlug);
+    }
+    this._roleId = roleId;
+    this._updatedAt = new Date();
+  }
+
+  public static isRoleAllowed(entityType: UserEntityType, roleSlug: string): boolean {
+    if (entityType === 'client') return roleSlug === 'client';
+    return roleSlug === 'staff' || roleSlug === 'admin';
   }
 
   private static validate(props: UserProps): void {

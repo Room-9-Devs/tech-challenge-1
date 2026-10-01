@@ -2,3 +2,7 @@ export * from './domain.error';
 export * from './invalid-user.error';
 export * from './user-not-found.error';
 export * from './user-already-exists.error';
+export * from './authentication.error';
+export * from './refresh-token-invalid.error';
+export * from './role-not-found.error';
+export * from './invalid-role-assignment.error';

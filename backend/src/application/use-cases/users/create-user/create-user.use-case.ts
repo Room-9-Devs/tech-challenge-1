@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { UserAlreadyExistsError } from '@/domain/errors/user-already-exists.error';
+import { RoleNotFoundError } from '@/domain/errors/role-not-found.error';
+import { InvalidRoleAssignmentError } from '@/domain/errors/invalid-role-assignment.error';
 import { PASSWORD_HASHER, PasswordHasher } from '@/application/ports/password-hasher.port';
 import { PROFILE_REPOSITORY, ProfileRepository } from '@/application/ports/profile.repository';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
@@ -27,7 +29,10 @@ export class CreateUserUseCase {
     if (existingUser || existingUsername) throw new UserAlreadyExistsError(input.email);
 
     const role = await this.roleRepository.findBySlug(input.entityType === 'client' ? 'client' : 'staff');
-    if (!role) throw new Error('Default role was not found');
+    if (!role) throw new RoleNotFoundError(input.entityType === 'client' ? 'client' : 'staff');
+    if (!User.isRoleAllowed(input.entityType, role.slug)) {
+      throw new InvalidRoleAssignmentError(input.entityType, role.slug);
+    }
 
     const profile = input.entityType === 'client'
       ? await this.profileRepository.createClient({

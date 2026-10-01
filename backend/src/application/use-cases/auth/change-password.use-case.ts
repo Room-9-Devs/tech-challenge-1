@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from '@/domain/errors/authentication.error';
-import { USER_REPOSITORY } from '../../users/create-user/create-user.use-case';
+import { USER_REPOSITORY } from '../users/create-user/create-user.use-case';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { PASSWORD_HASHER, PasswordHasher } from '@/application/ports/password-hasher.port';
 import { REFRESH_TOKEN_REPOSITORY, RefreshTokenRepository } from '@/application/ports/refresh-token.repository';

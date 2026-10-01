@@ -18,10 +18,7 @@ export class FindUserUseCase {
 
   async execute(input: FindUserInputDto): Promise<FindUserOutputDto> {
     const user = await this.userRepository.findById(input.id);
-
-    if (!user) {
-      throw new UserNotFoundError(input.id);
-    }
+    if (!user) throw new UserNotFoundError(input.id);
 
     const profile = await this.profileRepository.findById(user.entityType, user.entityId);
     const role = await this.roleRepository.findById(user.roleId);

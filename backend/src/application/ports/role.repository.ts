@@ -7,6 +7,7 @@ export interface RoleRecord {
 }
 
 export interface RoleRepository {
+  findAll(): Promise<RoleRecord[]>;
   findBySlug(slug: string): Promise<RoleRecord | null>;
   findById(id: string): Promise<RoleRecord | null>;
 }

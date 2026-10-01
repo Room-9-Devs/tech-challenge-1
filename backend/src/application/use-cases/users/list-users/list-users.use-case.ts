@@ -1,10 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { UserRepository } from '@/domain/repositories/user.repository';
+import { UserRepository, UserFilter } from '@/domain/repositories/user.repository';
 import { USER_REPOSITORY } from '../create-user/create-user.use-case';
 import { ListUsersOutputDto } from './list-users-output.dto';
 import { PROFILE_REPOSITORY, ProfileRepository } from '@/application/ports/profile.repository';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
-import { UserFilter } from '@/domain/repositories/user.repository';
 
 @Injectable()
 export class ListUsersUseCase {
@@ -17,7 +16,6 @@ export class ListUsersUseCase {
 
   async execute(input?: UserFilter): Promise<ListUsersOutputDto> {
     const users = await this.userRepository.findAll(input);
-
     return {
       users: await Promise.all(users.map(async (user) => ({
         id: user.id,

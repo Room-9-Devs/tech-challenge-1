@@ -13,13 +13,16 @@ import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
 import { OpaqueRefreshTokenService } from './infrastructure/services/jwt/opaque-refresh-token.service';
-import { LoginUseCase } from './application/use-cases/auth/login/login.use-case';
-import { LogoutUseCase } from './application/use-cases/auth/logout/logout.use-case';
-import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token/refresh-token.use-case';
-import { ChangePasswordUseCase } from './application/use-cases/auth/change-password/change-password.use-case';
+import { LoginUseCase } from './application/use-cases/auth/login.use-case';
+import { LogoutUseCase } from './application/use-cases/auth/logout.use-case';
+import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token.use-case';
+import { ChangePasswordUseCase } from './application/use-cases/auth/change-password.use-case';
 import { AuthController } from './infrastructure/http/auth/auth.controller';
 import { JwtAuthGuard } from './infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from './infrastructure/http/auth/roles.guard';
+import { ListRolesUseCase } from './application/use-cases/permissions/list-roles.use-case';
+import { ChangeRoleUseCase } from './application/use-cases/permissions/change-role.use-case';
+import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
 
 @Module({
   imports: [
@@ -33,7 +36,7 @@ import { RolesGuard } from './infrastructure/http/auth/roles.guard';
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as `${number}${'s' | 'm' | 'h' | 'd'}` },
     }),
   ],
-  controllers: [UsersController, AuthController],
+  controllers: [UsersController, AuthController, PermissionsController],
   providers: [
     CreateUserUseCase,
     FindUserUseCase,
@@ -47,6 +50,8 @@ import { RolesGuard } from './infrastructure/http/auth/roles.guard';
     ChangePasswordUseCase,
     JwtAuthGuard,
     RolesGuard,
+    ListRolesUseCase,
+    ChangeRoleUseCase,
   ],
 })
 export class AppModule { }
