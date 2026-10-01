@@ -6,3 +6,6 @@ export * from './authentication.error';
 export * from './refresh-token-invalid.error';
 export * from './role-not-found.error';
 export * from './invalid-role-assignment.error';
+export * from './invalid-service-type.error';
+export * from './service-type-not-found.error';
+export * from './service-type-already-exists.error';

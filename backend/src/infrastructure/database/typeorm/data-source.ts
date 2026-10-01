@@ -5,8 +5,7 @@ import { EmployeeOrmEntity } from './entities/employee.orm-entity';
 import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
 import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
-import { CreateAuthUsersSchema1704067200000 } from './migrations/1704067200000-create-auth-users-schema';
-import { AddEmployeeDocuments1704067201000 } from './migrations/1704067201000-add-employee-documents';
+import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
 
 loadEnvironment();
 
@@ -17,14 +16,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'app',
-  entities: [
-    UserOrmEntity,
-    RoleOrmEntity,
-    ClientOrmEntity,
-    EmployeeOrmEntity,
-    RefreshTokenOrmEntity,
-  ],
-  migrations: [CreateAuthUsersSchema1704067200000, AddEmployeeDocuments1704067201000],
+  entities: [UserOrmEntity, RoleOrmEntity, ClientOrmEntity, EmployeeOrmEntity, RefreshTokenOrmEntity, ServiceTypeOrmEntity],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
   synchronize: false,
 });
