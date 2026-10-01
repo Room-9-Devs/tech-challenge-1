@@ -57,4 +57,15 @@ describe('CreateUserUseCase', () => {
 
     await expect(useCase.execute({ ...input, document: '55555555555' })).rejects.toThrow(UserAlreadyExistsError);
   });
+
+  it('rejects when the default role is missing or incompatible', async () => {
+    const input = {
+      username: 'role-test', email: 'role@example.com', password: 'password123', entityType: 'client' as const,
+      name: 'Role Test', documentType: 'CPF' as const, document: '66666666666', phone: '11999999994',
+    };
+    const missingRole = { findBySlug: jest.fn().mockResolvedValue(null) };
+    await expect(new CreateUserUseCase(users, new FakePasswordHasher(), profiles, missingRole as never).execute(input)).rejects.toThrow('Role with slug client not found');
+    const incompatibleRole = { findBySlug: jest.fn().mockResolvedValue({ id: 'role-admin', slug: 'admin', name: 'Administrador' }) };
+    await expect(new CreateUserUseCase(users, new FakePasswordHasher(), profiles, incompatibleRole as never).execute(input)).rejects.toThrow('cannot be assigned');
+  });
 });

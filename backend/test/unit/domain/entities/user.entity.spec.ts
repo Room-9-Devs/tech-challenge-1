@@ -25,5 +25,11 @@ describe('User', () => {
 
   it('rejects invalid credentials data', () => {
     expect(() => User.create({ ...props, username: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, email: 'invalid' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, password: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, entityType: 'client', entityId: '', roleId: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, entityType: 'other' as never })).toThrow(InvalidUserError);
+    expect(() => User.create(props).changePassword('')).toThrow(InvalidUserError);
+    expect(() => User.create(props).changeRole('', 'staff')).toThrow(InvalidUserError);
   });
 });

@@ -20,4 +20,11 @@ describe('AuthController', () => {
     expect(refresh.execute).toHaveBeenCalledWith('refresh');
     expect(logout.execute).toHaveBeenCalledWith('refresh');
   });
+
+  it('delegates authenticated password changes', async () => {
+    const change = { execute: jest.fn().mockResolvedValue(undefined) };
+    const controller = new AuthController({} as never, {} as never, {} as never, change as never);
+    await controller.change({ user: { sub: 'user-1' } } as never, { currentPassword: 'old', newPassword: 'new-password' });
+    expect(change.execute).toHaveBeenCalledWith('user-1', 'old', 'new-password');
+  });
 });

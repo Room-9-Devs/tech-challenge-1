@@ -23,4 +23,11 @@ describe('RefreshTokenUseCase', () => {
     const useCase = new RefreshTokenUseCase(new FakeUserRepository(), new FakeRoleRepository(), new FakeRefreshTokenRepository(), new FakeRefreshTokenService(), new FakeTokenService());
     await expect(useCase.execute('unknown')).rejects.toThrow(RefreshTokenInvalidError);
   });
+
+  it('rejects a refresh token whose user no longer exists', async () => {
+    const tokens = new FakeRefreshTokenRepository();
+    await tokens.save({ userId: 'missing', tokenHash: 'hash:orphan', expiresAt: new Date(Date.now() + 60_000), revokedAt: null });
+    const useCase = new RefreshTokenUseCase(new FakeUserRepository(), new FakeRoleRepository(), tokens, new FakeRefreshTokenService(), new FakeTokenService());
+    await expect(useCase.execute('orphan')).rejects.toThrow(RefreshTokenInvalidError);
+  });
 });
