@@ -1,7 +1,11 @@
 export interface FindUserOutputDto {
   id: string;
-  name: string;
+  username: string;
   email: string;
+  entityType: 'client' | 'employee';
+  entityId: string;
+  role: string;
+  profile: object;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -8,22 +8,18 @@ import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.useGlobalFilters(new DomainExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('Clean Architecture API')
-    .setDescription('NestJS Clean Architecture Template API')
+    .setTitle('API da Oficina Mecânica')
+    .setDescription('API da oficina mecânica com autenticação, usuários, permissões e tipos de serviço.')
     .setVersion('1.0.0')
-    .addTag('Users')
-    .addTag('Service Types')
+    .addTag('Autenticação')
+    .addTag('Usuários')
+    .addTag('Permissões')
+    .addTag('Tipos de serviço')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Authorization', description: 'Informe o token JWT de acesso.', in: 'header' }, 'access-token')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -32,8 +28,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  const seedService = app.get(ServiceTypeSeedService);
-  await seedService.run();
+  await app.get(ServiceTypeSeedService).run();
 
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/docs`);

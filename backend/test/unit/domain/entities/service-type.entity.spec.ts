@@ -72,6 +72,10 @@ describe('ServiceType Entity', () => {
     });
   });
 
+  it('should reject non-numeric unit values', () => {
+    expect(() => ServiceType.create({ description: 'Serviço', unitValue: Number.NaN })).toThrow(InvalidServiceTypeError);
+  });
+
   describe('changeDescription', () => {
     it('should update the description', () => {
       const serviceType = ServiceType.create({

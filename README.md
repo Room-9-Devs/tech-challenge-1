@@ -240,22 +240,19 @@ cd backend
 cp .env.example .env
 ```
 
-3. Ajuste as variáveis conforme necessário.
+3. Ajuste as variáveis conforme necessário. Pode manter as de exemplo se quiser.
 
-### Variáveis de Ambiente
+### Migrations e seeds
 
-```env
-# Application
-NODE_ENV=development
-PORT=3000
+Com o PostgreSQL disponível, execute a migration inicial e depois os seeds:
 
-# Database
-DATABASE_HOST=postgres
-DATABASE_PORT=5432
-DATABASE_USER=postgres
-DATABASE_PASSWORD=postgres
-DATABASE_NAME=app
+```bash
+cd backend
+npm run migration:run
+npm run seed
 ```
+
+Os seeds são separados por entidade (`roles`, `clients`, `employees` e `users`) e são idempotentes. Todos os usuários seedados usam a senha `password123`; esses dados são destinados somente ao ambiente de desenvolvimento.
 
 ## Execução com Docker Compose
 

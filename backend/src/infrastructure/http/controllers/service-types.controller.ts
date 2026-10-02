@@ -26,7 +26,7 @@ import { UpdateServiceTypeRequestDto } from '../dtos/update-service-type-request
 import { ServiceTypeResponseDto } from '../dtos/service-type-response.dto';
 import { ListServiceTypesResponseDto } from '../dtos/list-service-types-response.dto';
 
-  @ApiTags('Tipos de serviço')
+@ApiTags('Tipos de serviço')
 @Controller('service-types')
 export class ServiceTypesController {
   constructor(
