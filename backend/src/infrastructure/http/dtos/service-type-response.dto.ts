@@ -20,13 +20,13 @@ export class ServiceTypeResponseDto {
   unitValue: number;
 
   @ApiProperty({
-    description: 'Creation timestamp',
+    description: 'Data de criação',
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Last update timestamp',
+    description: 'Data da última atualização',
     example: '2024-01-01T00:00:00.000Z',
   })
   updatedAt: Date;

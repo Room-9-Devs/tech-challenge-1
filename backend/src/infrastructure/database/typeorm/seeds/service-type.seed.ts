@@ -31,7 +31,7 @@ export class ServiceTypeSeedService {
     const existingServiceTypes = await this.serviceTypeRepository.findAll();
 
     if (existingServiceTypes.length > 0) {
-      this.logger.log('Service types already seeded. Skipping.');
+      this.logger.log('Tipos de serviço já semeados. Pulando.');
       return;
     }
 
@@ -41,7 +41,7 @@ export class ServiceTypeSeedService {
     }
 
     this.logger.log(
-      `${DEFAULT_SERVICE_TYPES.length} service types seeded successfully.`,
+      `${DEFAULT_SERVICE_TYPES.length} tipos de serviço semeados com sucesso.`,
     );
   }
 }

@@ -39,11 +39,11 @@ export class ServiceTypesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Cadastrar tipo de serviço' })
+  @ApiOperation({ summary: 'Cria um novo tipo de serviço' })
   @ApiBody({ type: CreateServiceTypeRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Tipo de serviço cadastrado com sucesso',
+    description: 'Tipo de serviço criado com sucesso',
     type: ServiceTypeResponseDto,
   })
   @ApiResponse({
@@ -61,7 +61,7 @@ export class ServiceTypesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar tipos de serviço' })
+  @ApiOperation({ summary: 'Lista todos os tipos de serviço' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lista de tipos de serviço',
@@ -72,7 +72,7 @@ export class ServiceTypesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Consultar tipo de serviço por ID' })
+  @ApiOperation({ summary: 'Busca tipo de serviço pelo ID' })
   @ApiParam({
     name: 'id',
     description: 'UUID do tipo de serviço',
@@ -92,10 +92,10 @@ export class ServiceTypesController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Atualizar tipo de serviço' })
+  @ApiOperation({ summary: 'Atualiza um tipo de serviço' })
   @ApiParam({
     name: 'id',
-    description: 'Service type UUID',
+    description: 'UUID do tipo de serviço',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiBody({ type: UpdateServiceTypeRequestDto })
@@ -106,11 +106,11 @@ export class ServiceTypesController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
+    description: 'Dados de entrada inválidos',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Service type not found',
+    description: 'Tipo de serviço não encontrado',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -125,19 +125,19 @@ export class ServiceTypesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Excluir tipo de serviço' })
+  @ApiOperation({ summary: 'Remove um tipo de serviço' })
   @ApiParam({
     name: 'id',
-    description: 'Service type UUID',
+    description: 'UUID do tipo de serviço',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
-    description: 'Tipo de serviço excluído com sucesso',
+    description: 'Tipo de serviço removido com sucesso',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Service type not found',
+    description: 'Tipo de serviço não encontrado',
   })
   async delete(@Param('id') id: string): Promise<void> {
     return this.deleteServiceTypeUseCase.execute({ id });
