@@ -4,6 +4,6 @@ export class ServiceTypeAlreadyExistsError extends DomainError {
   readonly statusCode = 409;
 
   constructor(description: string) {
-    super(`Service type with description ${description} already exists`);
+    super(`Já existe um tipo de serviço com a descrição ${description}`);
   }
 }
