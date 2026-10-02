@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,7 +30,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 
-@ApiTags('Users')
+@ApiTags('Usuários')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -39,6 +40,9 @@ export class UsersController {
   ) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('access-token')
+  @Roles('admin', 'staff')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cadastrar usuário' })
   @ApiBody({ type: CreateUserRequestDto })
@@ -55,19 +59,21 @@ export class UsersController {
     status: HttpStatus.CONFLICT,
     description: 'Já existe um usuário com este e-mail',
   })
-  async create(@Body() dto: CreateUserRequestDto): Promise<UserResponseDto> {
-    if (dto.entityType !== 'client') throw new BadRequestException('Employee registration requires administrator access');
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Usuário não autorizado a cadastrar usuários',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Acesso negado para registrar funcionários',
+  })
+  async create(@Body() dto: CreateUserRequestDto, @Req() request: { user: { role: string } }): Promise<UserResponseDto> {
+
+    if (dto.entityType === 'employee' && request.user.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+    if (dto.entityType === 'employee' && request.user.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar administrador.');
+
     return this.createUserUseCase.execute(dto);
   }
-
-  // @Post('employees')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles('admin')
-  // @HttpCode(HttpStatus.CREATED)
-  // async createEmployee(@Body() dto: CreateUserRequestDto): Promise<UserResponseDto> {
-  //   if (dto.entityType !== 'employee') throw new BadRequestException('This endpoint only creates employees');
-  //   return this.createUserUseCase.execute(dto);
-  // }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
@@ -85,6 +91,7 @@ export class UsersController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Consultar usuário por ID' })
   @ApiParam({
     name: 'id',
@@ -99,6 +106,14 @@ export class UsersController {
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Usuário não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Usuário não autorizado a ver dados de outro usuário'
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Usuário não autorizado a ver dados de outro usuário'
   })
   async findById(@Param('id') id: string): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id });
@@ -116,6 +131,10 @@ export class UsersController {
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
+    description: 'Usuário não autorizado a listar usuários'
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a listar usuários'
   })
   async findAll(@Query('type') type?: 'client' | 'employee'): Promise<ListUsersResponseDto> {

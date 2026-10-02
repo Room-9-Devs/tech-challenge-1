@@ -9,7 +9,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { LoginRequestDto, RefreshTokenRequestDto, ChangePasswordRequestDto } from './auth.dto';
 import { AccessTokenPayload } from '@/application/ports/token-service.port';
 
-@ApiTags('Auth')
+@ApiTags('Autenticação')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly login: LoginUseCase, private readonly refresh: RefreshTokenUseCase, private readonly logout: LogoutUseCase, private readonly changePassword: ChangePasswordUseCase) { }

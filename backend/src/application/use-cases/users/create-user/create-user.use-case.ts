@@ -34,18 +34,21 @@ export class CreateUserUseCase {
       throw new InvalidRoleAssignmentError(input.entityType, role.slug);
     }
 
+    const phone = input.phone.replace(/\D/g, '');
+    const document = input.document.replace(/\D/g, '');
+
     const profile = input.entityType === 'client'
       ? await this.profileRepository.createClient({
         name: input.name,
         documentType: input.documentType,
-        document: input.document,
-        phone: input.phone,
+        document: document,
+        phone: phone,
       })
       : await this.profileRepository.createEmployee({
         name: input.name,
         documentType: input.documentType,
-        document: input.document,
-        phone: input.phone,
+        document: document,
+        phone: phone,
         jobTitle: input.jobTitle,
       });
 

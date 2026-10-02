@@ -31,11 +31,11 @@ export class CreateUserRequestDto {
   documentType: 'CPF' | 'CNPJ';
 
   @ApiProperty({ description: 'Número do documento.', example: '123.456.789-00' })
-  @IsString() @IsNotEmpty() @MaxLength(14)
+  @IsString() @IsNotEmpty()
   document: string;
 
   @ApiProperty({ description: 'Telefone do usuário.', example: '(20) 99999-9999' })
-  @IsString() @IsNotEmpty() @MaxLength(11)
+  @IsString() @IsNotEmpty()
   phone: string;
 
   @ApiProperty({ description: 'Cargo do funcionário (se for funcionário).', example: 'Mecânico', required: false })
