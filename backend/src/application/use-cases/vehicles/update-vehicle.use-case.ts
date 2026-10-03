@@ -1,0 +1,33 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { VehicleProps } from '@/domain/entities/vehicle.entity';
+import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exists.error';
+import { VehicleNotFoundError } from '@/domain/errors/vehicle-not-found.error';
+import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
+import { VEHICLE_REPOSITORY } from './create-vehicle/create-vehicle.use-case';
+import { CreateVehicleOutputDto } from './create-vehicle/create-vehicle-output.dto';
+
+export type UpdateVehicleInput = Pick<VehicleProps, 'license_plate' | 'model' | 'brand' | 'year' | 'color'> & { id: string };
+
+@Injectable()
+export class UpdateVehicleUseCase {
+  constructor(@Inject(VEHICLE_REPOSITORY) private readonly vehicles: VehicleRepository) {}
+
+  async execute(input: UpdateVehicleInput): Promise<CreateVehicleOutputDto> {
+    const vehicle = await this.vehicles.findById(input.id);
+    if (!vehicle) throw new VehicleNotFoundError(input.id);
+
+    // Validate all fields before mutating the loaded entity.
+    const normalizedPlate = input.license_plate?.trim().toUpperCase().replace('-', '');
+    if (normalizedPlate !== vehicle.license_plate) {
+      const duplicate = await this.vehicles.findByLicensePlate(normalizedPlate);
+      if (duplicate && duplicate.id !== vehicle.id) throw new VehicleAlreadyExistsError(normalizedPlate);
+    }
+    vehicle.updateDetails(input);
+    const saved = await this.vehicles.save(vehicle);
+    return {
+      id: saved.id, user_id: saved.user_id, license_plate: saved.license_plate,
+      model: saved.model, brand: saved.brand, year: saved.year, color: saved.color,
+      createdAt: saved.createdAt, updatedAt: saved.updatedAt,
+    };
+  }
+}

@@ -9,3 +9,7 @@ export * from './invalid-role-assignment.error';
 export * from './invalid-service-type.error';
 export * from './service-type-not-found.error';
 export * from './service-type-already-exists.error';
+export * from './invalid-vehicle.error';
+export * from './vehicle-not-found.error';
+export * from './vehicle-already-exists.error';
+export * from './document-already-exists.error';

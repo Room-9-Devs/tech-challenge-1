@@ -1,5 +1,8 @@
 import { User } from '@/domain/entities/user.entity';
-import { UserFilter, UserRepository } from '@/domain/repositories/user.repository';
+import {
+  UserFilter,
+  UserRepository,
+} from '@/domain/repositories/user.repository';
 
 export class FakeUserRepository implements UserRepository {
   private users: User[] = [];
@@ -16,7 +19,9 @@ export class FakeUserRepository implements UserRepository {
   }
 
   async findAll(filter?: UserFilter): Promise<User[]> {
-    return this.users.filter((user) => !filter?.entityType || user.entityType === filter.entityType);
+    return this.users.filter(
+      (user) => !filter?.entityType || user.entityType === filter.entityType,
+    );
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -29,5 +34,12 @@ export class FakeUserRepository implements UserRepository {
 
   clear(): void {
     this.users = [];
+  }
+
+  snapshot(): User[] {
+    return [...this.users];
+  }
+  restore(users: User[]): void {
+    this.users = [...users];
   }
 }

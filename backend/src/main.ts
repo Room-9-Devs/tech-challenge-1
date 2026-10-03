@@ -8,18 +8,37 @@ import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.useGlobalFilters(new DomainExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('API da Oficina Mecânica')
-    .setDescription('API da oficina mecânica com autenticação, usuários, permissões e tipos de serviço.')
+    .setDescription(
+      'API da oficina mecânica com autenticação, usuários, permissões, tipos de serviço e veículos.',
+    )
     .setVersion('1.0.0')
     .addTag('Autenticação')
     .addTag('Usuários')
     .addTag('Permissões')
     .addTag('Tipos de serviço')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Authorization', description: 'Informe o token JWT de acesso.', in: 'header' }, 'access-token')
+    .addTag('Veículos')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Informe o token JWT de acesso.',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

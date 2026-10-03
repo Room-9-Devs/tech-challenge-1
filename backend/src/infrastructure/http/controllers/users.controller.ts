@@ -9,7 +9,6 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import {
@@ -70,7 +69,6 @@ export class UsersController {
   async create(@Body() dto: CreateUserRequestDto, @Req() request: { user: { role: string } }): Promise<UserResponseDto> {
 
     if (dto.entityType === 'employee' && request.user.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
-    if (dto.entityType === 'employee' && request.user.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar administrador.');
 
     return this.createUserUseCase.execute(dto);
   }
