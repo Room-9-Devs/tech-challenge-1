@@ -1,128 +1,35 @@
-import { User } from '@/domain/entities/user.entity';
+import { InvalidRoleAssignmentError } from '@/domain/errors/invalid-role-assignment.error';
 import { InvalidUserError } from '@/domain/errors/invalid-user.error';
+import { User } from '@/domain/entities/user.entity';
 
-describe('User Entity', () => {
-  describe('create', () => {
-    it('should create a user with valid data', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@example.com',
-      });
+describe('User', () => {
+  const props = { username: 'jose', email: 'jose@example.com', password: 'hash', entityType: 'employee' as const, entityId: 'employee-1', roleId: 'role-staff' };
 
-      expect(user).toBeInstanceOf(User);
-      expect(user.id).toBeDefined();
-      expect(user.name).toBe('John Doe');
-      expect(user.email).toBe('john@example.com');
-      expect(user.createdAt).toBeInstanceOf(Date);
-      expect(user.updatedAt).toBeInstanceOf(Date);
-    });
-
-    it('should throw InvalidUserError when name is empty', () => {
-      expect(() =>
-        User.create({
-          name: '',
-          email: 'john@example.com',
-        }),
-      ).toThrow(InvalidUserError);
-    });
-
-    it('should throw InvalidUserError when name is too short', () => {
-      expect(() =>
-        User.create({
-          name: 'A',
-          email: 'john@example.com',
-        }),
-      ).toThrow(InvalidUserError);
-    });
-
-    it('should throw InvalidUserError when name is too long', () => {
-      expect(() =>
-        User.create({
-          name: 'A'.repeat(101),
-          email: 'john@example.com',
-        }),
-      ).toThrow(InvalidUserError);
-    });
-
-    it('should throw InvalidUserError when email is empty', () => {
-      expect(() =>
-        User.create({
-          name: 'John Doe',
-          email: '',
-        }),
-      ).toThrow(InvalidUserError);
-    });
-
-    it('should throw InvalidUserError when email format is invalid', () => {
-      expect(() =>
-        User.create({
-          name: 'John Doe',
-          email: 'invalid-email',
-        }),
-      ).toThrow(InvalidUserError);
-    });
-
-    it('should accept email with subdomain', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@sub.example.com',
-      });
-
-      expect(user.email).toBe('john@sub.example.com');
-    });
+  it('creates a valid user and normalizes email', () => {
+    const user = User.create({ ...props, email: 'JOSE@EXAMPLE.COM' });
+    expect(user.email).toBe('jose@example.com');
   });
 
-  describe('changeName', () => {
-    it('should update the name', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@example.com',
-      });
-
-      const previousUpdatedAt = user.updatedAt;
-
-      user.changeName('Jane Doe');
-
-      expect(user.name).toBe('Jane Doe');
-      expect(user.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        previousUpdatedAt.getTime(),
-      );
-    });
-
-    it('should throw InvalidUserError when new name is invalid', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@example.com',
-      });
-
-      expect(() => user.changeName('')).toThrow(InvalidUserError);
-    });
+  it('changes password and role', () => {
+    const user = User.create(props);
+    user.changePassword('new-hash');
+    user.changeRole('role-admin', 'admin');
+    expect(user.password).toBe('new-hash');
+    expect(user.roleId).toBe('role-admin');
   });
 
-  describe('changeEmail', () => {
-    it('should update the email', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@example.com',
-      });
+  it('does not allow a client to receive an employee role', () => {
+    const user = User.create({ ...props, entityType: 'client', roleId: 'role-client' });
+    expect(() => user.changeRole('role-admin', 'admin')).toThrow(InvalidRoleAssignmentError);
+  });
 
-      const previousUpdatedAt = user.updatedAt;
-
-      user.changeEmail('jane@example.com');
-
-      expect(user.email).toBe('jane@example.com');
-      expect(user.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        previousUpdatedAt.getTime(),
-      );
-    });
-
-    it('should throw InvalidUserError when new email is invalid', () => {
-      const user = User.create({
-        name: 'John Doe',
-        email: 'john@example.com',
-      });
-
-      expect(() => user.changeEmail('invalid')).toThrow(InvalidUserError);
-    });
+  it('rejects invalid credentials data', () => {
+    expect(() => User.create({ ...props, username: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, email: 'invalid' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, password: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, entityType: 'client', entityId: '', roleId: '' })).toThrow(InvalidUserError);
+    expect(() => User.create({ ...props, entityType: 'other' as never })).toThrow(InvalidUserError);
+    expect(() => User.create(props).changePassword('')).toThrow(InvalidUserError);
+    expect(() => User.create(props).changeRole('', 'staff')).toThrow(InvalidUserError);
   });
 });

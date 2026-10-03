@@ -1,8 +1,15 @@
 import { DataSource } from 'typeorm';
+import { loadEnvironment } from '../../../config/environment';
+import { ClientOrmEntity } from './entities/client.orm-entity';
+import { EmployeeOrmEntity } from './entities/employee.orm-entity';
+import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
+import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
 import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
 import { ItemOrmEntity } from './entities/item.orm-entity';
 import { StockOrmEntity } from './entities/stock.orm-entity';
+
+loadEnvironment();
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -13,6 +20,10 @@ export const AppDataSource = new DataSource({
   database: process.env.DATABASE_NAME || 'app',
   entities: [
     UserOrmEntity,
+    RoleOrmEntity,
+    ClientOrmEntity,
+    EmployeeOrmEntity,
+    RefreshTokenOrmEntity,
     ServiceTypeOrmEntity,
     ItemOrmEntity,
     StockOrmEntity,

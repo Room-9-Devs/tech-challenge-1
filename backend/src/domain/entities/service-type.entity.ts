@@ -69,29 +69,29 @@ export class ServiceType {
 
   private static validateDescription(description: string): void {
     if (!description || description.trim().length === 0) {
-      throw new InvalidServiceTypeError('Description is required');
+      throw new InvalidServiceTypeError('A descrição é obrigatória');
     }
     if (description.trim().length < 2) {
       throw new InvalidServiceTypeError(
-        'Description must be at least 2 characters long',
+        'A descrição deve ter pelo menos 2 caracteres',
       );
     }
     if (description.trim().length > 255) {
       throw new InvalidServiceTypeError(
-        'Description must be at most 255 characters long',
+        'A descrição deve ter no máximo 255 caracteres',
       );
     }
   }
 
   private static validateUnitValue(unitValue: number): void {
     if (unitValue === undefined || unitValue === null) {
-      throw new InvalidServiceTypeError('Unit value is required');
+      throw new InvalidServiceTypeError('O valor unitário é obrigatório');
     }
     if (typeof unitValue !== 'number' || Number.isNaN(unitValue)) {
-      throw new InvalidServiceTypeError('Unit value must be a number');
+      throw new InvalidServiceTypeError('O valor unitário deve ser um número');
     }
     if (unitValue < 0) {
-      throw new InvalidServiceTypeError('Unit value must be greater than or equal to 0');
+      throw new InvalidServiceTypeError('O valor unitário deve ser maior ou igual a 0');
     }
   }
 }
