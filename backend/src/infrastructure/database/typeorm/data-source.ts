@@ -6,6 +6,8 @@ import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
 import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
 import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
+import { ProductOrmEntity } from './entities/product.orm-entity';
+import { StockOrmEntity } from './entities/stock.orm-entity';
 
 loadEnvironment();
 
@@ -16,7 +18,16 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'app',
-  entities: [UserOrmEntity, RoleOrmEntity, ClientOrmEntity, EmployeeOrmEntity, RefreshTokenOrmEntity, ServiceTypeOrmEntity],
+  entities: [
+    UserOrmEntity,
+    RoleOrmEntity,
+    ClientOrmEntity,
+    EmployeeOrmEntity,
+    RefreshTokenOrmEntity,
+    ServiceTypeOrmEntity,
+    ProductOrmEntity,
+    StockOrmEntity,
+  ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
   synchronize: false,

@@ -5,6 +5,7 @@ import { ENV_FILE_PATH } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
 import { ServiceTypesController } from './infrastructure/http/controllers/service-types.controller';
+import { ProductsController } from './infrastructure/http/controllers/products.controller';
 import { AuthController } from './infrastructure/http/auth/auth.controller';
 import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
@@ -15,7 +16,12 @@ import { FindServiceTypeUseCase } from './application/use-cases/service-types/fi
 import { ListServiceTypesUseCase } from './application/use-cases/service-types/list-service-types/list-service-types.use-case';
 import { UpdateServiceTypeUseCase } from './application/use-cases/service-types/update-service-type/update-service-type.use-case';
 import { DeleteServiceTypeUseCase } from './application/use-cases/service-types/delete-service-type/delete-service-type.use-case';
+import { CreateProductUseCase } from './application/use-cases/products/create-product/create-product.use-case';
+import { ListProductsUseCase } from './application/use-cases/products/list-products/list-products.use-case';
+import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
+import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
 import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
+import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 import { ScryptPasswordHasherService } from './infrastructure/services/password/scrypt-password-hasher.service';
 import { JwtTokenService } from './infrastructure/services/jwt/jwt-token.service';
 import { OpaqueRefreshTokenService } from './infrastructure/services/jwt/opaque-refresh-token.service';
@@ -40,7 +46,7 @@ import { ChangeRoleUseCase } from './application/use-cases/permissions/change-ro
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as `${number}${'s' | 'm' | 'h' | 'd'}` },
     }),
   ],
-  controllers: [UsersController, ServiceTypesController, AuthController, PermissionsController],
+  controllers: [UsersController, ServiceTypesController, ProductsController, AuthController, PermissionsController],
   providers: [
     CreateUserUseCase,
     FindUserUseCase,
@@ -50,7 +56,12 @@ import { ChangeRoleUseCase } from './application/use-cases/permissions/change-ro
     ListServiceTypesUseCase,
     UpdateServiceTypeUseCase,
     DeleteServiceTypeUseCase,
+    CreateProductUseCase,
+    ListProductsUseCase,
+    UpdateProductUseCase,
+    DeleteProductUseCase,
     ServiceTypeSeedService,
+    ProductSeedService,
     { provide: PASSWORD_HASHER, useClass: ScryptPasswordHasherService },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: REFRESH_TOKEN_SERVICE, useClass: OpaqueRefreshTokenService },
