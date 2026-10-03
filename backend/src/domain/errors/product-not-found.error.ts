@@ -1,9 +1,9 @@
 import { DomainError } from './domain.error';
 
-export class ItemNotFoundError extends DomainError {
+export class ProductNotFoundError extends DomainError {
   readonly statusCode = 404;
 
   constructor(id: string) {
-    super(`Item with id ${id} not found`);
+    super(`Produto com id ${id} não encontrado`);
   }
 }

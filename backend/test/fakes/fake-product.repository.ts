@@ -1,36 +1,39 @@
-import { Item } from '@/domain/entities/item.entity';
-import { ItemRepository } from '@/domain/repositories/item.repository';
+import { Product } from '@/domain/entities/product.entity';
+import { ProductRepository } from '@/domain/repositories/product.repository';
 
-export class FakeItemRepository implements ItemRepository {
-  private items: Item[] = [];
+export class FakeProductRepository implements ProductRepository {
+  private products: Product[] = [];
 
-  async save(item: Item): Promise<Item> {
-    const existingIndex = this.items.findIndex(
-      (existing) => existing.id === item.id,
+  async save(product: Product): Promise<Product> {
+    const existingIndex = this.products.findIndex(
+      (existing) => existing.id === product.id,
     );
 
     if (existingIndex >= 0) {
-      this.items[existingIndex] = item;
+      this.products[existingIndex] = product;
     } else {
-      this.items.push(item);
+      this.products.push(product);
     }
 
-    return item;
+    return product;
   }
 
-  async findById(id: string): Promise<Item | null> {
-    return this.items.find((item) => item.id === id && item.active) ?? null;
+  async findById(id: string): Promise<Product | null> {
+    return (
+      this.products.find((product) => product.id === id && product.active) ??
+      null
+    );
   }
 
-  async findAll(): Promise<Item[]> {
-    return this.items.filter((item) => item.active);
+  async findAll(): Promise<Product[]> {
+    return this.products.filter((product) => product.active);
   }
 
-  async findBySku(sku: string): Promise<Item | null> {
-    return this.items.find((item) => item.sku === sku) ?? null;
+  async findBySku(sku: string): Promise<Product | null> {
+    return this.products.find((product) => product.sku === sku) ?? null;
   }
 
   clear(): void {
-    this.items = [];
+    this.products = [];
   }
 }

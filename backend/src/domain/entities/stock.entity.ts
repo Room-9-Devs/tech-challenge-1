@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 export interface StockProps {
   id?: string;
-  itemId: string;
+  productId: string;
   quantity: number;
   reserved: number;
   createdAt?: Date;
@@ -11,7 +11,7 @@ export interface StockProps {
 
 export class Stock {
   private readonly _id: string;
-  private readonly _itemId: string;
+  private readonly _productId: string;
   private _quantity: number;
   private _reserved: number;
   private readonly _createdAt: Date;
@@ -19,7 +19,7 @@ export class Stock {
 
   private constructor(props: StockProps) {
     this._id = props.id ?? randomUUID();
-    this._itemId = props.itemId;
+    this._productId = props.productId;
     this._quantity = props.quantity;
     this._reserved = props.reserved;
     this._createdAt = props.createdAt ?? new Date();
@@ -34,8 +34,8 @@ export class Stock {
     return this._id;
   }
 
-  get itemId(): string {
-    return this._itemId;
+  get productId(): string {
+    return this._productId;
   }
 
   get quantity(): number {

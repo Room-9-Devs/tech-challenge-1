@@ -7,19 +7,19 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { ItemOrmEntity } from './item.orm-entity';
+import { ProductOrmEntity } from './product.orm-entity';
 
 @Entity('stocks')
 export class StockOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column('uuid', { name: 'item_id' })
-  itemId: string;
+  @Column('uuid', { name: 'product_id' })
+  productId: string;
 
-  @OneToOne(() => ItemOrmEntity)
-  @JoinColumn({ name: 'item_id' })
-  item: ItemOrmEntity;
+  @OneToOne(() => ProductOrmEntity)
+  @JoinColumn({ name: 'product_id' })
+  product: ProductOrmEntity;
 
   @Column({ type: 'int', default: 0 })
   quantity: number;

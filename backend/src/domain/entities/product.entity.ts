@@ -1,25 +1,25 @@
 import { randomUUID } from 'crypto';
-import { InvalidItemError } from '../errors/invalid-item.error';
+import { InvalidProductError } from '../errors/invalid-product.error';
 
-export enum ItemType {
+export enum ProductType {
   PART = 'PART',
   CONSUMABLE = 'CONSUMABLE',
 }
 
-export enum ItemUnit {
+export enum ProductUnit {
   UNIT = 'UNIT',
   LITER = 'LITER',
   KILOGRAM = 'KILOGRAM',
   METER = 'METER',
 }
 
-export interface ItemProps {
+export interface ProductProps {
   id?: string;
   sku: string;
   name: string;
   description?: string | null;
-  itemType: ItemType;
-  unit: ItemUnit;
+  productType: ProductType;
+  unit: ProductUnit;
   cost: number;
   salePrice: number;
   active?: boolean;
@@ -27,25 +27,25 @@ export interface ItemProps {
   updatedAt?: Date;
 }
 
-export class Item {
+export class Product {
   private readonly _id: string;
   private _sku: string;
   private _name: string;
   private _description: string | null;
-  private _itemType: ItemType;
-  private _unit: ItemUnit;
+  private _productType: ProductType;
+  private _unit: ProductUnit;
   private _cost: number;
   private _salePrice: number;
   private _active: boolean;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
-  private constructor(props: ItemProps) {
+  private constructor(props: ProductProps) {
     this._id = props.id ?? randomUUID();
     this._sku = props.sku;
     this._name = props.name;
     this._description = props.description ?? null;
-    this._itemType = props.itemType;
+    this._productType = props.productType;
     this._unit = props.unit;
     this._cost = props.cost;
     this._salePrice = props.salePrice;
@@ -54,20 +54,20 @@ export class Item {
     this._updatedAt = props.updatedAt ?? new Date();
   }
 
-  public static create(props: ItemProps): Item {
-    Item.validateSku(props.sku);
-    Item.validateName(props.name);
-    Item.validateDescription(props.description);
-    Item.validateItemType(props.itemType);
-    Item.validateUnit(props.unit);
-    Item.validatePrice(props.cost, 'Cost');
-    Item.validatePrice(props.salePrice, 'Sale price');
+  public static create(props: ProductProps): Product {
+    Product.validateSku(props.sku);
+    Product.validateName(props.name);
+    Product.validateDescription(props.description);
+    Product.validateProductType(props.productType);
+    Product.validateUnit(props.unit);
+    Product.validatePrice(props.cost, 'O custo');
+    Product.validatePrice(props.salePrice, 'O preço de venda');
 
-    return new Item(props);
+    return new Product(props);
   }
 
-  public static reconstitute(props: ItemProps): Item {
-    return new Item(props);
+  public static reconstitute(props: ProductProps): Product {
+    return new Product(props);
   }
 
   get id(): string {
@@ -86,11 +86,11 @@ export class Item {
     return this._description;
   }
 
-  get itemType(): ItemType {
-    return this._itemType;
+  get productType(): ProductType {
+    return this._productType;
   }
 
-  get unit(): ItemUnit {
+  get unit(): ProductUnit {
     return this._unit;
   }
 
@@ -115,43 +115,43 @@ export class Item {
   }
 
   public changeSku(sku: string): void {
-    Item.validateSku(sku);
+    Product.validateSku(sku);
     this._sku = sku;
     this._updatedAt = new Date();
   }
 
   public changeName(name: string): void {
-    Item.validateName(name);
+    Product.validateName(name);
     this._name = name;
     this._updatedAt = new Date();
   }
 
   public changeDescription(description: string | null | undefined): void {
-    Item.validateDescription(description);
+    Product.validateDescription(description);
     this._description = description ?? null;
     this._updatedAt = new Date();
   }
 
-  public changeItemType(itemType: ItemType): void {
-    Item.validateItemType(itemType);
-    this._itemType = itemType;
+  public changeProductType(productType: ProductType): void {
+    Product.validateProductType(productType);
+    this._productType = productType;
     this._updatedAt = new Date();
   }
 
-  public changeUnit(unit: ItemUnit): void {
-    Item.validateUnit(unit);
+  public changeUnit(unit: ProductUnit): void {
+    Product.validateUnit(unit);
     this._unit = unit;
     this._updatedAt = new Date();
   }
 
   public changeCost(cost: number): void {
-    Item.validatePrice(cost, 'Cost');
+    Product.validatePrice(cost, 'O custo');
     this._cost = cost;
     this._updatedAt = new Date();
   }
 
   public changeSalePrice(salePrice: number): void {
-    Item.validatePrice(salePrice, 'Sale price');
+    Product.validatePrice(salePrice, 'O preço de venda');
     this._salePrice = salePrice;
     this._updatedAt = new Date();
   }
@@ -163,22 +163,22 @@ export class Item {
 
   private static validateSku(sku: string): void {
     if (!sku || sku.trim().length === 0) {
-      throw new InvalidItemError('SKU is required');
+      throw new InvalidProductError('O SKU é obrigatório');
     }
     if (sku.trim().length > 100) {
-      throw new InvalidItemError('SKU must be at most 100 characters long');
+      throw new InvalidProductError('O SKU deve ter no máximo 100 caracteres');
     }
   }
 
   private static validateName(name: string): void {
     if (!name || name.trim().length === 0) {
-      throw new InvalidItemError('Name is required');
+      throw new InvalidProductError('O nome é obrigatório');
     }
     if (name.trim().length < 2) {
-      throw new InvalidItemError('Name must be at least 2 characters long');
+      throw new InvalidProductError('O nome deve ter pelo menos 2 caracteres');
     }
     if (name.trim().length > 255) {
-      throw new InvalidItemError('Name must be at most 255 characters long');
+      throw new InvalidProductError('O nome deve ter no máximo 255 caracteres');
     }
   }
 
@@ -186,37 +186,37 @@ export class Item {
     description: string | null | undefined,
   ): void {
     if (description && description.trim().length > 255) {
-      throw new InvalidItemError(
-        'Description must be at most 255 characters long',
+      throw new InvalidProductError(
+        'A descrição deve ter no máximo 255 caracteres',
       );
     }
   }
 
-  private static validateItemType(itemType: ItemType): void {
-    if (!Object.values(ItemType).includes(itemType)) {
-      throw new InvalidItemError(
-        `Item type must be one of: ${Object.values(ItemType).join(', ')}`,
+  private static validateProductType(productType: ProductType): void {
+    if (!Object.values(ProductType).includes(productType)) {
+      throw new InvalidProductError(
+        `O tipo do produto deve ser um dos valores: ${Object.values(ProductType).join(', ')}`,
       );
     }
   }
 
-  private static validateUnit(unit: ItemUnit): void {
-    if (!Object.values(ItemUnit).includes(unit)) {
-      throw new InvalidItemError(
-        `Unit must be one of: ${Object.values(ItemUnit).join(', ')}`,
+  private static validateUnit(unit: ProductUnit): void {
+    if (!Object.values(ProductUnit).includes(unit)) {
+      throw new InvalidProductError(
+        `A unidade deve ser um dos valores: ${Object.values(ProductUnit).join(', ')}`,
       );
     }
   }
 
   private static validatePrice(value: number, field: string): void {
     if (value === undefined || value === null) {
-      throw new InvalidItemError(`${field} is required`);
+      throw new InvalidProductError(`${field} é obrigatório`);
     }
     if (typeof value !== 'number' || Number.isNaN(value)) {
-      throw new InvalidItemError(`${field} must be a number`);
+      throw new InvalidProductError(`${field} deve ser um número`);
     }
     if (value < 0) {
-      throw new InvalidItemError(`${field} must be greater than or equal to 0`);
+      throw new InvalidProductError(`${field} deve ser maior ou igual a 0`);
     }
   }
 }

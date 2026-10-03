@@ -1,12 +1,12 @@
-import { ItemType, ItemUnit } from '@/domain/entities/item.entity';
+import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
 
-export interface UpdateItemInputDto {
+export interface UpdateProductInputDto {
   id: string;
   sku: string;
   name: string;
   description?: string;
-  itemType: ItemType;
-  unit: ItemUnit;
+  productType: ProductType;
+  unit: ProductUnit;
   cost: number;
   salePrice: number;
 }

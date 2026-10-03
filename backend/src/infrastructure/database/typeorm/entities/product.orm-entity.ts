@@ -5,7 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ItemType, ItemUnit } from '../../../../domain/entities/item.entity';
+import {
+  ProductType,
+  ProductUnit,
+} from '../../../../domain/entities/product.entity';
 
 const decimalTransformer = {
   from: (value: string | number | null): number | null => {
@@ -17,8 +20,8 @@ const decimalTransformer = {
   to: (value: number | null): number | null => value,
 };
 
-@Entity('items')
-export class ItemOrmEntity {
+@Entity('products')
+export class ProductOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
 
@@ -31,11 +34,11 @@ export class ItemOrmEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   description: string | null;
 
-  @Column({ name: 'item_type', type: 'enum', enum: ItemType })
-  itemType: ItemType;
+  @Column({ name: 'product_type', type: 'enum', enum: ProductType })
+  productType: ProductType;
 
-  @Column({ type: 'enum', enum: ItemUnit })
-  unit: ItemUnit;
+  @Column({ type: 'enum', enum: ProductUnit })
+  unit: ProductUnit;
 
   @Column('decimal', {
     precision: 10,

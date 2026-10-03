@@ -5,7 +5,7 @@ export class StockMapper {
   static toDomain(ormEntity: StockOrmEntity): Stock {
     return Stock.reconstitute({
       id: ormEntity.id,
-      itemId: ormEntity.itemId,
+      productId: ormEntity.productId,
       quantity: ormEntity.quantity,
       reserved: ormEntity.reserved,
       createdAt: ormEntity.createdAt,

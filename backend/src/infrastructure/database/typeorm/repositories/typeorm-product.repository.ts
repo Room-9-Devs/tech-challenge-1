@@ -1,40 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Item } from '@/domain/entities/item.entity';
-import { ItemRepository } from '@/domain/repositories/item.repository';
-import { ItemOrmEntity } from '../entities/item.orm-entity';
-import { ItemMapper } from '../mappers/item.mapper';
+import { Product } from '@/domain/entities/product.entity';
+import { ProductRepository } from '@/domain/repositories/product.repository';
+import { ProductOrmEntity } from '../entities/product.orm-entity';
+import { ProductMapper } from '../mappers/product.mapper';
 
 @Injectable()
-export class TypeOrmItemRepository implements ItemRepository {
+export class TypeOrmProductRepository implements ProductRepository {
   constructor(
-    @InjectRepository(ItemOrmEntity)
-    private readonly repository: Repository<ItemOrmEntity>,
+    @InjectRepository(ProductOrmEntity)
+    private readonly repository: Repository<ProductOrmEntity>,
   ) {}
 
-  async save(item: Item): Promise<Item> {
-    const ormEntity = ItemMapper.toPersistence(item);
+  async save(product: Product): Promise<Product> {
+    const ormEntity = ProductMapper.toPersistence(product);
     const saved = await this.repository.save(ormEntity);
-    return ItemMapper.toDomain(saved);
+    return ProductMapper.toDomain(saved);
   }
 
-  async findById(id: string): Promise<Item | null> {
+  async findById(id: string): Promise<Product | null> {
     const ormEntity = await this.repository.findOne({
       where: { id, active: true },
     });
-    return ormEntity ? ItemMapper.toDomain(ormEntity) : null;
+    return ormEntity ? ProductMapper.toDomain(ormEntity) : null;
   }
 
-  async findAll(): Promise<Item[]> {
+  async findAll(): Promise<Product[]> {
     const ormEntities = await this.repository.find({
       where: { active: true },
     });
-    return ormEntities.map((entity) => ItemMapper.toDomain(entity));
+    return ormEntities.map((entity) => ProductMapper.toDomain(entity));
   }
 
-  async findBySku(sku: string): Promise<Item | null> {
+  async findBySku(sku: string): Promise<Product | null> {
     const ormEntity = await this.repository.findOne({ where: { sku } });
-    return ormEntity ? ItemMapper.toDomain(ormEntity) : null;
+    return ormEntity ? ProductMapper.toDomain(ormEntity) : null;
   }
 }

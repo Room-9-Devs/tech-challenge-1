@@ -1,72 +1,72 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemType, ItemUnit } from '@/domain/entities/item.entity';
+import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
 
-export class ItemResponseDto {
+export class ProductResponseDto {
   @ApiProperty({
-    description: 'Item unique identifier',
+    description: 'Identificador único do produto',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   id: string;
 
   @ApiProperty({
-    description: 'Item SKU',
+    description: 'SKU do produto',
     example: 'OLEO-5W30-1L',
   })
   sku: string;
 
   @ApiProperty({
-    description: 'Item name',
+    description: 'Nome do produto',
     example: 'Óleo 5W30 sintético',
   })
   name: string;
 
   @ApiProperty({
-    description: 'Item description',
+    description: 'Descrição do produto',
     example: 'Óleo lubrificante sintético para motores a gasolina',
     nullable: true,
   })
   description: string | null;
 
   @ApiProperty({
-    description: 'Item type',
-    enum: ItemType,
-    example: ItemType.CONSUMABLE,
+    description: 'Tipo do produto',
+    enum: ProductType,
+    example: ProductType.CONSUMABLE,
   })
-  itemType: ItemType;
+  productType: ProductType;
 
   @ApiProperty({
-    description: 'Item unit of measure',
-    enum: ItemUnit,
-    example: ItemUnit.LITER,
+    description: 'Unidade de medida do produto',
+    enum: ProductUnit,
+    example: ProductUnit.LITER,
   })
-  unit: ItemUnit;
+  unit: ProductUnit;
 
   @ApiProperty({
-    description: 'Item cost',
+    description: 'Custo do produto',
     example: 35.9,
   })
   cost: number;
 
   @ApiProperty({
-    description: 'Item sale price',
+    description: 'Preço de venda do produto',
     example: 59.9,
   })
   salePrice: number;
 
   @ApiProperty({
-    description: 'Whether the item is active',
+    description: 'Indica se o produto está ativo',
     example: true,
   })
   active: boolean;
 
   @ApiProperty({
-    description: 'Creation timestamp',
+    description: 'Data de criação',
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Last update timestamp',
+    description: 'Data da última atualização',
     example: '2024-01-01T00:00:00.000Z',
   })
   updatedAt: Date;

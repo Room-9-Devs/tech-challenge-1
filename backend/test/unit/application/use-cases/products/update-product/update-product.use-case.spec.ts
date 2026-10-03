@@ -1,20 +1,24 @@
-import { UpdateItemUseCase } from '@/application/use-cases/items/update-item/update-item.use-case';
-import { FakeItemRepository } from '../../../../../fakes/fake-item.repository';
-import { ItemNotFoundError } from '@/domain/errors/item-not-found.error';
-import { ItemAlreadyExistsError } from '@/domain/errors/item-already-exists.error';
-import { InvalidItemError } from '@/domain/errors/invalid-item.error';
-import { Item, ItemType, ItemUnit } from '@/domain/entities/item.entity';
+import { UpdateProductUseCase } from '@/application/use-cases/products/update-product/update-product.use-case';
+import { FakeProductRepository } from '../../../../../fakes/fake-product.repository';
+import { ProductNotFoundError } from '@/domain/errors/product-not-found.error';
+import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import { InvalidProductError } from '@/domain/errors/invalid-product.error';
+import {
+  Product,
+  ProductType,
+  ProductUnit,
+} from '@/domain/entities/product.entity';
 
-describe('UpdateItemUseCase', () => {
-  let useCase: UpdateItemUseCase;
-  let fakeRepository: FakeItemRepository;
+describe('UpdateProductUseCase', () => {
+  let useCase: UpdateProductUseCase;
+  let fakeRepository: FakeProductRepository;
 
-  const createItem = (sku: string): Item =>
-    Item.create({
+  const createProduct = (sku: string): Product =>
+    Product.create({
       sku,
       name: 'Pastilha de freio',
-      itemType: ItemType.PART,
-      unit: ItemUnit.UNIT,
+      productType: ProductType.PART,
+      unit: ProductUnit.UNIT,
       cost: 100,
       salePrice: 150,
     });
@@ -23,24 +27,24 @@ describe('UpdateItemUseCase', () => {
     sku: 'PAST-FREIO-02',
     name: 'Pastilha de freio cerâmica',
     description: 'Pastilha de freio dianteira',
-    itemType: ItemType.PART,
-    unit: ItemUnit.UNIT,
+    productType: ProductType.PART,
+    unit: ProductUnit.UNIT,
     cost: 120,
     salePrice: 190,
   };
 
   beforeEach(() => {
-    fakeRepository = new FakeItemRepository();
-    useCase = new UpdateItemUseCase(fakeRepository);
+    fakeRepository = new FakeProductRepository();
+    useCase = new UpdateProductUseCase(fakeRepository);
   });
 
-  it('should update an item with valid data', async () => {
-    const item = createItem('PAST-FREIO-01');
-    await fakeRepository.save(item);
+  it('should update an product with valid data', async () => {
+    const product = createProduct('PAST-FREIO-01');
+    await fakeRepository.save(product);
 
-    const result = await useCase.execute({ id: item.id, ...updateData });
+    const result = await useCase.execute({ id: product.id, ...updateData });
 
-    expect(result.id).toBe(item.id);
+    expect(result.id).toBe(product.id);
     expect(result.sku).toBe('PAST-FREIO-02');
     expect(result.name).toBe('Pastilha de freio cerâmica');
     expect(result.description).toBe('Pastilha de freio dianteira');
@@ -50,11 +54,11 @@ describe('UpdateItemUseCase', () => {
   });
 
   it('should allow updating with the same sku', async () => {
-    const item = createItem('PAST-FREIO-01');
-    await fakeRepository.save(item);
+    const product = createProduct('PAST-FREIO-01');
+    await fakeRepository.save(product);
 
     const result = await useCase.execute({
-      id: item.id,
+      id: product.id,
       ...updateData,
       sku: 'PAST-FREIO-01',
     });
@@ -63,39 +67,39 @@ describe('UpdateItemUseCase', () => {
     expect(result.salePrice).toBe(190);
   });
 
-  it('should throw ItemNotFoundError when item does not exist', async () => {
+  it('should throw ProductNotFoundError when product does not exist', async () => {
     await expect(
       useCase.execute({ id: 'non-existent-id', ...updateData }),
-    ).rejects.toThrow(ItemNotFoundError);
+    ).rejects.toThrow(ProductNotFoundError);
   });
 
-  it('should throw ItemNotFoundError when item is inactive', async () => {
-    const item = createItem('PAST-FREIO-01');
-    item.deactivate();
-    await fakeRepository.save(item);
+  it('should throw ProductNotFoundError when product is inactive', async () => {
+    const product = createProduct('PAST-FREIO-01');
+    product.deactivate();
+    await fakeRepository.save(product);
 
     await expect(
-      useCase.execute({ id: item.id, ...updateData }),
-    ).rejects.toThrow(ItemNotFoundError);
+      useCase.execute({ id: product.id, ...updateData }),
+    ).rejects.toThrow(ProductNotFoundError);
   });
 
-  it('should throw ItemAlreadyExistsError when sku is already used by another item', async () => {
-    const item1 = createItem('PAST-FREIO-01');
-    const item2 = createItem('PAST-FREIO-02');
-    await fakeRepository.save(item1);
-    await fakeRepository.save(item2);
+  it('should throw ProductAlreadyExistsError when sku is already used by another product', async () => {
+    const product1 = createProduct('PAST-FREIO-01');
+    const product2 = createProduct('PAST-FREIO-02');
+    await fakeRepository.save(product1);
+    await fakeRepository.save(product2);
 
     await expect(
-      useCase.execute({ id: item1.id, ...updateData, sku: 'PAST-FREIO-02' }),
-    ).rejects.toThrow(ItemAlreadyExistsError);
+      useCase.execute({ id: product1.id, ...updateData, sku: 'PAST-FREIO-02' }),
+    ).rejects.toThrow(ProductAlreadyExistsError);
   });
 
-  it('should throw InvalidItemError when data is invalid', async () => {
-    const item = createItem('PAST-FREIO-01');
-    await fakeRepository.save(item);
+  it('should throw InvalidProductError when data is invalid', async () => {
+    const product = createProduct('PAST-FREIO-01');
+    await fakeRepository.save(product);
 
     await expect(
-      useCase.execute({ id: item.id, ...updateData, salePrice: -1 }),
-    ).rejects.toThrow(InvalidItemError);
+      useCase.execute({ id: product.id, ...updateData, salePrice: -1 }),
+    ).rejects.toThrow(InvalidProductError);
   });
 });

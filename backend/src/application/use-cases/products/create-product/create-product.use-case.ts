@@ -1,50 +1,50 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Item } from '@/domain/entities/item.entity';
-import { ItemRepository } from '@/domain/repositories/item.repository';
-import { ItemAlreadyExistsError } from '@/domain/errors/item-already-exists.error';
-import { CreateItemInputDto } from './create-item-input.dto';
-import { CreateItemOutputDto } from './create-item-output.dto';
+import { Product } from '@/domain/entities/product.entity';
+import { ProductRepository } from '@/domain/repositories/product.repository';
+import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import { CreateProductInputDto } from './create-product-input.dto';
+import { CreateProductOutputDto } from './create-product-output.dto';
 
-export const ITEM_REPOSITORY = Symbol('ITEM_REPOSITORY');
+export const PRODUCT_REPOSITORY = Symbol('PRODUCT_REPOSITORY');
 
 @Injectable()
-export class CreateItemUseCase {
+export class CreateProductUseCase {
   constructor(
-    @Inject(ITEM_REPOSITORY)
-    private readonly itemRepository: ItemRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepository,
   ) {}
 
-  async execute(input: CreateItemInputDto): Promise<CreateItemOutputDto> {
-    const existingItem = await this.itemRepository.findBySku(input.sku);
+  async execute(input: CreateProductInputDto): Promise<CreateProductOutputDto> {
+    const existingProduct = await this.productRepository.findBySku(input.sku);
 
-    if (existingItem) {
-      throw new ItemAlreadyExistsError(input.sku);
+    if (existingProduct) {
+      throw new ProductAlreadyExistsError(input.sku);
     }
 
-    const item = Item.create({
+    const product = Product.create({
       sku: input.sku,
       name: input.name,
       description: input.description,
-      itemType: input.itemType,
+      productType: input.productType,
       unit: input.unit,
       cost: input.cost,
       salePrice: input.salePrice,
     });
 
-    const savedItem = await this.itemRepository.save(item);
+    const savedProduct = await this.productRepository.save(product);
 
     return {
-      id: savedItem.id,
-      sku: savedItem.sku,
-      name: savedItem.name,
-      description: savedItem.description,
-      itemType: savedItem.itemType,
-      unit: savedItem.unit,
-      cost: savedItem.cost,
-      salePrice: savedItem.salePrice,
-      active: savedItem.active,
-      createdAt: savedItem.createdAt,
-      updatedAt: savedItem.updatedAt,
+      id: savedProduct.id,
+      sku: savedProduct.sku,
+      name: savedProduct.name,
+      description: savedProduct.description,
+      productType: savedProduct.productType,
+      unit: savedProduct.unit,
+      cost: savedProduct.cost,
+      salePrice: savedProduct.salePrice,
+      active: savedProduct.active,
+      createdAt: savedProduct.createdAt,
+      updatedAt: savedProduct.updatedAt,
     };
   }
 }

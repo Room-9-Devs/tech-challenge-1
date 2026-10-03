@@ -1,9 +1,9 @@
 import { DomainError } from './domain.error';
 
-export class ItemHasStockError extends DomainError {
+export class ProductHasStockError extends DomainError {
   readonly statusCode = 409;
 
   constructor(id: string) {
-    super(`Item with id ${id} cannot be deactivated because it has stock`);
+    super(`Produto com id ${id} não pode ser desativado pois possui estoque`);
   }
 }

@@ -1,55 +1,55 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ItemRepository } from '@/domain/repositories/item.repository';
-import { ItemNotFoundError } from '@/domain/errors/item-not-found.error';
-import { ItemAlreadyExistsError } from '@/domain/errors/item-already-exists.error';
-import { ITEM_REPOSITORY } from '../create-item/create-item.use-case';
-import { UpdateItemInputDto } from './update-item-input.dto';
-import { UpdateItemOutputDto } from './update-item-output.dto';
+import { ProductRepository } from '@/domain/repositories/product.repository';
+import { ProductNotFoundError } from '@/domain/errors/product-not-found.error';
+import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import { PRODUCT_REPOSITORY } from '../create-product/create-product.use-case';
+import { UpdateProductInputDto } from './update-product-input.dto';
+import { UpdateProductOutputDto } from './update-product-output.dto';
 
 @Injectable()
-export class UpdateItemUseCase {
+export class UpdateProductUseCase {
   constructor(
-    @Inject(ITEM_REPOSITORY)
-    private readonly itemRepository: ItemRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepository,
   ) {}
 
-  async execute(input: UpdateItemInputDto): Promise<UpdateItemOutputDto> {
-    const item = await this.itemRepository.findById(input.id);
+  async execute(input: UpdateProductInputDto): Promise<UpdateProductOutputDto> {
+    const product = await this.productRepository.findById(input.id);
 
-    if (!item) {
-      throw new ItemNotFoundError(input.id);
+    if (!product) {
+      throw new ProductNotFoundError(input.id);
     }
 
-    if (item.sku !== input.sku) {
-      const existingItem = await this.itemRepository.findBySku(input.sku);
+    if (product.sku !== input.sku) {
+      const existingProduct = await this.productRepository.findBySku(input.sku);
 
-      if (existingItem) {
-        throw new ItemAlreadyExistsError(input.sku);
+      if (existingProduct) {
+        throw new ProductAlreadyExistsError(input.sku);
       }
     }
 
-    item.changeSku(input.sku);
-    item.changeName(input.name);
-    item.changeDescription(input.description);
-    item.changeItemType(input.itemType);
-    item.changeUnit(input.unit);
-    item.changeCost(input.cost);
-    item.changeSalePrice(input.salePrice);
+    product.changeSku(input.sku);
+    product.changeName(input.name);
+    product.changeDescription(input.description);
+    product.changeProductType(input.productType);
+    product.changeUnit(input.unit);
+    product.changeCost(input.cost);
+    product.changeSalePrice(input.salePrice);
 
-    const updatedItem = await this.itemRepository.save(item);
+    const updatedProduct = await this.productRepository.save(product);
 
     return {
-      id: updatedItem.id,
-      sku: updatedItem.sku,
-      name: updatedItem.name,
-      description: updatedItem.description,
-      itemType: updatedItem.itemType,
-      unit: updatedItem.unit,
-      cost: updatedItem.cost,
-      salePrice: updatedItem.salePrice,
-      active: updatedItem.active,
-      createdAt: updatedItem.createdAt,
-      updatedAt: updatedItem.updatedAt,
+      id: updatedProduct.id,
+      sku: updatedProduct.sku,
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      productType: updatedProduct.productType,
+      unit: updatedProduct.unit,
+      cost: updatedProduct.cost,
+      salePrice: updatedProduct.salePrice,
+      active: updatedProduct.active,
+      createdAt: updatedProduct.createdAt,
+      updatedAt: updatedProduct.updatedAt,
     };
   }
 }

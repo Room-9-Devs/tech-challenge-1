@@ -1,5 +1,5 @@
 import { Stock } from '../entities/stock.entity';
 
 export interface StockRepository {
-  findByItemId(itemId: string): Promise<Stock | null>;
+  findByProductId(productId: string): Promise<Stock | null>;
 }

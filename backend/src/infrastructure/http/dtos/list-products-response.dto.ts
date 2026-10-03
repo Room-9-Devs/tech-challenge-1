@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ItemResponseDto } from './item-response.dto';
+import { ProductResponseDto } from './product-response.dto';
 
-export class ListItemsResponseDto {
+export class ListProductsResponseDto {
   @ApiProperty({
-    description: 'List of items',
-    type: [ItemResponseDto],
+    description: 'Lista de produtos',
+    type: [ProductResponseDto],
   })
-  items: ItemResponseDto[];
+  products: ProductResponseDto[];
 }

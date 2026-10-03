@@ -1,6 +1,6 @@
 import { DomainError } from './domain.error';
 
-export class InvalidItemError extends DomainError {
+export class InvalidProductError extends DomainError {
   readonly statusCode = 400;
 
   constructor(message: string) {

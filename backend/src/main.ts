@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
 import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
-import { ItemSeedService } from './infrastructure/database/typeorm/seeds/item.seed';
+import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,7 +20,7 @@ async function bootstrap() {
     .addTag('Usuários')
     .addTag('Permissões')
     .addTag('Tipos de serviço')
-    .addTag('Items')
+    .addTag('Produtos')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Authorization', description: 'Informe o token JWT de acesso.', in: 'header' }, 'access-token')
     .build();
 
@@ -32,8 +32,8 @@ async function bootstrap() {
 
   await app.get(ServiceTypeSeedService).run();
 
-  const itemSeedService = app.get(ItemSeedService);
-  await itemSeedService.run();
+  const productSeedService = app.get(ProductSeedService);
+  await productSeedService.run();
 
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/docs`);

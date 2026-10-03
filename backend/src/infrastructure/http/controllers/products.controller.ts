@@ -8,6 +8,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,111 +16,128 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { CreateItemUseCase } from '@/application/use-cases/items/create-item/create-item.use-case';
-import { ListItemsUseCase } from '@/application/use-cases/items/list-items/list-items.use-case';
-import { UpdateItemUseCase } from '@/application/use-cases/items/update-item/update-item.use-case';
-import { DeleteItemUseCase } from '@/application/use-cases/items/delete-item/delete-item.use-case';
-import { CreateItemRequestDto } from '../dtos/create-item-request.dto';
-import { UpdateItemRequestDto } from '../dtos/update-item-request.dto';
-import { ItemResponseDto } from '../dtos/item-response.dto';
-import { ListItemsResponseDto } from '../dtos/list-items-response.dto';
+import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
+import { ListProductsUseCase } from '@/application/use-cases/products/list-products/list-products.use-case';
+import { UpdateProductUseCase } from '@/application/use-cases/products/update-product/update-product.use-case';
+import { DeleteProductUseCase } from '@/application/use-cases/products/delete-product/delete-product.use-case';
+import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
+import { UpdateProductRequestDto } from '../dtos/update-product-request.dto';
+import { ProductResponseDto } from '../dtos/product-response.dto';
+import { ListProductsResponseDto } from '../dtos/list-products-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
-@ApiTags('Items')
-@Controller('items')
-export class ItemsController {
+@ApiTags('Produtos')
+@ApiBearerAuth('access-token')
+@Controller('products')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'staff')
+@ApiResponse({
+  status: HttpStatus.UNAUTHORIZED,
+  description: 'Autenticação obrigatória',
+})
+@ApiResponse({
+  status: HttpStatus.FORBIDDEN,
+  description: 'Usuário sem permissão para gerenciar produtos',
+})
+export class ProductsController {
   constructor(
-    private readonly createItemUseCase: CreateItemUseCase,
-    private readonly listItemsUseCase: ListItemsUseCase,
-    private readonly updateItemUseCase: UpdateItemUseCase,
-    private readonly deleteItemUseCase: DeleteItemUseCase,
+    private readonly createProductUseCase: CreateProductUseCase,
+    private readonly listProductsUseCase: ListProductsUseCase,
+    private readonly updateProductUseCase: UpdateProductUseCase,
+    private readonly deleteProductUseCase: DeleteProductUseCase,
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new item' })
-  @ApiBody({ type: CreateItemRequestDto })
+  @ApiOperation({ summary: 'Cria um novo produto' })
+  @ApiBody({ type: CreateProductRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Item created successfully',
-    type: ItemResponseDto,
+    description: 'Produto criado com sucesso',
+    type: ProductResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
+    description: 'Dados de entrada inválidos',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Item with this SKU already exists',
+    description: 'Já existe um produto com este SKU',
   })
-  async create(@Body() dto: CreateItemRequestDto): Promise<ItemResponseDto> {
-    return this.createItemUseCase.execute(dto);
+  async create(
+    @Body() dto: CreateProductRequestDto,
+  ): Promise<ProductResponseDto> {
+    return this.createProductUseCase.execute(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all active items' })
+  @ApiOperation({ summary: 'Lista todos os produtos ativos' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of items',
-    type: ListItemsResponseDto,
+    description: 'Lista de produtos',
+    type: ListProductsResponseDto,
   })
-  async findAll(): Promise<ListItemsResponseDto> {
-    return this.listItemsUseCase.execute();
+  async findAll(): Promise<ListProductsResponseDto> {
+    return this.listProductsUseCase.execute();
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update an item' })
+  @ApiOperation({ summary: 'Atualiza um produto' })
   @ApiParam({
     name: 'id',
-    description: 'Item UUID',
+    description: 'UUID do produto',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @ApiBody({ type: UpdateItemRequestDto })
+  @ApiBody({ type: UpdateProductRequestDto })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Item updated successfully',
-    type: ItemResponseDto,
+    description: 'Produto atualizado com sucesso',
+    type: ProductResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
+    description: 'Dados de entrada inválidos',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Item not found',
+    description: 'Produto não encontrado',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Item with this SKU already exists',
+    description: 'Já existe um produto com este SKU',
   })
   async update(
     @Param('id') id: string,
-    @Body() dto: UpdateItemRequestDto,
-  ): Promise<ItemResponseDto> {
-    return this.updateItemUseCase.execute({ id, ...dto });
+    @Body() dto: UpdateProductRequestDto,
+  ): Promise<ProductResponseDto> {
+    return this.updateProductUseCase.execute({ id, ...dto });
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Deactivate an item' })
+  @ApiOperation({ summary: 'Desativa um produto' })
   @ApiParam({
     name: 'id',
-    description: 'Item UUID',
+    description: 'UUID do produto',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
-    description: 'Item deactivated successfully',
+    description: 'Produto desativado com sucesso',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Item not found',
+    description: 'Produto não encontrado',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Item has stock and cannot be deactivated',
+    description: 'Produto possui estoque e não pode ser desativado',
   })
   async delete(@Param('id') id: string): Promise<void> {
-    return this.deleteItemUseCase.execute({ id });
+    return this.deleteProductUseCase.execute({ id });
   }
 }

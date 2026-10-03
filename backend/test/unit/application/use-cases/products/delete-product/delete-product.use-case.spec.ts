@@ -1,90 +1,97 @@
-import { DeleteItemUseCase } from '@/application/use-cases/items/delete-item/delete-item.use-case';
-import { FakeItemRepository } from '../../../../../fakes/fake-item.repository';
+import { DeleteProductUseCase } from '@/application/use-cases/products/delete-product/delete-product.use-case';
+import { FakeProductRepository } from '../../../../../fakes/fake-product.repository';
 import { FakeStockRepository } from '../../../../../fakes/fake-stock.repository';
-import { ItemNotFoundError } from '@/domain/errors/item-not-found.error';
-import { ItemHasStockError } from '@/domain/errors/item-has-stock.error';
-import { Item, ItemType, ItemUnit } from '@/domain/entities/item.entity';
+import { ProductNotFoundError } from '@/domain/errors/product-not-found.error';
+import { ProductHasStockError } from '@/domain/errors/product-has-stock.error';
+import {
+  Product,
+  ProductType,
+  ProductUnit,
+} from '@/domain/entities/product.entity';
 import { Stock } from '@/domain/entities/stock.entity';
 
-describe('DeleteItemUseCase', () => {
-  let useCase: DeleteItemUseCase;
-  let fakeItemRepository: FakeItemRepository;
+describe('DeleteProductUseCase', () => {
+  let useCase: DeleteProductUseCase;
+  let fakeProductRepository: FakeProductRepository;
   let fakeStockRepository: FakeStockRepository;
-  let item: Item;
+  let product: Product;
 
   beforeEach(async () => {
-    fakeItemRepository = new FakeItemRepository();
+    fakeProductRepository = new FakeProductRepository();
     fakeStockRepository = new FakeStockRepository();
-    useCase = new DeleteItemUseCase(fakeItemRepository, fakeStockRepository);
+    useCase = new DeleteProductUseCase(
+      fakeProductRepository,
+      fakeStockRepository,
+    );
 
-    item = Item.create({
+    product = Product.create({
       sku: 'PAST-FREIO-01',
       name: 'Pastilha de freio',
-      itemType: ItemType.PART,
-      unit: ItemUnit.UNIT,
+      productType: ProductType.PART,
+      unit: ProductUnit.UNIT,
       cost: 100,
       salePrice: 150,
     });
 
-    await fakeItemRepository.save(item);
+    await fakeProductRepository.save(product);
   });
 
-  it('should deactivate an item without stock record', async () => {
-    await useCase.execute({ id: item.id });
+  it('should deactivate an product without stock record', async () => {
+    await useCase.execute({ id: product.id });
 
-    const foundItem = await fakeItemRepository.findById(item.id);
-    const persistedItem = await fakeItemRepository.findBySku(item.sku);
+    const foundProduct = await fakeProductRepository.findById(product.id);
+    const persistedProduct = await fakeProductRepository.findBySku(product.sku);
 
-    expect(foundItem).toBeNull();
-    expect(persistedItem).not.toBeNull();
-    expect(persistedItem!.active).toBe(false);
+    expect(foundProduct).toBeNull();
+    expect(persistedProduct).not.toBeNull();
+    expect(persistedProduct!.active).toBe(false);
   });
 
-  it('should deactivate an item with empty stock', async () => {
+  it('should deactivate an product with empty stock', async () => {
     fakeStockRepository.add(
-      Stock.reconstitute({ itemId: item.id, quantity: 0, reserved: 0 }),
+      Stock.reconstitute({ productId: product.id, quantity: 0, reserved: 0 }),
     );
 
-    await useCase.execute({ id: item.id });
+    await useCase.execute({ id: product.id });
 
-    const persistedItem = await fakeItemRepository.findBySku(item.sku);
-    expect(persistedItem!.active).toBe(false);
+    const persistedProduct = await fakeProductRepository.findBySku(product.sku);
+    expect(persistedProduct!.active).toBe(false);
   });
 
-  it('should throw ItemHasStockError when item has quantity in stock', async () => {
+  it('should throw ProductHasStockError when product has quantity in stock', async () => {
     fakeStockRepository.add(
-      Stock.reconstitute({ itemId: item.id, quantity: 5, reserved: 0 }),
+      Stock.reconstitute({ productId: product.id, quantity: 5, reserved: 0 }),
     );
 
-    await expect(useCase.execute({ id: item.id })).rejects.toThrow(
-      ItemHasStockError,
+    await expect(useCase.execute({ id: product.id })).rejects.toThrow(
+      ProductHasStockError,
     );
 
-    const persistedItem = await fakeItemRepository.findById(item.id);
-    expect(persistedItem!.active).toBe(true);
+    const persistedProduct = await fakeProductRepository.findById(product.id);
+    expect(persistedProduct!.active).toBe(true);
   });
 
-  it('should throw ItemHasStockError when item has reserved stock', async () => {
+  it('should throw ProductHasStockError when product has reserved stock', async () => {
     fakeStockRepository.add(
-      Stock.reconstitute({ itemId: item.id, quantity: 0, reserved: 2 }),
+      Stock.reconstitute({ productId: product.id, quantity: 0, reserved: 2 }),
     );
 
-    await expect(useCase.execute({ id: item.id })).rejects.toThrow(
-      ItemHasStockError,
+    await expect(useCase.execute({ id: product.id })).rejects.toThrow(
+      ProductHasStockError,
     );
   });
 
-  it('should throw ItemNotFoundError when item does not exist', async () => {
+  it('should throw ProductNotFoundError when product does not exist', async () => {
     await expect(useCase.execute({ id: 'non-existent-id' })).rejects.toThrow(
-      ItemNotFoundError,
+      ProductNotFoundError,
     );
   });
 
-  it('should throw ItemNotFoundError when item is already inactive', async () => {
-    await useCase.execute({ id: item.id });
+  it('should throw ProductNotFoundError when product is already inactive', async () => {
+    await useCase.execute({ id: product.id });
 
-    await expect(useCase.execute({ id: item.id })).rejects.toThrow(
-      ItemNotFoundError,
+    await expect(useCase.execute({ id: product.id })).rejects.toThrow(
+      ProductNotFoundError,
     );
   });
 });

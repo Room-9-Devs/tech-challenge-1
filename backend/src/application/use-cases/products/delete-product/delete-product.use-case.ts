@@ -1,37 +1,37 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ItemRepository } from '@/domain/repositories/item.repository';
+import { ProductRepository } from '@/domain/repositories/product.repository';
 import { StockRepository } from '@/domain/repositories/stock.repository';
-import { ItemNotFoundError } from '@/domain/errors/item-not-found.error';
-import { ItemHasStockError } from '@/domain/errors/item-has-stock.error';
-import { ITEM_REPOSITORY } from '../create-item/create-item.use-case';
-import { DeleteItemInputDto } from './delete-item-input.dto';
+import { ProductNotFoundError } from '@/domain/errors/product-not-found.error';
+import { ProductHasStockError } from '@/domain/errors/product-has-stock.error';
+import { PRODUCT_REPOSITORY } from '../create-product/create-product.use-case';
+import { DeleteProductInputDto } from './delete-product-input.dto';
 
 export const STOCK_REPOSITORY = Symbol('STOCK_REPOSITORY');
 
 @Injectable()
-export class DeleteItemUseCase {
+export class DeleteProductUseCase {
   constructor(
-    @Inject(ITEM_REPOSITORY)
-    private readonly itemRepository: ItemRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepository,
     @Inject(STOCK_REPOSITORY)
     private readonly stockRepository: StockRepository,
   ) {}
 
-  async execute(input: DeleteItemInputDto): Promise<void> {
-    const item = await this.itemRepository.findById(input.id);
+  async execute(input: DeleteProductInputDto): Promise<void> {
+    const product = await this.productRepository.findById(input.id);
 
-    if (!item) {
-      throw new ItemNotFoundError(input.id);
+    if (!product) {
+      throw new ProductNotFoundError(input.id);
     }
 
-    const stock = await this.stockRepository.findByItemId(item.id);
+    const stock = await this.stockRepository.findByProductId(product.id);
 
     if (stock && stock.hasBalance()) {
-      throw new ItemHasStockError(item.id);
+      throw new ProductHasStockError(product.id);
     }
 
-    item.deactivate();
+    product.deactivate();
 
-    await this.itemRepository.save(item);
+    await this.productRepository.save(product);
   }
 }

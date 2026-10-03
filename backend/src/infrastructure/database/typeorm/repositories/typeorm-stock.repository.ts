@@ -13,8 +13,8 @@ export class TypeOrmStockRepository implements StockRepository {
     private readonly repository: Repository<StockOrmEntity>,
   ) {}
 
-  async findByItemId(itemId: string): Promise<Stock | null> {
-    const ormEntity = await this.repository.findOne({ where: { itemId } });
+  async findByProductId(productId: string): Promise<Stock | null> {
+    const ormEntity = await this.repository.findOne({ where: { productId } });
     return ormEntity ? StockMapper.toDomain(ormEntity) : null;
   }
 }

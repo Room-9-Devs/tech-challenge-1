@@ -1,8 +1,8 @@
-import { Item } from '../entities/item.entity';
+import { Product } from '../entities/product.entity';
 
-export interface ItemRepository {
-  save(item: Item): Promise<Item>;
-  findById(id: string): Promise<Item | null>;
-  findAll(): Promise<Item[]>;
-  findBySku(sku: string): Promise<Item | null>;
+export interface ProductRepository {
+  save(product: Product): Promise<Product>;
+  findById(id: string): Promise<Product | null>;
+  findAll(): Promise<Product[]>;
+  findBySku(sku: string): Promise<Product | null>;
 }

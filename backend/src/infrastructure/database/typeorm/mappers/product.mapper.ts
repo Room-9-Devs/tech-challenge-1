@@ -1,14 +1,14 @@
-import { Item } from '@/domain/entities/item.entity';
-import { ItemOrmEntity } from '../entities/item.orm-entity';
+import { Product } from '@/domain/entities/product.entity';
+import { ProductOrmEntity } from '../entities/product.orm-entity';
 
-export class ItemMapper {
-  static toDomain(ormEntity: ItemOrmEntity): Item {
-    return Item.reconstitute({
+export class ProductMapper {
+  static toDomain(ormEntity: ProductOrmEntity): Product {
+    return Product.reconstitute({
       id: ormEntity.id,
       sku: ormEntity.sku,
       name: ormEntity.name,
       description: ormEntity.description,
-      itemType: ormEntity.itemType,
+      productType: ormEntity.productType,
       unit: ormEntity.unit,
       cost: ormEntity.cost,
       salePrice: ormEntity.salePrice,
@@ -18,13 +18,13 @@ export class ItemMapper {
     });
   }
 
-  static toPersistence(domainEntity: Item): ItemOrmEntity {
-    const ormEntity = new ItemOrmEntity();
+  static toPersistence(domainEntity: Product): ProductOrmEntity {
+    const ormEntity = new ProductOrmEntity();
     ormEntity.id = domainEntity.id;
     ormEntity.sku = domainEntity.sku;
     ormEntity.name = domainEntity.name;
     ormEntity.description = domainEntity.description;
-    ormEntity.itemType = domainEntity.itemType;
+    ormEntity.productType = domainEntity.productType;
     ormEntity.unit = domainEntity.unit;
     ormEntity.cost = domainEntity.cost;
     ormEntity.salePrice = domainEntity.salePrice;

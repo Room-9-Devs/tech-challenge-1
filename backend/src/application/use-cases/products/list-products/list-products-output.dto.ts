@@ -1,13 +1,13 @@
-import { ItemType, ItemUnit } from '@/domain/entities/item.entity';
+import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
 
-export interface ListItemsOutputDto {
-  items: {
+export interface ListProductsOutputDto {
+  products: {
     id: string;
     sku: string;
     name: string;
     description: string | null;
-    itemType: ItemType;
-    unit: ItemUnit;
+    productType: ProductType;
+    unit: ProductUnit;
     cost: number;
     salePrice: number;
     active: boolean;

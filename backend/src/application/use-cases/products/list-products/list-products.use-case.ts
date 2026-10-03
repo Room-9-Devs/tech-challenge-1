@@ -1,31 +1,31 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ItemRepository } from '@/domain/repositories/item.repository';
-import { ITEM_REPOSITORY } from '../create-item/create-item.use-case';
-import { ListItemsOutputDto } from './list-items-output.dto';
+import { ProductRepository } from '@/domain/repositories/product.repository';
+import { PRODUCT_REPOSITORY } from '../create-product/create-product.use-case';
+import { ListProductsOutputDto } from './list-products-output.dto';
 
 @Injectable()
-export class ListItemsUseCase {
+export class ListProductsUseCase {
   constructor(
-    @Inject(ITEM_REPOSITORY)
-    private readonly itemRepository: ItemRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepository,
   ) {}
 
-  async execute(): Promise<ListItemsOutputDto> {
-    const items = await this.itemRepository.findAll();
+  async execute(): Promise<ListProductsOutputDto> {
+    const products = await this.productRepository.findAll();
 
     return {
-      items: items.map((item) => ({
-        id: item.id,
-        sku: item.sku,
-        name: item.name,
-        description: item.description,
-        itemType: item.itemType,
-        unit: item.unit,
-        cost: item.cost,
-        salePrice: item.salePrice,
-        active: item.active,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
+      products: products.map((product) => ({
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        description: product.description,
+        productType: product.productType,
+        unit: product.unit,
+        cost: product.cost,
+        salePrice: product.salePrice,
+        active: product.active,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
       })),
     };
   }

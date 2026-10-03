@@ -4,8 +4,8 @@ import { StockRepository } from '@/domain/repositories/stock.repository';
 export class FakeStockRepository implements StockRepository {
   private stocks: Stock[] = [];
 
-  async findByItemId(itemId: string): Promise<Stock | null> {
-    return this.stocks.find((stock) => stock.itemId === itemId) ?? null;
+  async findByProductId(productId: string): Promise<Stock | null> {
+    return this.stocks.find((stock) => stock.productId === productId) ?? null;
   }
 
   add(stock: Stock): void {

@@ -6,7 +6,7 @@ import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
 import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
 import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
-import { ItemOrmEntity } from './entities/item.orm-entity';
+import { ProductOrmEntity } from './entities/product.orm-entity';
 import { StockOrmEntity } from './entities/stock.orm-entity';
 
 loadEnvironment();
@@ -25,7 +25,7 @@ export const AppDataSource = new DataSource({
     EmployeeOrmEntity,
     RefreshTokenOrmEntity,
     ServiceTypeOrmEntity,
-    ItemOrmEntity,
+    ProductOrmEntity,
     StockOrmEntity,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
