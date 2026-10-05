@@ -1,14 +1,13 @@
-import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsInt,
+  IsJSON,
   IsOptional,
   IsString,
   Max,
   Min,
-  ValidateNested,
 } from 'class-validator';
-import { SortQueryDto } from './sort-query.dto';
 
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 10;
@@ -47,9 +46,21 @@ export class PaginationQueryDto {
   @IsString()
   search?: string;
 
-  @ApiHideProperty()
+  @ApiPropertyOptional({
+    description: 'JSON de ordenação. Ex: [{"field":"createdAt","order":"desc"}]',
+    example: '[{"field":"createdAt","order":"desc"}]',
+    type: String,
+  })
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => SortQueryDto)
-  sort?: SortQueryDto[];
+  @IsJSON()
+  sort?: string;
+
+  @ApiPropertyOptional({
+    description: 'JSON de filtros. Ex: {"productType":"PART"}',
+    example: '{"productType":"PART"}',
+    type: String,
+  })
+  @IsOptional()
+  @IsJSON()
+  filters?: string;
 }
