@@ -5,7 +5,7 @@ import { EmployeeOrmEntity } from './entities/employee.orm-entity';
 import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
 import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
-import { ServiceTypeOrmEntity } from './entities/service-type.orm-entity';
+import { RepairOrmEntity } from './entities/repair.orm-entity';
 import { ProductOrmEntity } from './entities/product.orm-entity';
 import { StockOrmEntity } from './entities/stock.orm-entity';
 
@@ -24,7 +24,7 @@ export const AppDataSource = new DataSource({
     ClientOrmEntity,
     EmployeeOrmEntity,
     RefreshTokenOrmEntity,
-    ServiceTypeOrmEntity,
+    RepairOrmEntity,
     ProductOrmEntity,
     StockOrmEntity,
   ],

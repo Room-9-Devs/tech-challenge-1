@@ -131,7 +131,7 @@ Referência: branch `feat/user-auth`, ainda não mesclada na `develop`. O códig
 | `UsersController` (`/users`) + use cases de `users` | Identidade e Acesso | Cria cliente e colaborador com perfil (`ProfileRepository`). **A implementar:** Guard `staff`/`admin` no `POST /users` (hoje é público) e ativar o `POST /users/employees` com papel `admin` (hoje comentado). |
 | `PermissionsController` (`/permissions`) + use cases de `permissions` | Identidade e Acesso | Implementado, restrito ao papel `admin` |
 | `application/ports` + `infrastructure/services` (JWT, refresh token opaco, hash scrypt) | Identidade e Acesso | Implementado |
-| `ServiceTypesController` (`/service-types`) + use cases de `service-types` | Cadastros (catálogo de serviços) | **A implementar:** proteção das rotas com JWT e papel |
+| `RepairsController` (`/repairs`) + use cases de `repairs` | Cadastros (catálogo de serviços) | **A implementar:** proteção das rotas com JWT e papel |
 
 ## Referências
 
