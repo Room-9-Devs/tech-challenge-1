@@ -1,7 +1,7 @@
 import { User } from '@/domain/entities/user.entity';
-import { ServiceType } from '@/domain/entities/service-type.entity';
+import { Repair } from '@/domain/entities/repair.entity';
 import { UserMapper } from '@/infrastructure/database/typeorm/mappers/user.mapper';
-import { ServiceTypeMapper } from '@/infrastructure/database/typeorm/mappers/service-type.mapper';
+import { RepairMapper } from '@/infrastructure/database/typeorm/mappers/repair.mapper';
 import { makeUser } from '../../../../fakes/user-fixture';
 
 describe('TypeORM mappers', () => {
@@ -14,11 +14,11 @@ describe('TypeORM mappers', () => {
     expect(domain.roleId).toBe(user.roleId);
   });
 
-  it('maps service types in both directions', () => {
-    const serviceType = ServiceType.create({ description: 'Troca de óleo', unitValue: 120 });
-    const persistence = ServiceTypeMapper.toPersistence(serviceType);
-    const domain = ServiceTypeMapper.toDomain(persistence);
-    expect(persistence.description).toBe(serviceType.description);
+  it('maps repairs in both directions', () => {
+    const repair = Repair.create({ description: 'Troca de óleo', unitValue: 120 });
+    const persistence = RepairMapper.toPersistence(repair);
+    const domain = RepairMapper.toDomain(persistence);
+    expect(persistence.description).toBe(repair.description);
     expect(domain.unitValue).toBe(120);
   });
 });

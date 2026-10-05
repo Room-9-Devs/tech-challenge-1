@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
-import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
+import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 
 async function bootstrap() {
@@ -14,12 +14,12 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('API da Oficina Mecânica')
-    .setDescription('API da oficina mecânica com autenticação, usuários, permissões e tipos de serviço.')
+    .setDescription('API da oficina mecânica com autenticação, usuários, permissões e tipos de reparo/serviço.')
     .setVersion('1.0.0')
     .addTag('Autenticação')
     .addTag('Usuários')
     .addTag('Permissões')
-    .addTag('Tipos de serviço')
+    .addTag('Tipos de Reparo/Serviço')
     .addTag('Produtos')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Authorization', description: 'Informe o token JWT de acesso.', in: 'header' }, 'access-token')
     .build();
@@ -30,7 +30,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  await app.get(ServiceTypeSeedService).run();
+  await app.get(RepairSeedService).run();
 
   const productSeedService = app.get(ProductSeedService);
   await productSeedService.run();

@@ -2,10 +2,10 @@ import { seedClients } from '@/infrastructure/database/seeds/client.seed';
 import { seedEmployees } from '@/infrastructure/database/seeds/employee.seed';
 import { seedRoles } from '@/infrastructure/database/seeds/role.seed';
 import { seedUsers } from '@/infrastructure/database/seeds/user.seed';
-import { ServiceTypeSeedService } from '@/infrastructure/database/typeorm/seeds/service-type.seed';
+import { RepairSeedService } from '@/infrastructure/database/typeorm/seeds/repair.seed';
 import { CreateAuthUsersSchema1704067200000 } from '@/infrastructure/database/typeorm/migrations/1704067200000-create-auth-users-schema';
 import { AddEmployeeDocuments1704067201000 } from '@/infrastructure/database/typeorm/migrations/1704067201000-add-employee-documents';
-import { CreateServiceTypesTable1790728653166 } from '@/infrastructure/database/typeorm/migrations/1790728653166-create-service-types-table';
+import { CreateRepairsTable1791168385775 } from '@/infrastructure/database/typeorm/migrations/1791168385775-create-repairs-table';
 
 describe('database seeds', () => {
   it('creates initial clients, employees and roles', async () => {
@@ -49,16 +49,16 @@ describe('database seeds', () => {
   });
 });
 
-describe('ServiceTypeSeedService', () => {
+describe('RepairSeedService', () => {
   it('seeds defaults only when the repository is empty', async () => {
     const repository = { findAll: jest.fn().mockResolvedValue([]), save: jest.fn().mockResolvedValue(undefined) };
-    await new ServiceTypeSeedService(repository as never).run();
+    await new RepairSeedService(repository as never).run();
     expect(repository.save).toHaveBeenCalledTimes(12);
   });
 
-  it('skips seeding when service types already exist', async () => {
-    const repository = { findAll: jest.fn().mockResolvedValue([{ id: 'service-1' }]), save: jest.fn() };
-    await new ServiceTypeSeedService(repository as never).run();
+  it('skips seeding when repairs already exist', async () => {
+    const repository = { findAll: jest.fn().mockResolvedValue([{ id: 'repair-1' }]), save: jest.fn() };
+    await new RepairSeedService(repository as never).run();
     expect(repository.save).not.toHaveBeenCalled();
   });
 });
@@ -81,11 +81,11 @@ describe('database migrations', () => {
     expect(queryRunner.query).toHaveBeenCalled();
   });
 
-  it('runs and reverts service types migration', async () => {
+  it('runs and reverts repairs migration', async () => {
     const queryRunner = { query: jest.fn().mockResolvedValue(undefined) };
-    const migration = new CreateServiceTypesTable1790728653166();
+    const migration = new CreateRepairsTable1791168385775();
     await migration.up(queryRunner as never);
     await migration.down(queryRunner as never);
-    expect(queryRunner.query).toHaveBeenCalledTimes(2);
+    expect(queryRunner.query).toHaveBeenCalledTimes(3);
   });
 });

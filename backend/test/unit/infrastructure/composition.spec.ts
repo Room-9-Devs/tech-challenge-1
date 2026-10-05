@@ -9,7 +9,7 @@ import { ClientOrmEntity } from '@/infrastructure/database/typeorm/entities/clie
 import { EmployeeOrmEntity } from '@/infrastructure/database/typeorm/entities/employee.orm-entity';
 import { RoleOrmEntity } from '@/infrastructure/database/typeorm/entities/role.orm-entity';
 import { RefreshTokenOrmEntity } from '@/infrastructure/database/typeorm/entities/refresh-token.orm-entity';
-import { ServiceTypeOrmEntity } from '@/infrastructure/database/typeorm/entities/service-type.orm-entity';
+import { RepairOrmEntity } from '@/infrastructure/database/typeorm/entities/repair.orm-entity';
 import * as domainErrors from '@/domain/errors';
 import { getMetadataArgsStorage } from 'typeorm';
 
@@ -18,14 +18,14 @@ describe('application composition', () => {
     expect(AppModule).toBeDefined();
     expect(DatabaseModule).toBeDefined();
     expect(AppDataSource.options.entities).toContain(UserOrmEntity);
-    expect(AppDataSource.options.entities).toContain(ServiceTypeOrmEntity);
+    expect(AppDataSource.options.entities).toContain(RepairOrmEntity);
   });
 
   it('loads environment configuration and domain errors', () => {
     expect(() => loadEnvironment()).not.toThrow();
     expect(domainErrors.AuthenticationError).toBeDefined();
     expect(domainErrors.InvalidRoleAssignmentError).toBeDefined();
-    expect(domainErrors.InvalidServiceTypeError).toBeDefined();
+    expect(domainErrors.InvalidRepairError).toBeDefined();
   });
 
   it('can instantiate ORM entities', () => {
@@ -34,8 +34,8 @@ describe('application composition', () => {
     expect(new EmployeeOrmEntity()).toBeInstanceOf(EmployeeOrmEntity);
     expect(new RoleOrmEntity()).toBeInstanceOf(RoleOrmEntity);
     expect(new RefreshTokenOrmEntity()).toBeInstanceOf(RefreshTokenOrmEntity);
-    expect(new ServiceTypeOrmEntity()).toBeInstanceOf(ServiceTypeOrmEntity);
-    const unitValueColumn = getMetadataArgsStorage().columns.find((column) => column.target === ServiceTypeOrmEntity && column.propertyName === 'unitValue');
+    expect(new RepairOrmEntity()).toBeInstanceOf(RepairOrmEntity);
+    const unitValueColumn = getMetadataArgsStorage().columns.find((column) => column.target === RepairOrmEntity && column.propertyName === 'unitValue');
     const transformer = (unitValueColumn?.options as any).transformer;
     expect(transformer.from(null)).toBeNull();
     expect(transformer.from('120.50')).toBe(120.5);
