@@ -28,10 +28,27 @@ import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
 import { UpdateProductRequestDto } from '../dtos/update-product-request.dto';
 import { ProductResponseDto } from '../dtos/product-response.dto';
 import { ListProductsQueryDto } from '../dtos/list-products-query.dto';
+import { ListProductsFiltersInputDto } from '@/application/use-cases/products/list-products/list-products-input.dto';
 import { ListProductsResponseDto } from '../dtos/list-products-response.dto';
+import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
+import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+
+const ALLOWED_PRODUCT_SORT_COLUMNS = [
+  'name',
+  'description',
+  'sku',
+  'productType',
+  'unit',
+  'cost',
+  'salePrice',
+  'createdAt',
+  'updatedAt',
+];
+
+const ALLOWED_PRODUCT_FILTERS = ['sku', 'name', 'productType', 'unit'];
 
 @ApiTags('Produtos')
 @ApiBearerAuth('access-token')
@@ -82,19 +99,19 @@ export class ProductsController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String, example: 'filtro de óleo' })
-  @ApiQuery({ name: 'sort[0][field]', required: false, type: String, example: 'createdAt' })
   @ApiQuery({
-    name: 'sort[0][order]',
-    required: false,
-    enum: ['asc', 'desc'],
-    example: 'desc',
-  })
-  @ApiQuery({
-    name: 'filters[fieldName]',
+    name: 'sort',
     required: false,
     type: String,
-    description: 'Filtros dinâmicos por campo (ex: filters[productType]=PART)',
-    example: 'PART',
+    description: 'JSON de ordenação. Ex: [{"field":"createdAt","order":"desc"}]',
+    example: '[{"field":"createdAt","order":"desc"}]',
+  })
+  @ApiQuery({
+    name: 'filters',
+    required: false,
+    type: String,
+    description: 'JSON de filtros. Ex: {"productType":"PART"}',
+    example: '{"productType":"PART"}',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -108,8 +125,11 @@ export class ProductsController {
       page: query.page,
       limit: query.limit,
       search: query.search,
-      sort: query.sort,
-      filters: query.filters,
+      sort: parseSortQuery(query.sort, ALLOWED_PRODUCT_SORT_COLUMNS),
+      filters: parseFiltersQuery(
+        query.filters,
+        ALLOWED_PRODUCT_FILTERS,
+      ) as ListProductsFiltersInputDto,
     });
   }
 

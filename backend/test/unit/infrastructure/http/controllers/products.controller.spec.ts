@@ -132,13 +132,19 @@ describe('ProductsController', () => {
         page: 1,
         limit: 10,
         search: undefined,
-        sort: undefined,
-        filters: undefined,
+        sort: '[{"field":"createdAt","order":"desc"}]',
+        filters: '{"productType":"PART"}',
       };
 
       const result = await controller.findAll(query);
 
-      expect(listProductsUseCase.execute).toHaveBeenCalledWith(query);
+      expect(listProductsUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: [{ field: 'createdAt', order: 'desc' }],
+        filters: { productType: 'PART' },
+      });
       expect(result).toEqual(expectedResult);
     });
   });

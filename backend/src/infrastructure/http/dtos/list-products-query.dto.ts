@@ -1,40 +1,57 @@
-import { ApiHideProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
-import { PaginationQueryDto } from '@/shared/pagination/pagination-query.dto';
-import { SortQueryDto } from '@/shared/pagination/sort-query.dto';
+import { IsInt, IsJSON, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class ListProductsFiltersDto {
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 10;
+export const MAX_LIMIT = 100;
+
+export class ListProductsQueryDto {
+  @ApiPropertyOptional({
+    description: 'Número da página',
+    minimum: 1,
+    default: DEFAULT_PAGE,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = DEFAULT_PAGE;
+
+  @ApiPropertyOptional({
+    description: 'Quantidade de itens por página',
+    minimum: 1,
+    maximum: MAX_LIMIT,
+    default: DEFAULT_LIMIT,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_LIMIT)
+  limit?: number = DEFAULT_LIMIT;
+
+  @ApiPropertyOptional({
+    description: 'Termo de busca textual',
+    example: 'filtro de óleo',
+  })
   @IsOptional()
   @IsString()
-  sku?: string;
+  search?: string;
 
+  @ApiPropertyOptional({
+    description: 'JSON de ordenação. Ex: [{"field":"createdAt","order":"desc"}]',
+    example: '[{"field":"createdAt","order":"desc"}]',
+  })
   @IsOptional()
-  @IsString()
-  name?: string;
+  @IsJSON()
+  sort?: string;
 
+  @ApiPropertyOptional({
+    description: 'JSON de filtros. Ex: {"productType":"PART"}',
+    example: '{"productType":"PART"}',
+  })
   @IsOptional()
-  @IsEnum(ProductType)
-  productType?: ProductType;
-
-  @IsOptional()
-  @IsEnum(ProductUnit)
-  unit?: ProductUnit;
-
-  [key: string]: string | number | boolean | undefined;
-}
-
-export class ListProductsQueryDto extends PaginationQueryDto {
-  @ApiHideProperty()
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => ListProductsFiltersDto)
-  filters?: ListProductsFiltersDto;
-
-  @ApiHideProperty()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => SortQueryDto)
-  sort?: SortQueryDto[];
+  @IsJSON()
+  filters?: string;
 }

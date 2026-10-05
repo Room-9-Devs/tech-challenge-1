@@ -27,7 +27,19 @@ import { CreateRepairRequestDto } from '../dtos/create-repair-request.dto';
 import { UpdateRepairRequestDto } from '../dtos/update-repair-request.dto';
 import { RepairResponseDto } from '../dtos/repair-response.dto';
 import { ListRepairsQueryDto } from '../dtos/list-repairs-query.dto';
+import { ListRepairsFiltersInputDto } from '@/application/use-cases/repairs/list-repairs/list-repairs-input.dto';
 import { ListRepairsResponseDto } from '../dtos/list-repairs-response.dto';
+import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
+import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+
+const ALLOWED_REPAIR_SORT_COLUMNS = [
+  'description',
+  'unitValue',
+  'createdAt',
+  'updatedAt',
+];
+
+const ALLOWED_REPAIR_FILTERS = ['description', 'unitValue'];
 
 @ApiTags('Tipos de Reparo/Serviço')
 @Controller('repairs')
@@ -68,19 +80,19 @@ export class RepairsController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String, example: 'troca de óleo' })
-  @ApiQuery({ name: 'sort[0][field]', required: false, type: String, example: 'description' })
   @ApiQuery({
-    name: 'sort[0][order]',
-    required: false,
-    enum: ['asc', 'desc'],
-    example: 'asc',
-  })
-  @ApiQuery({
-    name: 'filters[fieldName]',
+    name: 'sort',
     required: false,
     type: String,
-    description: 'Filtros dinâmicos por campo (ex: filters[unitValue]=120)',
-    example: '120',
+    description: 'JSON de ordenação. Ex: [{"field":"description","order":"asc"}]',
+    example: '[{"field":"description","order":"asc"}]',
+  })
+  @ApiQuery({
+    name: 'filters',
+    required: false,
+    type: String,
+    description: 'JSON de filtros. Ex: {"unitValue":120}',
+    example: '{"unitValue":120}',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -94,8 +106,11 @@ export class RepairsController {
       page: query.page,
       limit: query.limit,
       search: query.search,
-      sort: query.sort,
-      filters: query.filters,
+      sort: parseSortQuery(query.sort, ALLOWED_REPAIR_SORT_COLUMNS),
+      filters: parseFiltersQuery(
+        query.filters,
+        ALLOWED_REPAIR_FILTERS,
+      ) as ListRepairsFiltersInputDto,
     });
   }
 

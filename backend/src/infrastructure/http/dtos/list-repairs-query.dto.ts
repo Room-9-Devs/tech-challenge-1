@@ -1,32 +1,57 @@
-import { ApiHideProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { PaginationQueryDto } from '@/shared/pagination/pagination-query.dto';
-import { SortQueryDto } from '@/shared/pagination/sort-query.dto';
+import { IsInt, IsJSON, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class ListRepairsFiltersDto {
-  @IsOptional()
-  @IsString()
-  description?: string;
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 10;
+export const MAX_LIMIT = 100;
 
+export class ListRepairsQueryDto {
+  @ApiPropertyOptional({
+    description: 'Número da página',
+    minimum: 1,
+    default: DEFAULT_PAGE,
+  })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
-  unitValue?: number;
+  @IsInt()
+  @Min(1)
+  page?: number = DEFAULT_PAGE;
 
-  [key: string]: string | number | undefined;
-}
-
-export class ListRepairsQueryDto extends PaginationQueryDto {
-  @ApiHideProperty()
+  @ApiPropertyOptional({
+    description: 'Quantidade de itens por página',
+    minimum: 1,
+    maximum: MAX_LIMIT,
+    default: DEFAULT_LIMIT,
+  })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => ListRepairsFiltersDto)
-  filters?: ListRepairsFiltersDto;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_LIMIT)
+  limit?: number = DEFAULT_LIMIT;
 
-  @ApiHideProperty()
+  @ApiPropertyOptional({
+    description: 'Termo de busca textual',
+    example: 'troca de óleo',
+  })
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => SortQueryDto)
-  sort?: SortQueryDto[];
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'JSON de ordenação. Ex: [{"field":"description","order":"asc"}]',
+    example: '[{"field":"description","order":"asc"}]',
+  })
+  @IsOptional()
+  @IsJSON()
+  sort?: string;
+
+  @ApiPropertyOptional({
+    description: 'JSON de filtros. Ex: {"unitValue":120}',
+    example: '{"unitValue":120}',
+  })
+  @IsOptional()
+  @IsJSON()
+  filters?: string;
 }

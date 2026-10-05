@@ -129,13 +129,19 @@ describe('RepairsController', () => {
         page: 1,
         limit: 10,
         search: undefined,
-        sort: undefined,
-        filters: undefined,
+        sort: '[{"field":"description","order":"asc"}]',
+        filters: '{"unitValue":120}',
       };
 
       const result = await controller.findAll(query);
 
-      expect(listRepairsUseCase.execute).toHaveBeenCalledWith(query);
+      expect(listRepairsUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: [{ field: 'description', order: 'asc' }],
+        filters: { unitValue: 120 },
+      });
       expect(result).toEqual(expectedResult);
     });
   });
