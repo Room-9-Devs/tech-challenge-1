@@ -1,0 +1,91 @@
+import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
+import { FakeProductRepository } from '../../../../../fakes/fake-product.repository';
+import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import { InvalidProductError } from '@/domain/errors/invalid-product.error';
+import {
+  Product,
+  ProductType,
+  ProductUnit,
+} from '@/domain/entities/product.entity';
+
+describe('CreateProductUseCase', () => {
+  let useCase: CreateProductUseCase;
+  let fakeRepository: FakeProductRepository;
+
+  const input = {
+    sku: 'OLEO-5W30-1L',
+    name: 'Óleo 5W30 sintético',
+    description: 'Óleo lubrificante sintético',
+    productType: ProductType.CONSUMABLE,
+    unit: ProductUnit.LITER,
+    cost: 35.9,
+    salePrice: 59.9,
+  };
+
+  beforeEach(() => {
+    fakeRepository = new FakeProductRepository();
+    useCase = new CreateProductUseCase(fakeRepository);
+  });
+
+  it('should create an active product with valid data', async () => {
+    const result = await useCase.execute(input);
+
+    expect(result.id).toBeDefined();
+    expect(result.sku).toBe('OLEO-5W30-1L');
+    expect(result.name).toBe('Óleo 5W30 sintético');
+    expect(result.productType).toBe(ProductType.CONSUMABLE);
+    expect(result.unit).toBe(ProductUnit.LITER);
+    expect(result.cost).toBe(35.9);
+    expect(result.salePrice).toBe(59.9);
+    expect(result.active).toBe(true);
+    expect(result.createdAt).toBeInstanceOf(Date);
+    expect(result.updatedAt).toBeInstanceOf(Date);
+  });
+
+  it('should persist product through repository', async () => {
+    const result = await useCase.execute(input);
+
+    const persistedProduct = await fakeRepository.findById(result.id);
+
+    expect(persistedProduct).not.toBeNull();
+    expect(persistedProduct!.sku).toBe('OLEO-5W30-1L');
+  });
+
+  it('should throw ProductAlreadyExistsError when sku already exists', async () => {
+    await useCase.execute(input);
+
+    await expect(
+      useCase.execute({ ...input, name: 'Outro óleo' }),
+    ).rejects.toThrow(ProductAlreadyExistsError);
+  });
+
+  it('should throw ProductAlreadyExistsError when sku belongs to an inactive product', async () => {
+    const product = Product.create(input);
+    product.deactivate();
+    await fakeRepository.save(product);
+
+    await expect(useCase.execute(input)).rejects.toThrow(
+      ProductAlreadyExistsError,
+    );
+  });
+
+  it('should throw InvalidProductError when name is invalid', async () => {
+    await expect(useCase.execute({ ...input, name: '' })).rejects.toThrow(
+      InvalidProductError,
+    );
+  });
+
+  it('should throw InvalidProductError when cost is negative', async () => {
+    await expect(useCase.execute({ ...input, cost: -10 })).rejects.toThrow(
+      InvalidProductError,
+    );
+  });
+
+  it('should propagate repository errors', async () => {
+    jest
+      .spyOn(fakeRepository, 'save')
+      .mockRejectedValueOnce(new Error('Database error'));
+
+    await expect(useCase.execute(input)).rejects.toThrow('Database error');
+  });
+});

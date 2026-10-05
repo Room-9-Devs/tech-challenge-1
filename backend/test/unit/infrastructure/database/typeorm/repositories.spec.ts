@@ -2,9 +2,9 @@ import { TypeOrmRoleRepository } from '@/infrastructure/database/typeorm/reposit
 import { TypeOrmRefreshTokenRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-refresh-token.repository';
 import { TypeOrmProfileRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-profile.repository';
 import { TypeOrmUserRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-user.repository';
-import { TypeOrmServiceTypeRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-service-type.repository';
+import { TypeOrmRepairRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-repair.repository';
 import { makeUser } from '../../../../fakes/user-fixture';
-import { ServiceType } from '@/domain/entities/service-type.entity';
+import { Repair } from '@/domain/entities/repair.entity';
 
 const role = { id: 'role-client', name: 'Cliente', slug: 'client' };
 
@@ -62,17 +62,17 @@ describe('TypeOrmUserRepository', () => {
   });
 });
 
-describe('TypeOrmServiceTypeRepository', () => {
-  it('persists and queries service types', async () => {
-    const entity = { id: 'service-1', description: 'Troca de óleo', unitValue: 120, createdAt: new Date(), updatedAt: new Date() };
+describe('TypeOrmRepairRepository', () => {
+  it('persists and queries repairs', async () => {
+    const entity = { id: 'repair-1', description: 'Troca de óleo', unitValue: 120, createdAt: new Date(), updatedAt: new Date() };
     const repository = { create: jest.fn().mockReturnValue(entity), save: jest.fn().mockResolvedValue(entity), findOne: jest.fn().mockResolvedValue(entity), find: jest.fn().mockResolvedValue([entity]), softDelete: jest.fn().mockResolvedValue(undefined) };
-    const service = new TypeOrmServiceTypeRepository(repository as never);
-    const domain = ServiceType.create({ description: entity.description, unitValue: entity.unitValue });
+    const service = new TypeOrmRepairRepository(repository as never);
+    const domain = Repair.create({ description: entity.description, unitValue: entity.unitValue });
     await expect(service.save(domain)).resolves.toMatchObject({ description: entity.description });
-    await expect(service.findById('service-1')).resolves.toMatchObject({ id: 'service-1' });
+    await expect(service.findById('repair-1')).resolves.toMatchObject({ id: 'repair-1' });
     await expect(service.findAll()).resolves.toHaveLength(1);
     await expect(service.findByDescription(entity.description)).resolves.toMatchObject({ description: entity.description });
-    await service.delete('service-1');
-    expect(repository.softDelete).toHaveBeenCalledWith('service-1');
+    await service.delete('repair-1');
+    expect(repository.softDelete).toHaveBeenCalledWith('repair-1');
   });
 });

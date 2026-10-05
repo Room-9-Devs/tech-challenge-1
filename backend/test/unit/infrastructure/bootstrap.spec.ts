@@ -21,7 +21,7 @@ describe('bootstrap entrypoints', () => {
     jest.doMock('@nestjs/core', () => ({ NestFactory: { create: jest.fn().mockResolvedValue({ ...app, get: jest.fn().mockReturnValue(seed) }) } }));
     jest.doMock('@nestjs/swagger', () => ({ SwaggerModule: { createDocument, setup: swaggerSetup }, DocumentBuilder: jest.fn(() => builder) }));
     jest.doMock('@/app.module', () => ({ AppModule: class AppModule {} }));
-    jest.doMock('@/infrastructure/database/typeorm/seeds/service-type.seed', () => ({ ServiceTypeSeedService: class ServiceTypeSeedService {} }));
+    jest.doMock('@/infrastructure/database/typeorm/seeds/repair.seed', () => ({ RepairSeedService: class RepairSeedService {} }));
 
     require('@/main');
     await new Promise((resolve) => setImmediate(resolve));
