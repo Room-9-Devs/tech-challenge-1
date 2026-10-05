@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
@@ -24,6 +26,7 @@ import { DeleteRepairUseCase } from '@/application/use-cases/repairs/delete-repa
 import { CreateRepairRequestDto } from '../dtos/create-repair-request.dto';
 import { UpdateRepairRequestDto } from '../dtos/update-repair-request.dto';
 import { RepairResponseDto } from '../dtos/repair-response.dto';
+import { ListRepairsQueryDto } from '../dtos/list-repairs-query.dto';
 import { ListRepairsResponseDto } from '../dtos/list-repairs-response.dto';
 
 @ApiTags('Tipos de Reparo/Serviço')
@@ -61,14 +64,39 @@ export class RepairsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lista todos os tipos de reparo/serviço' })
+  @ApiOperation({ summary: 'Lista tipos de reparo/serviço com paginação, busca e filtros' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, example: 'troca de óleo' })
+  @ApiQuery({ name: 'sort[0][field]', required: false, type: String, example: 'description' })
+  @ApiQuery({
+    name: 'sort[0][order]',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'asc',
+  })
+  @ApiQuery({
+    name: 'filters[fieldName]',
+    required: false,
+    type: String,
+    description: 'Filtros dinâmicos por campo (ex: filters[unitValue]=120)',
+    example: '120',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de tipos de reparo/serviço',
+    description: 'Lista paginada de tipos de reparo/serviço',
     type: ListRepairsResponseDto,
   })
-  async findAll(): Promise<ListRepairsResponseDto> {
-    return this.listRepairsUseCase.execute();
+  async findAll(
+    @Query() query: ListRepairsQueryDto,
+  ): Promise<ListRepairsResponseDto> {
+    return this.listRepairsUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      sort: query.sort,
+      filters: query.filters,
+    });
   }
 
   @Get(':id')

@@ -51,13 +51,13 @@ describe('database seeds', () => {
 
 describe('RepairSeedService', () => {
   it('seeds defaults only when the repository is empty', async () => {
-    const repository = { findAll: jest.fn().mockResolvedValue([]), save: jest.fn().mockResolvedValue(undefined) };
+    const repository = { findAll: jest.fn().mockResolvedValue({ data: [], meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 } }), save: jest.fn().mockResolvedValue(undefined) };
     await new RepairSeedService(repository as never).run();
     expect(repository.save).toHaveBeenCalledTimes(12);
   });
 
   it('skips seeding when repairs already exist', async () => {
-    const repository = { findAll: jest.fn().mockResolvedValue([{ id: 'repair-1' }]), save: jest.fn() };
+    const repository = { findAll: jest.fn().mockResolvedValue({ data: [{ id: 'repair-1' }], meta: { page: 1, limit: 10, totalItems: 1, totalPages: 1 } }), save: jest.fn() };
     await new RepairSeedService(repository as never).run();
     expect(repository.save).not.toHaveBeenCalled();
   });

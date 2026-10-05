@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -17,6 +18,7 @@ import {
   ApiBody,
   ApiParam,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
 import { ListProductsUseCase } from '@/application/use-cases/products/list-products/list-products.use-case';
@@ -25,6 +27,7 @@ import { DeleteProductUseCase } from '@/application/use-cases/products/delete-pr
 import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
 import { UpdateProductRequestDto } from '../dtos/update-product-request.dto';
 import { ProductResponseDto } from '../dtos/product-response.dto';
+import { ListProductsQueryDto } from '../dtos/list-products-query.dto';
 import { ListProductsResponseDto } from '../dtos/list-products-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -75,14 +78,39 @@ export class ProductsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lista todos os produtos ativos' })
+  @ApiOperation({ summary: 'Lista produtos com paginação, busca e filtros' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, example: 'filtro de óleo' })
+  @ApiQuery({ name: 'sort[0][field]', required: false, type: String, example: 'createdAt' })
+  @ApiQuery({
+    name: 'sort[0][order]',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
+  @ApiQuery({
+    name: 'filters[fieldName]',
+    required: false,
+    type: String,
+    description: 'Filtros dinâmicos por campo (ex: filters[productType]=PART)',
+    example: 'PART',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de produtos',
+    description: 'Lista paginada de produtos',
     type: ListProductsResponseDto,
   })
-  async findAll(): Promise<ListProductsResponseDto> {
-    return this.listProductsUseCase.execute();
+  async findAll(
+    @Query() query: ListProductsQueryDto,
+  ): Promise<ListProductsResponseDto> {
+    return this.listProductsUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      sort: query.sort,
+      filters: query.filters,
+    });
   }
 
   @Put(':id')
