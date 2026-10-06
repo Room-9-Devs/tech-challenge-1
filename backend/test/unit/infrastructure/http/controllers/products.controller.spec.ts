@@ -107,9 +107,9 @@ describe('ProductsController', () => {
   });
 
   describe('findAll', () => {
-    it('should call ListProductsUseCase and return the result', async () => {
+    it('should call ListProductsUseCase with query and return the result', async () => {
       const expectedResult = {
-        products: [
+        data: [
           {
             id: 'uuid-1',
             ...productData,
@@ -118,13 +118,33 @@ describe('ProductsController', () => {
             updatedAt: new Date(),
           },
         ],
+        meta: {
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+        },
       };
 
       listProductsUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll();
+      const query = {
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: '[{"field":"createdAt","order":"desc"}]',
+        filters: '{"productType":"PART"}',
+      };
 
-      expect(listProductsUseCase.execute).toHaveBeenCalled();
+      const result = await controller.findAll(query);
+
+      expect(listProductsUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: [{ field: 'createdAt', order: 'desc' }],
+        filters: { productType: 'PART' },
+      });
       expect(result).toEqual(expectedResult);
     });
   });

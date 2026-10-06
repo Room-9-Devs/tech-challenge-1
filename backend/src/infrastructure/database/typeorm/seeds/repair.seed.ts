@@ -28,7 +28,7 @@ export class RepairSeedService {
   ) {}
 
   async run(): Promise<void> {
-    const existingRepairs = await this.repairRepository.findAll();
+    const { data: existingRepairs } = await this.repairRepository.findAll();
 
     if (existingRepairs.length > 0) {
       this.logger.log('Tipos de reparo/serviço já semeados. Pulando.');
