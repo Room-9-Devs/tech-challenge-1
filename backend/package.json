@@ -26,6 +26,7 @@
     "migration:run:container": "npm run typeorm -- migration:run -d src/infrastructure/database/typeorm/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/infrastructure/database/typeorm/data-source.ts",
     "migration:revert:container": "npm run typeorm -- migration:revert -d src/infrastructure/database/typeorm/data-source.ts",
+    "vehicles:backfill-owners": "ts-node -r tsconfig-paths/register src/infrastructure/database/scripts/backfill-vehicle-owners.ts",
     "seed": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/run-seeds.ts",
     "seed:container": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/run-seeds.ts"
   },

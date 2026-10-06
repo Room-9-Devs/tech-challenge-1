@@ -71,9 +71,8 @@ describe('UsersController', () => {
   });
 
   it('rejects employee creation by staff', async () => {
-    const create = {
-      execute: jest.fn(),
-    };
+    
+    const create = {execute: jest.fn(),};
 
     const controller = new UsersController(
       create as never,

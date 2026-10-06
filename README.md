@@ -518,3 +518,76 @@ services:
 ```
 
 Não há frontend, Redis, Nginx, PgAdmin ou qualquer outro container.
+
+## Proprietários de veículos e dados legados
+
+Novos veículos exigem `user_id` de um usuário existente. O PUT altera os dados do
+veículo, mas não transfere sua propriedade. IDs inválidos nas rotas retornam 400;
+placas duplicadas retornam 409, inclusive em gravações concorrentes.
+
+A migração de relacionamento preserva veículos antigos sem proprietário. Eles
+continuam disponíveis para leitura com `user_id: null`, mas precisam de um dono
+antes de serem atualizados. Nenhum usuário é escolhido automaticamente.
+
+Para concluir a migração em uma base com esses registros, prepare um JSON com
+todos os vínculos reais pendentes:
+
+```json
+[
+  {
+    "vehicleId": "UUID_DO_VEICULO",
+    "userId": "UUID_DO_USUARIO"
+  }
+]
+```
+
+Execute dentro de `backend`, com o `.env` da base desejada:
+
+```sh
+npm run vehicles:backfill-owners -- caminho/vehicle-owners.json
+```
+
+O comando valida os IDs e os usuários, impede sobrescrever proprietários existentes
+e executa tudo em uma transação. Se faltar algum vínculo, nada é gravado. Ao
+finalizar, a coluna passa a ser `NOT NULL`.
+
+O cadastro de usuário e perfil também é transacional. CPF, CNPJ numérico e CNPJ
+alfanumérico têm os dígitos verificadores validados; letras do CNPJ são preservadas
+em maiúsculas conforme o
+[manual da Receita Federal](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj/manual-dv-cnpj.pdf).
+
+### Testes de persistência
+
+Os testes unitários não exigem banco. Os testes de integração são opt-in e aceitam
+apenas a base local isolada `fiap_fipe_test` em `localhost:5433`. Criam e removem
+somente schemas temporários `regression_*`, sem alterar tabelas existentes:
+
+```powershell
+$env:RUN_DATABASE_INTEGRATION_TESTS = 'true'
+npm run test:integration -- --runInBand
+```
+
+## Consulta FIPE
+
+`GET /vehicles/fipe/:code` consulta a FIPE API v2 da Parallelum e retorna os preços
+do código informado para os anos e combustíveis disponíveis. Exemplo:
+
+```http
+GET /vehicles/fipe/001004-9
+```
+
+O backend procura o código entre automóveis, motos e caminhões e converte a resposta
+para os campos `valor`, `marca`, `modelo`, `anoModelo`, `combustivel`, `codigoFipe`,
+`mesReferencia`, `tipoVeiculo`, `siglaCombustivel` e `dataConsulta`.
+`dataConsulta` é o instante da consulta, gerado pelo backend.
+
+A cota pública permite consultas sem token. Opcionalmente, configure `FIPE_API_TOKEN`
+no `backend/.env`; o backend envia esse valor no cabeçalho `X-Subscription-Token`.
+Consulte os limites e a obtenção do token na
+[documentação da Parallelum](https://deividfortuna.github.io/fipe/v2/).
+
+Cada consulta envolve uma busca pelos anos e uma requisição de preço por ano/combustível.
+As chamadas de preço têm concorrência máxima de quatro, com prazo total de dez segundos.
+A API local retorna 400 para formato de código inválido, 404 para código ausente,
+503 para cota externa esgotada, 504 para timeout e 502 para falha ou resposta inválida
+do serviço externo.

@@ -3,12 +3,14 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { RoleOrmEntity } from './role.orm-entity';
+import { VehicleOrmEntity } from './vehicle.orm-entity';
 
 @Entity('users')
 @Index(['entityType', 'entityId'])
@@ -43,4 +45,7 @@ export class UserOrmEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToMany(() => VehicleOrmEntity, (vehicle) => vehicle.user)
+  vehicles: VehicleOrmEntity[];
 }

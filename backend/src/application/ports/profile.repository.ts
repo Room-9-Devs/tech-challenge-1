@@ -3,6 +3,7 @@ import { UserEntityType } from '@/domain/entities/user.entity';
 export const PROFILE_REPOSITORY = Symbol('PROFILE_REPOSITORY');
 
 export interface ClientProfileInput {
+  id?: string;
   name: string;
   documentType: 'CPF' | 'CNPJ';
   document: string;
@@ -10,6 +11,7 @@ export interface ClientProfileInput {
 }
 
 export interface EmployeeProfileInput {
+  id?: string;
   name: string;
   documentType: 'CPF' | 'CNPJ';
   document: string;

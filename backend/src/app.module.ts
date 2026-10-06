@@ -9,6 +9,7 @@ import { RepairsController } from './infrastructure/http/controllers/repairs.con
 import { ProductsController } from './infrastructure/http/controllers/products.controller';
 import { AuthController } from './infrastructure/http/auth/auth.controller';
 import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
+import { VehiclesController } from './infrastructure/http/controllers/vehicles.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
@@ -37,6 +38,14 @@ import { JwtAuthGuard } from './infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from './infrastructure/http/auth/roles.guard';
 import { ListRolesUseCase } from './application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from './application/use-cases/permissions/change-role.use-case';
+import { CreateVehicleUseCase } from './application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
+import { FindVehicleUseCase } from './application/use-cases/vehicles/find-vehicle/find-vehicle.use-case';
+import { ListVehiclesUseCase } from './application/use-cases/vehicles/list-vehicles/list-vehicles.use-case';
+import { UpdateVehicleUseCase } from './application/use-cases/vehicles/update-vehicle.use-case';
+import { DeleteVehicleUseCase } from './application/use-cases/vehicles/delete-vehicle.use-case';
+import { GetFipeDataUseCase } from './application/use-cases/vehicles/get-fipe-data.use-case';
+import { FIPE_GATEWAY } from './application/ports/fipe.gateway';
+import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum-fipe.gateway';
 
 @Module({
   imports: [
@@ -44,15 +53,32 @@ import { ChangeRoleUseCase } from './application/use-cases/permissions/change-ro
     DatabaseModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'development-secret-change-me',
-      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as `${number}${'s' | 'm' | 'h' | 'd'}` },
+      signOptions: {
+        expiresIn: (process.env.JWT_EXPIRES_IN ||
+          '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+      },
     }),
     EmailModule,
   ],
-  controllers: [UsersController, RepairsController, ProductsController, AuthController, PermissionsController],
+  controllers: [
+    UsersController,
+    RepairsController,
+    ProductsController,
+    VehiclesController,
+    AuthController,
+    PermissionsController,
+  ],
   providers: [
     CreateUserUseCase,
     FindUserUseCase,
     ListUsersUseCase,
+    CreateVehicleUseCase,
+    FindVehicleUseCase,
+    ListVehiclesUseCase,
+    UpdateVehicleUseCase,
+    DeleteVehicleUseCase,
+    GetFipeDataUseCase,
+    { provide: FIPE_GATEWAY, useClass: ParallelumFipeGateway },
     CreateRepairUseCase,
     FindRepairUseCase,
     ListRepairsUseCase,
@@ -77,4 +103,4 @@ import { ChangeRoleUseCase } from './application/use-cases/permissions/change-ro
     ChangeRoleUseCase,
   ],
 })
-export class AppModule { }
+export class AppModule {}
