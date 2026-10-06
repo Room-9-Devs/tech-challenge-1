@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ENV_FILE_PATH } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { EmailModule } from './infrastructure/services/email/email.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
 import { RepairsController } from './infrastructure/http/controllers/repairs.controller';
 import { ProductsController } from './infrastructure/http/controllers/products.controller';
@@ -57,6 +58,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
           '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
       },
     }),
+    EmailModule,
   ],
   controllers: [
     UsersController,
