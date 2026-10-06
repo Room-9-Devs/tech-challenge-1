@@ -1,39 +1,80 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { ENV_FILE_PATH } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { EmailModule } from './infrastructure/services/email/email.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
-import { ServiceTypesController } from './infrastructure/http/controllers/service-types.controller';
+import { RepairsController } from './infrastructure/http/controllers/repairs.controller';
+import { ProductsController } from './infrastructure/http/controllers/products.controller';
+import { AuthController } from './infrastructure/http/auth/auth.controller';
+import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
-import { CreateServiceTypeUseCase } from './application/use-cases/service-types/create-service-type/create-service-type.use-case';
-import { FindServiceTypeUseCase } from './application/use-cases/service-types/find-service-type/find-service-type.use-case';
-import { ListServiceTypesUseCase } from './application/use-cases/service-types/list-service-types/list-service-types.use-case';
-import { UpdateServiceTypeUseCase } from './application/use-cases/service-types/update-service-type/update-service-type.use-case';
-import { DeleteServiceTypeUseCase } from './application/use-cases/service-types/delete-service-type/delete-service-type.use-case';
-import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/service-type.seed';
+import { CreateRepairUseCase } from './application/use-cases/repairs/create-repair/create-repair.use-case';
+import { FindRepairUseCase } from './application/use-cases/repairs/find-repair/find-repair.use-case';
+import { ListRepairsUseCase } from './application/use-cases/repairs/list-repairs/list-repairs.use-case';
+import { UpdateRepairUseCase } from './application/use-cases/repairs/update-repair/update-repair.use-case';
+import { DeleteRepairUseCase } from './application/use-cases/repairs/delete-repair/delete-repair.use-case';
+import { CreateProductUseCase } from './application/use-cases/products/create-product/create-product.use-case';
+import { ListProductsUseCase } from './application/use-cases/products/list-products/list-products.use-case';
+import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
+import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
+import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
+import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
+import { ScryptPasswordHasherService } from './infrastructure/services/password/scrypt-password-hasher.service';
+import { JwtTokenService } from './infrastructure/services/jwt/jwt-token.service';
+import { OpaqueRefreshTokenService } from './infrastructure/services/jwt/opaque-refresh-token.service';
+import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
+import { TOKEN_SERVICE } from './application/ports/token-service.port';
+import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
+import { LoginUseCase } from './application/use-cases/auth/login.use-case';
+import { LogoutUseCase } from './application/use-cases/auth/logout.use-case';
+import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token.use-case';
+import { ChangePasswordUseCase } from './application/use-cases/auth/change-password.use-case';
+import { JwtAuthGuard } from './infrastructure/http/auth/jwt-auth.guard';
+import { RolesGuard } from './infrastructure/http/auth/roles.guard';
+import { ListRolesUseCase } from './application/use-cases/permissions/list-roles.use-case';
+import { ChangeRoleUseCase } from './application/use-cases/permissions/change-role.use-case';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ENV_FILE_PATH }),
     DatabaseModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'development-secret-change-me',
+      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as `${number}${'s' | 'm' | 'h' | 'd'}` },
+    }),
     EmailModule,
   ],
-  controllers: [UsersController, ServiceTypesController],
+  controllers: [UsersController, RepairsController, ProductsController, AuthController, PermissionsController],
   providers: [
     CreateUserUseCase,
     FindUserUseCase,
     ListUsersUseCase,
-    CreateServiceTypeUseCase,
-    FindServiceTypeUseCase,
-    ListServiceTypesUseCase,
-    UpdateServiceTypeUseCase,
-    DeleteServiceTypeUseCase,
-    ServiceTypeSeedService,
+    CreateRepairUseCase,
+    FindRepairUseCase,
+    ListRepairsUseCase,
+    UpdateRepairUseCase,
+    DeleteRepairUseCase,
+    CreateProductUseCase,
+    ListProductsUseCase,
+    UpdateProductUseCase,
+    DeleteProductUseCase,
+    RepairSeedService,
+    ProductSeedService,
+    { provide: PASSWORD_HASHER, useClass: ScryptPasswordHasherService },
+    { provide: TOKEN_SERVICE, useClass: JwtTokenService },
+    { provide: REFRESH_TOKEN_SERVICE, useClass: OpaqueRefreshTokenService },
+    LoginUseCase,
+    LogoutUseCase,
+    RefreshTokenUseCase,
+    ChangePasswordUseCase,
+    JwtAuthGuard,
+    RolesGuard,
+    ListRolesUseCase,
+    ChangeRoleUseCase,
   ],
 })
-export class AppModule {}
+export class AppModule { }

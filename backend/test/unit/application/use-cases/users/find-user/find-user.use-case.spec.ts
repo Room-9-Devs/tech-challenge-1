@@ -1,35 +1,28 @@
 import { FindUserUseCase } from '@/application/use-cases/users/find-user/find-user.use-case';
 import { FakeUserRepository } from '../../../../../fakes/fake-user.repository';
+import { FakeProfileRepository } from '../../../../../fakes/fake-profile.repository';
+import { FakeRoleRepository } from '../../../../../fakes/fake-role.repository';
 import { UserNotFoundError } from '@/domain/errors/user-not-found.error';
-import { User } from '@/domain/entities/user.entity';
+import { makeUser } from '../../../../../fakes/user-fixture';
 
 describe('FindUserUseCase', () => {
-  let useCase: FindUserUseCase;
-  let fakeRepository: FakeUserRepository;
-
-  beforeEach(() => {
-    fakeRepository = new FakeUserRepository();
-    useCase = new FindUserUseCase(fakeRepository);
-  });
-
-  it('should return user when user exists', async () => {
-    const user = User.create({
-      name: 'John Doe',
-      email: 'john@example.com',
-    });
-
-    await fakeRepository.save(user);
-
-    const result = await useCase.execute({ id: user.id });
+  it('returns the account, role and polymorphic profile', async () => {
+    const users = new FakeUserRepository();
+    const profiles = new FakeProfileRepository();
+    const user = makeUser();
+    await users.save(user);
+    const profile = await profiles.createEmployee({ name: 'José', documentType: 'CPF', document: '22222222222', phone: '11999999991', jobTitle: 'mecânico' });
+    user.changeRole('role-staff', 'staff');
+    const result = await new FindUserUseCase(users, profiles, new FakeRoleRepository()).execute({ id: user.id });
 
     expect(result.id).toBe(user.id);
-    expect(result.name).toBe('John Doe');
-    expect(result.email).toBe('john@example.com');
+    expect(result.role).toBe('staff');
+    expect(result.profile).toBeDefined();
+    expect(profile.type).toBe('employee');
   });
 
-  it('should throw UserNotFoundError when user does not exist', async () => {
-    await expect(useCase.execute({ id: 'non-existent-id' })).rejects.toThrow(
-      UserNotFoundError,
-    );
+  it('throws when the user does not exist', async () => {
+    const useCase = new FindUserUseCase(new FakeUserRepository(), new FakeProfileRepository(), new FakeRoleRepository());
+    await expect(useCase.execute({ id: 'missing' })).rejects.toThrow(UserNotFoundError);
   });
 });
