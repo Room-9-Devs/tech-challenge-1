@@ -4,6 +4,9 @@ describe('bootstrap entrypoints', () => {
       useGlobalPipes: jest.fn(),
       useGlobalFilters: jest.fn(),
       listen: jest.fn().mockResolvedValue(undefined),
+      getHttpAdapter: jest.fn().mockReturnValue({
+        getInstance: jest.fn().mockReturnValue({ set: jest.fn() }),
+      }),
     };
     const seed = { run: jest.fn().mockResolvedValue(undefined) };
     const createDocument = jest.fn().mockReturnValue({});

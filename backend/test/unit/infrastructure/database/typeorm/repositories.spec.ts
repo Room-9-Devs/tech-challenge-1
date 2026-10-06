@@ -64,13 +64,34 @@ describe('TypeOrmUserRepository', () => {
 
 describe('TypeOrmRepairRepository', () => {
   it('persists and queries repairs', async () => {
-    const entity = { id: 'repair-1', description: 'Troca de óleo', unitValue: 120, createdAt: new Date(), updatedAt: new Date() };
-    const repository = { create: jest.fn().mockReturnValue(entity), save: jest.fn().mockResolvedValue(entity), findOne: jest.fn().mockResolvedValue(entity), find: jest.fn().mockResolvedValue([entity]), softDelete: jest.fn().mockResolvedValue(undefined) };
+    const entity = { id: 'repair-1', description: 'Troca de óleo', unitValue: 120, createdAt: new Date(), updatedAt: new Date(), deletedAt: null };
+    const queryBuilder = {
+      andWhere: jest.fn(),
+      orderBy: jest.fn(),
+      skip: jest.fn(),
+      take: jest.fn(),
+      getManyAndCount: jest.fn().mockResolvedValue([[entity], 1]),
+    };
+    queryBuilder.andWhere.mockReturnValue(queryBuilder);
+    queryBuilder.orderBy.mockReturnValue(queryBuilder);
+    queryBuilder.skip.mockReturnValue(queryBuilder);
+    queryBuilder.take.mockReturnValue(queryBuilder);
+
+    const repository = {
+      create: jest.fn().mockReturnValue(entity),
+      save: jest.fn().mockResolvedValue(entity),
+      findOne: jest.fn().mockResolvedValue(entity),
+      find: jest.fn().mockResolvedValue([entity]),
+      softDelete: jest.fn().mockResolvedValue(undefined),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    };
     const service = new TypeOrmRepairRepository(repository as never);
     const domain = Repair.create({ description: entity.description, unitValue: entity.unitValue });
     await expect(service.save(domain)).resolves.toMatchObject({ description: entity.description });
     await expect(service.findById('repair-1')).resolves.toMatchObject({ id: 'repair-1' });
-    await expect(service.findAll()).resolves.toHaveLength(1);
+    const findAllResult = await service.findAll();
+    expect(findAllResult.data).toHaveLength(1);
+    expect(findAllResult.meta.totalItems).toBe(1);
     await expect(service.findByDescription(entity.description)).resolves.toMatchObject({ description: entity.description });
     await service.delete('repair-1');
     expect(repository.softDelete).toHaveBeenCalledWith('repair-1');

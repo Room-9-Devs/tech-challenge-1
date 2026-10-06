@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
@@ -24,7 +26,20 @@ import { DeleteRepairUseCase } from '@/application/use-cases/repairs/delete-repa
 import { CreateRepairRequestDto } from '../dtos/create-repair-request.dto';
 import { UpdateRepairRequestDto } from '../dtos/update-repair-request.dto';
 import { RepairResponseDto } from '../dtos/repair-response.dto';
+import { ListRepairsQueryDto } from '../dtos/list-repairs-query.dto';
+import { ListRepairsFiltersInputDto } from '@/application/use-cases/repairs/list-repairs/list-repairs-input.dto';
 import { ListRepairsResponseDto } from '../dtos/list-repairs-response.dto';
+import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
+import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+
+const ALLOWED_REPAIR_SORT_COLUMNS = [
+  'description',
+  'unitValue',
+  'createdAt',
+  'updatedAt',
+];
+
+const ALLOWED_REPAIR_FILTERS = ['description', 'unitValue'];
 
 @ApiTags('Tipos de Reparo/Serviço')
 @Controller('repairs')
@@ -61,14 +76,42 @@ export class RepairsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lista todos os tipos de reparo/serviço' })
+  @ApiOperation({ summary: 'Lista tipos de reparo/serviço com paginação, busca e filtros' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, example: 'troca de óleo' })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'JSON de ordenação. Ex: [{"field":"description","order":"asc"}]',
+    example: '[{"field":"description","order":"asc"}]',
+  })
+  @ApiQuery({
+    name: 'filters',
+    required: false,
+    type: String,
+    description: 'JSON de filtros. Ex: {"unitValue":120}',
+    example: '{"unitValue":120}',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de tipos de reparo/serviço',
+    description: 'Lista paginada de tipos de reparo/serviço',
     type: ListRepairsResponseDto,
   })
-  async findAll(): Promise<ListRepairsResponseDto> {
-    return this.listRepairsUseCase.execute();
+  async findAll(
+    @Query() query: ListRepairsQueryDto,
+  ): Promise<ListRepairsResponseDto> {
+    return this.listRepairsUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      sort: parseSortQuery(query.sort, ALLOWED_REPAIR_SORT_COLUMNS),
+      filters: parseFiltersQuery(
+        query.filters,
+        ALLOWED_REPAIR_FILTERS,
+      ) as ListRepairsFiltersInputDto,
+    });
   }
 
   @Get(':id')

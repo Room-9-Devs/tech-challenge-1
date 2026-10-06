@@ -104,9 +104,9 @@ describe('RepairsController', () => {
   });
 
   describe('findAll', () => {
-    it('should call ListRepairsUseCase and return the result', async () => {
+    it('should call ListRepairsUseCase with query and return the result', async () => {
       const expectedResult = {
-        repairs: [
+        data: [
           {
             id: 'uuid-1',
             description: 'Troca de óleo',
@@ -115,13 +115,33 @@ describe('RepairsController', () => {
             updatedAt: new Date(),
           },
         ],
+        meta: {
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+        },
       };
 
       listRepairsUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll();
+      const query = {
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: '[{"field":"description","order":"asc"}]',
+        filters: '{"unitValue":120}',
+      };
 
-      expect(listRepairsUseCase.execute).toHaveBeenCalled();
+      const result = await controller.findAll(query);
+
+      expect(listRepairsUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        sort: [{ field: 'description', order: 'asc' }],
+        filters: { unitValue: 120 },
+      });
       expect(result).toEqual(expectedResult);
     });
   });
