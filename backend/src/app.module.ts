@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { EmailModule } from './infrastructure/services/email/email.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
 import { ServiceTypesController } from './infrastructure/http/controllers/service-types.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
@@ -20,6 +21,7 @@ import { ServiceTypeSeedService } from './infrastructure/database/typeorm/seeds/
       envFilePath: '.env',
     }),
     DatabaseModule,
+    EmailModule,
   ],
   controllers: [UsersController, ServiceTypesController],
   providers: [
