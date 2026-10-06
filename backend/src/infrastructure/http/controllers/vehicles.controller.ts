@@ -31,7 +31,7 @@ import { VehicleResponseDto } from '../dtos/vehicle-response.dto';
 import { ListVehiclesResponseDto } from '../dtos/list-vehicles-response.dto';
 import { UpdateVehicleRequestDto } from '../dtos/update-vehicle-request.dto';
 
-@ApiTags('Vehicles')
+@ApiTags('Veículos')
 @Controller('vehicles')
 export class VehiclesController {
   constructor(
