@@ -7,6 +7,8 @@ import { VehicleOrmEntity } from '../entities/vehicle.orm-entity';
 import { VehicleMapper } from '../mappers/vehicle.mapper';
 import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exists.error';
 import { UserNotFoundError } from '@/domain/errors/user-not-found.error';
+import { applyPagination } from '@/shared/pagination/typeorm-pagination.helper';
+import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
 
 @Injectable()
 export class TypeOrmVehicleRepository implements VehicleRepository {
@@ -44,9 +46,61 @@ export class TypeOrmVehicleRepository implements VehicleRepository {
     return ormEntity ? VehicleMapper.toDomain(ormEntity) : null;
   }
 
-  async findAll(): Promise<Vehicle[]> {
-    const ormEntities = await this.repository.find();
-    return ormEntities.map((entity) => VehicleMapper.toDomain(entity));
+  async findAll(
+    query?: PaginationQuery & { filters?: Record<string, string | number> },
+  ): Promise<PaginatedOutput<Vehicle>> {
+    const { filters, ...paginationQuery } = query ?? {
+      page: 1,
+      limit: 10,
+    };
+
+    const queryBuilder = this.repository.createQueryBuilder('vehicle');
+
+    const allowedFilters = ['brand', 'model', 'year', 'color', 'userId'];
+
+    if (filters) {
+      for (const [key, rawValue] of Object.entries(filters)) {
+        if (!allowedFilters.includes(key)) continue;
+
+        const value =
+          rawValue === 'true' ? true : rawValue === 'false' ? false : rawValue;
+        const paramName = `filter_${key}`;
+        queryBuilder.andWhere(`vehicle.${key} = :${paramName}`, {
+          [paramName]: value,
+        });
+      }
+    }
+
+    applyPagination(queryBuilder, paginationQuery, {
+      searchColumns: [
+        'vehicle.licensePlate',
+        'vehicle.model',
+        'vehicle.brand',
+        'vehicle.color',
+      ],
+      alias: 'vehicle',
+      allowedSortColumns: [
+        'licensePlate',
+        'model',
+        'brand',
+        'year',
+        'color',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+
+    const [ormEntities, totalItems] = await queryBuilder.getManyAndCount();
+
+    return {
+      data: ormEntities.map((entity) => VehicleMapper.toDomain(entity)),
+      meta: {
+        page: paginationQuery.page,
+        limit: paginationQuery.limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / paginationQuery.limit) || 1,
+      },
+    };
   }
 
   async findByLicensePlate(licensePlate: string): Promise<Vehicle | null> {

@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
@@ -16,6 +17,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 import { CreateVehicleUseCase } from '@/application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
@@ -29,7 +31,23 @@ import { FipePrice } from '@/application/ports/fipe.gateway';
 import { CreateVehicleRequestDto } from '../dtos/create-vehicle-request.dto';
 import { VehicleResponseDto } from '../dtos/vehicle-response.dto';
 import { ListVehiclesResponseDto } from '../dtos/list-vehicles-response.dto';
+import { ListVehiclesQueryDto } from '../dtos/list-vehicles-query.dto';
 import { UpdateVehicleRequestDto } from '../dtos/update-vehicle-request.dto';
+import { ListVehiclesFiltersInputDto } from '@/application/use-cases/vehicles/list-vehicles/list-vehicles-input.dto';
+import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
+import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+
+const ALLOWED_VEHICLE_SORT_COLUMNS = [
+  'licensePlate',
+  'model',
+  'brand',
+  'year',
+  'color',
+  'createdAt',
+  'updatedAt',
+];
+
+const ALLOWED_VEHICLE_FILTERS = ['brand', 'model', 'year', 'color', 'userId'];
 
 @ApiTags('Veículos')
 @Controller('vehicles')
@@ -43,9 +61,14 @@ export class VehiclesController {
     private readonly getFipeDataUseCase: GetFipeDataUseCase,
   ) {}
 
-  @Post()
+  @Post(':user_id')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new vehicle' })
+  @ApiParam({
+    name: 'user_id',
+    description: 'Vehicle owner UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @ApiBody({ type: CreateVehicleRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -65,9 +88,10 @@ export class VehiclesController {
     description: 'Vehicle owner not found',
   })
   async create(
+    @Param('user_id', new ParseUUIDPipe()) user_id: string,
     @Body() dto: CreateVehicleRequestDto,
   ): Promise<VehicleResponseDto> {
-    return this.createVehicleUseCase.execute(dto);
+    return this.createVehicleUseCase.execute({ user_id, ...dto });
   }
 
   @Get('fipe/:code')
@@ -120,13 +144,46 @@ export class VehiclesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all vehicles' })
+  @ApiOperation({ summary: 'List vehicles with pagination, search and filters' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    example: 'Corolla',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'JSON de ordenação. Ex: [{"field":"createdAt","order":"desc"}]',
+    example: '[{"field":"createdAt","order":"desc"}]',
+  })
+  @ApiQuery({
+    name: 'filters',
+    required: false,
+    type: String,
+    description: 'JSON de filtros. Ex: {"brand":"Toyota"}',
+    example: '{"brand":"Toyota"}',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of vehicles',
+    description: 'Paginated list of vehicles',
     type: ListVehiclesResponseDto,
   })
-  async findAll(): Promise<ListVehiclesResponseDto> {
-    return this.listVehiclesUseCase.execute();
+  async findAll(
+    @Query() query: ListVehiclesQueryDto,
+  ): Promise<ListVehiclesResponseDto> {
+    return this.listVehiclesUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      sort: parseSortQuery(query.sort, ALLOWED_VEHICLE_SORT_COLUMNS),
+      filters: parseFiltersQuery(
+        query.filters,
+        ALLOWED_VEHICLE_FILTERS,
+      ) as ListVehiclesFiltersInputDto,
+    });
   }
 }

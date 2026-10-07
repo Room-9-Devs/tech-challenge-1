@@ -63,8 +63,8 @@ describe('VehiclesController', () => {
 
   describe('create', () => {
     it('should call CreateVehicleUseCase and return the result', async () => {
+      const user_id = '550e8400-e29b-41d4-a716-446655440000';
       const dto: CreateVehicleRequestDto = {
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
         license_plate: 'ABC-1234',
         model: 'Corolla',
         brand: 'Toyota',
@@ -74,7 +74,7 @@ describe('VehiclesController', () => {
 
       const expectedResult = {
         id: 'vehicle-uuid',
-        user_id: dto.user_id,
+        user_id,
         license_plate: 'ABC1234',
         model: 'Corolla',
         brand: 'Toyota',
@@ -86,9 +86,12 @@ describe('VehiclesController', () => {
 
       createVehicleUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(user_id, dto);
 
-      expect(createVehicleUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(createVehicleUseCase.execute).toHaveBeenCalledWith({
+        user_id,
+        ...dto,
+      });
       expect(result).toEqual(expectedResult);
     });
   });
@@ -120,7 +123,7 @@ describe('VehiclesController', () => {
   describe('findAll', () => {
     it('should call ListVehiclesUseCase and return the result', async () => {
       const expectedResult = {
-        vehicles: [
+        data: [
           {
             id: 'vehicle-uuid',
             user_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -133,11 +136,17 @@ describe('VehiclesController', () => {
             updatedAt: new Date(),
           },
         ],
+        meta: {
+          page: 1,
+          limit: 10,
+          totalItems: 1,
+          totalPages: 1,
+        },
       };
 
       listVehiclesUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({} as never);
 
       expect(listVehiclesUseCase.execute).toHaveBeenCalled();
       expect(result).toEqual(expectedResult);

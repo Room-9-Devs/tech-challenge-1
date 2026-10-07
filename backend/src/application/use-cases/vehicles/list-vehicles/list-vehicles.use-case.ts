@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
 import { VEHICLE_REPOSITORY } from '../create-vehicle/create-vehicle.use-case';
+import { ListVehiclesInputDto } from './list-vehicles-input.dto';
 import { ListVehiclesOutputDto } from './list-vehicles-output.dto';
 
 @Injectable()
@@ -10,11 +11,21 @@ export class ListVehiclesUseCase {
     private readonly vehicleRepository: VehicleRepository,
   ) {}
 
-  async execute(): Promise<ListVehiclesOutputDto> {
-    const vehicles = await this.vehicleRepository.findAll();
+  async execute(
+    input: ListVehiclesInputDto = {},
+  ): Promise<ListVehiclesOutputDto> {
+    const { filters, ...paginationQuery } = input;
+
+    const { data, meta } = await this.vehicleRepository.findAll({
+      page: paginationQuery.page ?? 1,
+      limit: paginationQuery.limit ?? 10,
+      search: paginationQuery.search,
+      sort: paginationQuery.sort,
+      filters,
+    });
 
     return {
-      vehicles: vehicles.map((vehicle) => ({
+      data: data.map((vehicle) => ({
         id: vehicle.id,
         user_id: vehicle.user_id,
         license_plate: vehicle.license_plate,
@@ -25,6 +36,7 @@ export class ListVehiclesUseCase {
         createdAt: vehicle.createdAt,
         updatedAt: vehicle.updatedAt,
       })),
+      meta,
     };
   }
 }
