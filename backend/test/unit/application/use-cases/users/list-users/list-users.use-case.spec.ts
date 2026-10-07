@@ -24,4 +24,34 @@ describe('ListUsersUseCase', () => {
     expect(result.users).toHaveLength(1);
     expect(result.users[0].entityType).toBe('client');
   });
+
+  it('masks profile document and phone in the list output', async () => {
+    const users = new FakeUserRepository();
+    const profiles = new FakeProfileRepository();
+    const clientProfile = await profiles.createClient({
+      id: 'client-profile-1',
+      name: 'Maria',
+      documentType: 'CNPJ',
+      document: '11222333000181',
+      phone: '1133334444',
+    });
+    await users.save(
+      makeUser({
+        id: 'user-client-1',
+        entityType: 'client',
+        entityId: clientProfile.id,
+      }),
+    );
+
+    const result = await new ListUsersUseCase(
+      users,
+      profiles,
+      new FakeRoleRepository(),
+    ).execute();
+
+    expect(result.users[0].profile).toMatchObject({
+      document: '11.222.333/0001-81',
+      phone: '(11) 3333-4444',
+    });
+  });
 });
