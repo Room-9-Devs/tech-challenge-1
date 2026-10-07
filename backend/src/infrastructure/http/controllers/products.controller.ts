@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
 import { ListProductsUseCase } from '@/application/use-cases/products/list-products/list-products.use-case';
+import { FindProductUseCase } from '@/application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from '@/application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from '@/application/use-cases/products/delete-product/delete-product.use-case';
 import { CreateProductRequestDto } from '../dtos/create-product-request.dto';
@@ -67,6 +68,7 @@ export class ProductsController {
   constructor(
     private readonly createProductUseCase: CreateProductUseCase,
     private readonly listProductsUseCase: ListProductsUseCase,
+    private readonly findProductUseCase: FindProductUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly deleteProductUseCase: DeleteProductUseCase,
   ) {}
@@ -131,6 +133,26 @@ export class ProductsController {
         ALLOWED_PRODUCT_FILTERS,
       ) as ListProductsFiltersInputDto,
     });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Busca produto pelo ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'UUID do produto',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Produto encontrado',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Produto não encontrado',
+  })
+  async findById(@Param('id') id: string): Promise<ProductResponseDto> {
+    return this.findProductUseCase.execute({ id });
   }
 
   @Put(':id')
