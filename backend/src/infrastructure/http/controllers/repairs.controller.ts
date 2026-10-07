@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +18,11 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from '@/application/use-cases/repairs/list-repairs/list-repairs.use-case';
@@ -42,6 +47,9 @@ const ALLOWED_REPAIR_SORT_COLUMNS = [
 const ALLOWED_REPAIR_FILTERS = ['description', 'unitValue'];
 
 @ApiTags('Tipos de Reparo/Serviço')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'staff')
 @Controller('repairs')
 export class RepairsController {
   constructor(
@@ -76,6 +84,7 @@ export class RepairsController {
   }
 
   @Get()
+  @Roles('admin', 'staff', 'client')
   @ApiOperation({ summary: 'Lista tipos de reparo/serviço com paginação, busca e filtros' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
@@ -115,6 +124,7 @@ export class RepairsController {
   }
 
   @Get(':id')
+  @Roles('admin', 'staff', 'client')
   @ApiOperation({ summary: 'Busca tipo de reparo/serviço pelo ID' })
   @ApiParam({
     name: 'id',

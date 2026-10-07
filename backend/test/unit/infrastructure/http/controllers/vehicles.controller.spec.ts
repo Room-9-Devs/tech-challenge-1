@@ -8,6 +8,7 @@ import { UpdateVehicleUseCase } from '@/application/use-cases/vehicles/update-ve
 import { DeleteVehicleUseCase } from '@/application/use-cases/vehicles/delete-vehicle.use-case';
 import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-data.use-case';
 import { CreateVehicleRequestDto } from '@/infrastructure/http/dtos/create-vehicle-request.dto';
+import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
 
 describe('VehiclesController', () => {
   let controller: VehiclesController;
@@ -49,6 +50,10 @@ describe('VehiclesController', () => {
         { provide: UpdateVehicleUseCase, useValue: { execute: jest.fn() } },
         { provide: DeleteVehicleUseCase, useValue: { execute: jest.fn() } },
         { provide: GetFipeDataUseCase, useValue: { execute: jest.fn() } },
+        {
+          provide: TOKEN_SERVICE,
+          useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-id', role: 'admin' }) },
+        },
       ],
     }).compile();
 

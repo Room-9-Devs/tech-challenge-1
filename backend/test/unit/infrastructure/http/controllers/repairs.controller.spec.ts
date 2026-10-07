@@ -8,6 +8,7 @@ import { UpdateRepairUseCase } from '@/application/use-cases/repairs/update-repa
 import { DeleteRepairUseCase } from '@/application/use-cases/repairs/delete-repair/delete-repair.use-case';
 import { CreateRepairRequestDto } from '@/infrastructure/http/dtos/create-repair-request.dto';
 import { UpdateRepairRequestDto } from '@/infrastructure/http/dtos/update-repair-request.dto';
+import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
 
 describe('RepairsController', () => {
   let controller: RepairsController;
@@ -46,6 +47,10 @@ describe('RepairsController', () => {
         {
           provide: DeleteRepairUseCase,
           useValue: mockDeleteRepairUseCase,
+        },
+        {
+          provide: TOKEN_SERVICE,
+          useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-id', role: 'admin' }) },
         },
       ],
     }).compile();

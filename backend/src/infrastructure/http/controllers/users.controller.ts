@@ -87,7 +87,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('access-token')
   @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Consultar usuário por ID' })
