@@ -20,6 +20,7 @@ import { UpdateRepairUseCase } from './application/use-cases/repairs/update-repa
 import { DeleteRepairUseCase } from './application/use-cases/repairs/delete-repair/delete-repair.use-case';
 import { CreateProductUseCase } from './application/use-cases/products/create-product/create-product.use-case';
 import { ListProductsUseCase } from './application/use-cases/products/list-products/list-products.use-case';
+import { FindProductUseCase } from './application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
@@ -86,6 +87,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     DeleteRepairUseCase,
     CreateProductUseCase,
     ListProductsUseCase,
+    FindProductUseCase,
     UpdateProductUseCase,
     DeleteProductUseCase,
     RepairSeedService,

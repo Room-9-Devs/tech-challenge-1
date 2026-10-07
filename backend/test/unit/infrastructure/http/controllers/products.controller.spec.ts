@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from '@/infrastructure/http/controllers/products.controller';
 import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
 import { ListProductsUseCase } from '@/application/use-cases/products/list-products/list-products.use-case';
+import { FindProductUseCase } from '@/application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from '@/application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from '@/application/use-cases/products/delete-product/delete-product.use-case';
 import { CreateProductRequestDto } from '@/infrastructure/http/dtos/create-product-request.dto';
@@ -19,6 +20,7 @@ describe('ProductsController', () => {
   let controller: ProductsController;
   let createProductUseCase: jest.Mocked<CreateProductUseCase>;
   let listProductsUseCase: jest.Mocked<ListProductsUseCase>;
+  let findProductUseCase: jest.Mocked<FindProductUseCase>;
   let updateProductUseCase: jest.Mocked<UpdateProductUseCase>;
   let deleteProductUseCase: jest.Mocked<DeleteProductUseCase>;
 
@@ -35,6 +37,7 @@ describe('ProductsController', () => {
   beforeEach(async () => {
     const mockCreateProductUseCase = { execute: jest.fn() };
     const mockListProductsUseCase = { execute: jest.fn() };
+    const mockFindProductUseCase = { execute: jest.fn() };
     const mockUpdateProductUseCase = { execute: jest.fn() };
     const mockDeleteProductUseCase = { execute: jest.fn() };
 
@@ -48,6 +51,10 @@ describe('ProductsController', () => {
         {
           provide: ListProductsUseCase,
           useValue: mockListProductsUseCase,
+        },
+        {
+          provide: FindProductUseCase,
+          useValue: mockFindProductUseCase,
         },
         {
           provide: UpdateProductUseCase,
@@ -68,6 +75,7 @@ describe('ProductsController', () => {
     controller = module.get<ProductsController>(ProductsController);
     createProductUseCase = module.get(CreateProductUseCase);
     listProductsUseCase = module.get(ListProductsUseCase);
+    findProductUseCase = module.get(FindProductUseCase);
     updateProductUseCase = module.get(UpdateProductUseCase);
     deleteProductUseCase = module.get(DeleteProductUseCase);
   });
@@ -146,6 +154,37 @@ describe('ProductsController', () => {
         filters: { productType: 'PART' },
       });
       expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('findById', () => {
+    it('should call FindProductUseCase and return the result', async () => {
+      const id = 'uuid';
+
+      const expectedResult = {
+        id,
+        ...productData,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      findProductUseCase.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.findById(id);
+
+      expect(findProductUseCase.execute).toHaveBeenCalledWith({ id });
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should propagate ProductNotFoundError', async () => {
+      findProductUseCase.execute.mockRejectedValue(
+        new ProductNotFoundError('uuid'),
+      );
+
+      await expect(controller.findById('uuid')).rejects.toThrow(
+        ProductNotFoundError,
+      );
     });
   });
 
