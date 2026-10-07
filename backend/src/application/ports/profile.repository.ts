@@ -1,11 +1,12 @@
 import { UserEntityType } from '@/domain/entities/user.entity';
+import { DocumentType } from '@/domain/types';
 
 export const PROFILE_REPOSITORY = Symbol('PROFILE_REPOSITORY');
 
 export interface ClientProfileInput {
   id?: string;
   name: string;
-  documentType: 'CPF' | 'CNPJ';
+  documentType: DocumentType;
   document: string;
   phone: string;
 }
@@ -13,7 +14,7 @@ export interface ClientProfileInput {
 export interface EmployeeProfileInput {
   id?: string;
   name: string;
-  documentType: 'CPF' | 'CNPJ';
+  documentType: DocumentType;
   document: string;
   jobTitle?: string;
   phone: string;
@@ -23,7 +24,7 @@ export interface ProfileRecord {
   id: string;
   name: string;
   type: UserEntityType;
-  documentType?: 'CPF' | 'CNPJ';
+  documentType?: DocumentType;
   document?: string;
   phone: string;
   jobTitle?: string;

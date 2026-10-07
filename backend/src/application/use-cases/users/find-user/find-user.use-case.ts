@@ -6,6 +6,7 @@ import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.reposi
 import { USER_REPOSITORY } from '../create-user/create-user.use-case';
 import { FindUserInputDto } from './find-user-input.dto';
 import { FindUserOutputDto } from './find-user-output.dto';
+import { maskProfile } from '../mask-profile';
 
 @Injectable()
 export class FindUserUseCase {
@@ -29,7 +30,7 @@ export class FindUserUseCase {
       entityType: user.entityType,
       entityId: user.entityId,
       role: role?.slug || user.roleId,
-      profile: profile || {},
+      profile: profile ? maskProfile(profile) : {},
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

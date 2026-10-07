@@ -4,6 +4,7 @@ import { USER_REPOSITORY } from '../create-user/create-user.use-case';
 import { ListUsersOutputDto } from './list-users-output.dto';
 import { PROFILE_REPOSITORY, ProfileRepository } from '@/application/ports/profile.repository';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
+import { maskProfile } from '../mask-profile';
 
 @Injectable()
 export class ListUsersUseCase {
@@ -17,17 +18,20 @@ export class ListUsersUseCase {
   async execute(input?: UserFilter): Promise<ListUsersOutputDto> {
     const users = await this.userRepository.findAll(input);
     return {
-      users: await Promise.all(users.map(async (user) => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        entityType: user.entityType,
-        entityId: user.entityId,
-        role: (await this.roleRepository.findById(user.roleId))?.slug || user.roleId,
-        profile: (await this.profileRepository.findById(user.entityType, user.entityId)) || {},
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      }))),
+      users: await Promise.all(users.map(async (user) => {
+        const profile = await this.profileRepository.findById(user.entityType, user.entityId);
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          entityType: user.entityType,
+          entityId: user.entityId,
+          role: (await this.roleRepository.findById(user.roleId))?.slug || user.roleId,
+          profile: profile ? maskProfile(profile) : {},
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
+      })),
     };
   }
 }

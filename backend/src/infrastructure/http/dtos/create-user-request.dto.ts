@@ -8,6 +8,7 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
+import { DocumentType } from '@/domain/types';
 
 export class CreateUserRequestDto {
   @ApiProperty({
@@ -61,7 +62,7 @@ export class CreateUserRequestDto {
     example: 'CPF',
   })
   @IsIn(['CPF', 'CNPJ'])
-  documentType: 'CPF' | 'CNPJ';
+  documentType: DocumentType;
 
   @ApiProperty({
     description:
