@@ -49,11 +49,11 @@ describe('Vehicle HTTP validation', () => {
   });
   beforeEach(() => jest.clearAllMocks());
 
-  it.each(['get', 'put', 'delete'] as const)(
+  it.each(['get', 'put', 'delete', 'post'] as const)(
     'rejects malformed UUID on %s before invoking the use case',
     async (method) => {
       const call = request(app.getHttpServer())[method]('/vehicles/not-a-uuid');
-      if (method === 'put') call.send(details);
+      if (method === 'put' || method === 'post') call.send(details);
       await call.expect(400);
       expect(find.execute).not.toHaveBeenCalled();
       expect(update.execute).not.toHaveBeenCalled();

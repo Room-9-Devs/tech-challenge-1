@@ -11,7 +11,7 @@ describe('ListVehiclesUseCase', () => {
     useCase = new ListVehiclesUseCase(fakeRepository);
   });
 
-  it('should return all vehicles', async () => {
+  it('should return paginated vehicles', async () => {
     await fakeRepository.save(
       Vehicle.create({
         user_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -25,11 +25,20 @@ describe('ListVehiclesUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.vehicles).toHaveLength(1);
-    expect(result.vehicles[0].license_plate).toBe('ABC1234');
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].license_plate).toBe('ABC1234');
+    expect(result.meta).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 1,
+      totalPages: 1,
+    });
   });
 
-  it('should return an empty list when no vehicles exist', async () => {
-    await expect(useCase.execute()).resolves.toEqual({ vehicles: [] });
+  it('should return an empty paginated list when no vehicles exist', async () => {
+    await expect(useCase.execute()).resolves.toEqual({
+      data: [],
+      meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+    });
   });
 });

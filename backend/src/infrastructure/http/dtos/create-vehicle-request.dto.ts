@@ -3,7 +3,6 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  IsUUID,
   Matches,
   Max,
   MaxLength,
@@ -12,14 +11,6 @@ import {
 } from 'class-validator';
 
 export class CreateVehicleRequestDto {
-  @ApiProperty({
-    description: 'Vehicle owner UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  user_id: string;
-
   @ApiProperty({
     description: 'Vehicle license plate',
     example: 'ABC-1234',
