@@ -107,8 +107,20 @@ export class FakeProductRepository implements ProductRepository {
     return this.products.find((product) => product.sku === sku) ?? null;
   }
 
+  findAnyById(id: string): Product | null {
+    return this.products.find((product) => product.id === id) ?? null;
+  }
+
   clear(): void {
     this.products = [];
+  }
+
+  snapshot(): Product[] {
+    return [...this.products];
+  }
+
+  restore(products: Product[]): void {
+    this.products = [...products];
   }
 }
 

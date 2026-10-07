@@ -1,4 +1,12 @@
 import { randomUUID } from 'crypto';
+import { InsufficientStockError } from '../errors/insufficient-stock.error';
+import { InvalidStockMovementError } from '../errors/invalid-stock-movement.error';
+import { StockBelowReservedError } from '../errors/stock-below-reserved.error';
+import {
+  MAX_STOCK_QUANTITY,
+  StockMovement,
+  StockMovementType,
+} from './stock-movement.entity';
 
 export interface StockProps {
   id?: string;
@@ -26,6 +34,10 @@ export class Stock {
     this._updatedAt = props.updatedAt ?? new Date();
   }
 
+  public static create(props: { productId: string }): Stock {
+    return new Stock({ productId: props.productId, quantity: 0, reserved: 0 });
+  }
+
   public static reconstitute(props: StockProps): Stock {
     return new Stock(props);
   }
@@ -46,6 +58,10 @@ export class Stock {
     return this._reserved;
   }
 
+  get available(): number {
+    return this._quantity - this._reserved;
+  }
+
   get createdAt(): Date {
     return this._createdAt;
   }
@@ -56,5 +72,58 @@ export class Stock {
 
   public hasBalance(): boolean {
     return this._quantity > 0 || this._reserved > 0;
+  }
+
+  public applyMovement(movement: StockMovement): void {
+    if (movement.productId !== this._productId) {
+      throw new InvalidStockMovementError(
+        'A movimentação não pertence ao produto deste estoque',
+      );
+    }
+
+    switch (movement.movementType) {
+      case StockMovementType.IN:
+        this.increase(movement.quantity);
+        break;
+      case StockMovementType.OUT:
+        this.decrease(movement.quantity);
+        break;
+      case StockMovementType.ADJUSTMENT:
+        this.adjust(movement.quantity);
+        break;
+    }
+
+    this._updatedAt = new Date();
+  }
+
+  private increase(quantity: number): void {
+    if (this._quantity + quantity > MAX_STOCK_QUANTITY) {
+      throw new InvalidStockMovementError(
+        `A quantidade em estoque não pode ultrapassar ${MAX_STOCK_QUANTITY}`,
+      );
+    }
+    this._quantity += quantity;
+  }
+
+  private decrease(quantity: number): void {
+    if (quantity > this.available) {
+      throw new InsufficientStockError(
+        this._productId,
+        this.available,
+        quantity,
+      );
+    }
+    this._quantity -= quantity;
+  }
+
+  private adjust(quantity: number): void {
+    if (quantity < this._reserved) {
+      throw new StockBelowReservedError(
+        this._productId,
+        this._reserved,
+        quantity,
+      );
+    }
+    this._quantity = quantity;
   }
 }

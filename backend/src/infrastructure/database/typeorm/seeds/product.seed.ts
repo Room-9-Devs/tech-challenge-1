@@ -4,8 +4,13 @@ import {
   ProductType,
   ProductUnit,
 } from '@/domain/entities/product.entity';
+import { Stock } from '@/domain/entities/stock.entity';
 import { ProductRepository } from '@/domain/repositories/product.repository';
 import { PRODUCT_REPOSITORY } from '@/application/use-cases/products/create-product/create-product.use-case';
+import {
+  PRODUCT_CREATION_UNIT_OF_WORK,
+  ProductCreationUnitOfWork,
+} from '@/application/ports/product-creation-unit-of-work.port';
 
 export const DEFAULT_PRODUCTS = [
   {
@@ -179,6 +184,8 @@ export class ProductSeedService {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: ProductRepository,
+    @Inject(PRODUCT_CREATION_UNIT_OF_WORK)
+    private readonly unitOfWork: ProductCreationUnitOfWork,
   ) {}
 
   async run(): Promise<void> {
@@ -191,7 +198,10 @@ export class ProductSeedService {
         continue;
       }
 
-      await this.productRepository.save(Product.create(data));
+      await this.unitOfWork.run(async ({ products, stocks }) => {
+        const product = await products.save(Product.create(data));
+        await stocks.save(Stock.create({ productId: product.id }));
+      });
       seededCount++;
     }
 

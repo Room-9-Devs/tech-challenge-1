@@ -12,4 +12,15 @@ export class StockMapper {
       updatedAt: ormEntity.updatedAt,
     });
   }
+
+  static toPersistence(domainEntity: Stock): StockOrmEntity {
+    const ormEntity = new StockOrmEntity();
+    ormEntity.id = domainEntity.id;
+    ormEntity.productId = domainEntity.productId;
+    ormEntity.quantity = domainEntity.quantity;
+    ormEntity.reserved = domainEntity.reserved;
+    ormEntity.createdAt = domainEntity.createdAt;
+    ormEntity.updatedAt = domainEntity.updatedAt;
+    return ormEntity;
+  }
 }

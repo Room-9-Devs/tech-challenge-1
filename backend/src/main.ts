@@ -25,6 +25,7 @@ async function bootstrap() {
     .addTag('Permissões')
     .addTag('Tipos de Reparo/Serviço')
     .addTag('Produtos')
+    .addTag('Estoque')
     .addTag('Veículos')
     .addBearerAuth(
       {
