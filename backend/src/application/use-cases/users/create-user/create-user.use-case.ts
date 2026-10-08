@@ -19,7 +19,8 @@ import {
 } from '@/application/ports/role.repository';
 import { CreateUserInputDto } from './create-user-input.dto';
 import { CreateUserOutputDto } from './create-user-output.dto';
-import { normalizeAndValidateDocument } from '@/domain/validation/brazilian-document';
+import { Cpf, Cnpj, Phone } from '@/domain/value-objects';
+import { InvalidUserError } from '@/domain/errors/invalid-user.error';
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
@@ -35,10 +36,19 @@ export class CreateUserUseCase {
   ) {}
 
   async execute(input: CreateUserInputDto): Promise<CreateUserOutputDto> {
-    const document = normalizeAndValidateDocument(
-      input.documentType,
-      input.document,
-    );
+    const documentVo =
+      input.documentType === 'CPF'
+        ? new Cpf(input.document)
+        : input.documentType === 'CNPJ'
+          ? new Cnpj(input.document)
+          : (() => {
+              throw new InvalidUserError('Tipo de documento inválido');
+            })();
+
+    const document = documentVo.value;
+    const phoneVo = new Phone(input.phone);
+    const phone = phoneVo.value;
+
     const existingUser = await this.userRepository.findByEmail(
       input.email.toLowerCase(),
     );
@@ -59,8 +69,6 @@ export class CreateUserUseCase {
     if (!User.isRoleAllowed(input.entityType, role.slug)) {
       throw new InvalidRoleAssignmentError(input.entityType, role.slug);
     }
-
-    const phone = input.phone.replace(/\D/g, '');
 
     const profileId = randomUUID();
     const user = User.create({

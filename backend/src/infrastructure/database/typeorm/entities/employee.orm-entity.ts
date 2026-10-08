@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { DocumentType } from '@/domain/types';
 
 @Entity('employees')
 export class EmployeeOrmEntity {
@@ -15,7 +16,7 @@ export class EmployeeOrmEntity {
   name: string;
 
   @Column({ name: 'document_type', type: 'enum', enum: ['CPF', 'CNPJ'] })
-  documentType: 'CPF' | 'CNPJ';
+  documentType: DocumentType;
 
   @Column({ type: 'varchar', length: 14, unique: true })
   document: string;

@@ -1,32 +1,18 @@
+import { UserEntityType } from '@/domain/entities/user.entity';
+import { DocumentType } from '@/domain/types';
+
 export interface CreateUserOutputDto {
   id: string;
   username: string;
   email: string;
-  entityType: 'client' | 'employee';
+  entityType: UserEntityType;
   entityId: string;
   role: string;
   profile: {
     id: string;
     name: string;
     phone: string;
-    documentType?: 'CPF' | 'CNPJ';
-    document?: string;
-    jobTitle?: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}export interface CreateUserOutputDto {
-  id: string;
-  username: string;
-  email: string;
-  entityType: 'client' | 'employee';
-  entityId: string;
-  role: string;
-  profile: {
-    id: string;
-    name: string;
-    phone: string;
-    documentType?: 'CPF' | 'CNPJ';
+    documentType?: DocumentType;
     document?: string;
     jobTitle?: string;
   };

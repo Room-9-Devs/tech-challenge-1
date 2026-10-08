@@ -1,5 +1,6 @@
 import { UsersController } from '@/infrastructure/http/controllers/users.controller';
 import { CreateUserRequestDto } from '@/infrastructure/http/dtos/create-user-request.dto';
+import { ListUsersQueryDto } from '@/infrastructure/http/dtos/list-users-query.dto';
 import { ForbiddenException } from '@nestjs/common';
 
 describe('UsersController', () => {
@@ -44,7 +45,10 @@ describe('UsersController', () => {
     };
 
     const list = {
-      execute: jest.fn().mockResolvedValue({ users: [] }),
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
     };
 
     const controller = new UsersController(
@@ -55,18 +59,45 @@ describe('UsersController', () => {
 
     await controller.me({ user: { sub: 'user-1' } });
     await controller.findById('user-2');
-    await controller.findAll('client');
-    await controller.findAll();
+    await controller.findAll({
+      filters: JSON.stringify({ entityType: 'client' }),
+    } as ListUsersQueryDto);
+    await controller.findAll({} as ListUsersQueryDto);
 
     expect(find.execute).toHaveBeenNthCalledWith(1, { id: 'user-1' });
     expect(find.execute).toHaveBeenNthCalledWith(2, { id: 'user-2' });
 
     expect(list.execute).toHaveBeenCalledWith({
-      entityType: 'client',
+      filters: { entityType: 'client' },
     });
 
     expect(list.execute).toHaveBeenCalledWith({
-      entityType: undefined,
+      filters: undefined,
+    });
+  });
+
+  it('allows profile.name in sort and filters', async () => {
+    const list = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
+    };
+
+    const controller = new UsersController(
+      {} as never,
+      {} as never,
+      list as never,
+    );
+
+    await controller.findAll({
+      sort: JSON.stringify([{ field: 'profile.name', order: 'asc' }]),
+      filters: JSON.stringify({ 'profile.name': 'José Silveira' }),
+    } as ListUsersQueryDto);
+
+    expect(list.execute).toHaveBeenCalledWith({
+      sort: [{ field: 'profile.name', order: 'asc' }],
+      filters: { 'profile.name': 'José Silveira' },
     });
   });
 

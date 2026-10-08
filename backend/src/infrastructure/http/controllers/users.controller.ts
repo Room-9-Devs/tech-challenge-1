@@ -28,6 +28,30 @@ import { ListUsersResponseDto } from '../dtos/list-users-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { ListUsersFiltersInputDto } from '@/application/use-cases/users/list-users/list-users-input.dto';
+import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
+import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
+import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+
+const ALLOWED_USERS_SORT_COLUMNS = [
+  'username',
+  'email',
+  'profile.name',
+  'role.name',
+  'entityType',
+  'createdAt',
+  'updatedAt',
+];
+
+const ALLOWED_USERS_FILTERS = [
+  'username',
+  'email',
+  'entityType',
+  'entityId',
+  'role',
+  'profile',
+  'profile.name',
+];
 
 @ApiTags('Usuários')
 @Controller('users')
@@ -135,7 +159,17 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a listar usuários'
   })
-  async findAll(@Query('type') type?: 'client' | 'employee'): Promise<ListUsersResponseDto> {
-    return this.listUsersUseCase.execute({ entityType: type });
+  async findAll(
+    @Query() query: ListUsersQueryDto): Promise<ListUsersResponseDto> {
+    return this.listUsersUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      sort: parseSortQuery(query.sort, ALLOWED_USERS_SORT_COLUMNS),
+      filters: parseFiltersQuery(
+        query.filters,
+        ALLOWED_USERS_FILTERS,
+      ) as ListUsersFiltersInputDto,
+    });
   }
 }

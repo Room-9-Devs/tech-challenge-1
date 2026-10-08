@@ -13,7 +13,7 @@ export class TypeOrmRepairRepository implements RepairRepository {
   constructor(
     @InjectRepository(RepairOrmEntity)
     private readonly repository: Repository<RepairOrmEntity>,
-  ) {}
+  ) { }
 
   async save(repair: Repair): Promise<Repair> {
     const ormEntity = RepairMapper.toPersistence(repair);

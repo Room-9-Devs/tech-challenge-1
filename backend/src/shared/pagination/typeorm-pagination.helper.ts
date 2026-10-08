@@ -6,6 +6,7 @@ export interface ApplyPaginationOptions {
   searchMode?: 'any' | 'all';
   alias?: string;
   allowedSortColumns?: string[];
+  sortColumnMap?: Record<string, string>;
 }
 
 export function applyPagination<T>(
@@ -21,21 +22,25 @@ export function applyPagination<T>(
 
     queryBuilder.andWhere(
       new Brackets((qb) => {
-        for (const column of searchColumns) {
+        searchColumns.forEach((column, columnIndex) => {
           if (searchMode === 'any') {
             qb.orWhere(
               new Brackets((termQb) => {
-                for (const term of terms) {
-                  termQb.andWhere(`${column} ILIKE :term`, {
-                    term: `%${term}%`,
+                terms.forEach((term, termIndex) => {
+                  const paramName = `search_${columnIndex}_${termIndex}`;
+                  termQb.andWhere(`${column} ILIKE :${paramName}`, {
+                    [paramName]: `%${term}%`,
                   });
-                }
+                });
               }),
             );
           } else {
-            qb.orWhere(`${column} ILIKE :search`, { search: `%${search}%` });
+            const paramName = `search_${columnIndex}_full`;
+            qb.orWhere(`${column} ILIKE :${paramName}`, {
+              [paramName]: `%${search}%`,
+            });
           }
-        }
+        });
       }),
     );
   }
@@ -46,7 +51,8 @@ export function applyPagination<T>(
       if (options.allowedSortColumns && !options.allowedSortColumns.includes(field)) {
         continue;
       }
-      const column = alias ? `${alias}.${field}` : field;
+      const column =
+        options.sortColumnMap?.[field] ?? (alias ? `${alias}.${field}` : field);
       order[column] = direction.toUpperCase() as 'ASC' | 'DESC';
     }
     if (Object.keys(order).length > 0) {

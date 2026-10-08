@@ -1,4 +1,5 @@
 import { UserEntityType } from '@/domain/entities/user.entity';
+import { DocumentType } from '@/domain/types';
 
 export interface CreateUserInputDto {
   username: string;
@@ -6,7 +7,7 @@ export interface CreateUserInputDto {
   password: string;
   entityType: UserEntityType;
   name: string;
-  documentType: 'CPF' | 'CNPJ';
+  documentType: DocumentType;
   document: string;
   phone: string;
   jobTitle?: string;

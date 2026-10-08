@@ -152,6 +152,37 @@ describe('CreateUserUseCase', () => {
     expect(createProfile).not.toHaveBeenCalled();
   });
 
+  it('rejects invalid CNPJ before creating a profile', async () => {
+    const createProfile = jest.spyOn(profiles, 'createClient');
+    await expect(
+      useCase.execute({
+        username: 'invalid.cnpj',
+        email: 'invalid.cnpj@example.com',
+        password: 'password123',
+        entityType: 'client',
+        name: 'Invalid CNPJ',
+        documentType: 'CNPJ',
+        document: '11.222.333/0001-82',
+        phone: '11999999999',
+      }),
+    ).rejects.toThrow(InvalidUserError);
+
+    await expect(
+      useCase.execute({
+        username: 'invalid.alphanumeric.cnpj',
+        email: 'invalid.alpha@example.com',
+        password: 'password123',
+        entityType: 'client',
+        name: 'Invalid Alphanumeric CNPJ',
+        documentType: 'CNPJ',
+        document: '12ABC34501DE36',
+        phone: '11999999999',
+      }),
+    ).rejects.toThrow(InvalidUserError);
+
+    expect(createProfile).not.toHaveBeenCalled();
+  });
+
   it('accepts a formatted CNPJ and stores only digits', async () => {
     const result = await useCase.execute({
       username: 'company.owner',
@@ -198,7 +229,7 @@ describe('CreateUserUseCase', () => {
       }),
     ).rejects.toThrow('write failed');
     expect(profiles.snapshot()).toEqual([]);
-    expect(await users.findAll()).toEqual([]);
+    expect((await users.findAll()).data).toEqual([]);
   });
 
   it('accepts and preserves an alphanumeric CNPJ', async () => {
@@ -214,5 +245,48 @@ describe('CreateUserUseCase', () => {
     });
     expect(result.profile.document).toBe('12ABC34501DE35');
     expect(result.entityId).toBe(result.profile.id);
+  });
+
+  it('rejects invalid phone before creating a profile', async () => {
+    const createProfile = jest.spyOn(profiles, 'createClient');
+    await expect(
+      useCase.execute({
+        username: 'invalid.phone',
+        email: 'invalid.phone@example.com',
+        password: 'password123',
+        entityType: 'client',
+        name: 'Invalid Phone',
+        documentType: 'CPF',
+        document: '52998224725',
+        phone: '(11) 999-99999',
+      }),
+    ).rejects.toThrow(InvalidUserError);
+    expect(createProfile).not.toHaveBeenCalled();
+  });
+
+  it('accepts formatted mobile and landline phones and stores only digits', async () => {
+    const resultMobile = await useCase.execute({
+      username: 'mobile.user',
+      email: 'mobile@example.com',
+      password: 'password123',
+      entityType: 'client',
+      name: 'Mobile User',
+      documentType: 'CPF',
+      document: '52998224725',
+      phone: '(11) 99999-9999',
+    });
+    expect(resultMobile.profile.phone).toBe('11999999999');
+
+    const resultLandline = await useCase.execute({
+      username: 'landline.user',
+      email: 'landline@example.com',
+      password: 'password123',
+      entityType: 'client',
+      name: 'Landline User',
+      documentType: 'CPF',
+      document: '11144477735',
+      phone: '(11) 3333-4444',
+    });
+    expect(resultLandline.profile.phone).toBe('1133334444');
   });
 });
