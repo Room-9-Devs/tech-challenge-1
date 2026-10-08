@@ -1,6 +1,7 @@
 import { Product } from '@/domain/entities/product.entity';
 import { ProductRepository } from '@/domain/repositories/product.repository';
 import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
+import { compareValues } from '../helpers/compare-values';
 
 export class FakeProductRepository implements ProductRepository {
   private products: Product[] = [];
@@ -111,17 +112,3 @@ export class FakeProductRepository implements ProductRepository {
     this.products = [];
   }
 }
-
-function compareValues(a: unknown, b: unknown): number {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return a.localeCompare(b);
-  }
-  if (typeof a === 'number' && typeof b === 'number') {
-    return a - b;
-  }
-  if (a instanceof Date && b instanceof Date) {
-    return a.getTime() - b.getTime();
-  }
-  return String(a).localeCompare(String(b));
-}
-

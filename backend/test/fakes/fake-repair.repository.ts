@@ -1,6 +1,7 @@
 import { Repair } from '@/domain/entities/repair.entity';
 import { RepairRepository } from '@/domain/repositories/repair.repository';
 import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
+import { compareValues } from '../helpers/compare-values';
 
 interface StoredRepair {
   repair: Repair;
@@ -116,17 +117,4 @@ export class FakeRepairRepository implements RepairRepository {
   clear(): void {
     this.repairs = [];
   }
-}
-
-function compareValues(a: unknown, b: unknown): number {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return a.localeCompare(b);
-  }
-  if (typeof a === 'number' && typeof b === 'number') {
-    return a - b;
-  }
-  if (a instanceof Date && b instanceof Date) {
-    return a.getTime() - b.getTime();
-  }
-  return String(a).localeCompare(String(b));
 }

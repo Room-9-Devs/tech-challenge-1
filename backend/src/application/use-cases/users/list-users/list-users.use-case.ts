@@ -1,10 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { UserRepository, UserFilter } from '@/domain/repositories/user.repository';
+import { UserRepository } from '@/domain/repositories/user.repository';
 import { USER_REPOSITORY } from '../create-user/create-user.use-case';
 import { ListUsersOutputDto } from './list-users-output.dto';
 import { PROFILE_REPOSITORY, ProfileRepository } from '@/application/ports/profile.repository';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
 import { maskProfile } from '../mask-profile';
+import { ListUsersInputDto } from './list-users-input.dto';
 
 @Injectable()
 export class ListUsersUseCase {
@@ -15,10 +16,19 @@ export class ListUsersUseCase {
     @Inject(ROLE_REPOSITORY) private readonly roleRepository: RoleRepository,
   ) { }
 
-  async execute(input?: UserFilter): Promise<ListUsersOutputDto> {
-    const users = await this.userRepository.findAll(input);
+  async execute(input: ListUsersInputDto = {}): Promise<ListUsersOutputDto> {
+    const { filters, ...paginationQuery } = input;
+
+    const { data, meta } = await this.userRepository.findAll({
+      page: paginationQuery.page ?? 1,
+      limit: paginationQuery.limit ?? 10,
+      search: paginationQuery.search,
+      sort: paginationQuery.sort,
+      filters,
+    });
+
     return {
-      users: await Promise.all(users.map(async (user) => {
+      data: await Promise.all(data.map(async (user) => {
         const profile = await this.profileRepository.findById(user.entityType, user.entityId);
         return {
           id: user.id,
@@ -32,6 +42,7 @@ export class ListUsersUseCase {
           updatedAt: user.updatedAt,
         };
       })),
+      meta,
     };
   }
 }

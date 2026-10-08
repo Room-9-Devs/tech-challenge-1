@@ -229,7 +229,7 @@ describe('CreateUserUseCase', () => {
       }),
     ).rejects.toThrow('write failed');
     expect(profiles.snapshot()).toEqual([]);
-    expect(await users.findAll()).toEqual([]);
+    expect((await users.findAll()).data).toEqual([]);
   });
 
   it('accepts and preserves an alphanumeric CNPJ', async () => {
