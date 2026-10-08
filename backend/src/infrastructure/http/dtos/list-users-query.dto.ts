@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsJSON, IsOptional } from 'class-validator';
+import { IsJSON, IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '@/shared/pagination/pagination-query.dto';
 
 export class ListUsersQueryDto extends PaginationQueryDto {
@@ -11,6 +11,14 @@ export class ListUsersQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsJSON()
   sort?: string;
+
+  @ApiPropertyOptional({
+    description: 'Termo de busca textual',
+    example: 'Quitéria',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @ApiPropertyOptional({
     description: 'JSON de filtros. Ex: {"username":"quiteria.dantas"}',

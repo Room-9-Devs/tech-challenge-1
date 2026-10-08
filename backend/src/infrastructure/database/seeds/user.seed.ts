@@ -30,7 +30,7 @@ export async function seedUsers(dataSource: DataSource): Promise<void> {
     employeeRepository.findOneByOrFail({ name: 'Jeremias Lopes' }),
   ]);
   const agnaldo = await clientRepository.findOneByOrFail({
-    document: '11111111111',
+    document: '45612378955',
   });
 
   const users = [

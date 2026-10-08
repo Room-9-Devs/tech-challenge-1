@@ -254,6 +254,8 @@ npm run seed
 
 Os seeds são separados por entidade (`roles`, `clients`, `employees` e `users`) e são idempotentes. Todos os usuários seedados usam a senha `password123`; esses dados são destinados somente ao ambiente de desenvolvimento.
 
+Os documentos dos perfis seedados são fictícios, porém válidos: os dígitos verificadores conferem com os value objects `Cpf`/`Cnpj`. Se o banco já foi seedado anteriormente, o seed atualiza o documento desses perfis em vez de criar registros duplicados.
+
 ## Execução com Docker Compose
 
 Este projeto utiliza **exatamente 2 containers**:
