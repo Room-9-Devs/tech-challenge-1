@@ -26,6 +26,7 @@ export class ProductEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'product',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }
@@ -35,6 +36,7 @@ export class ProductEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'product',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }
@@ -44,6 +46,7 @@ export class ProductEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'product',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }

@@ -23,7 +23,7 @@ export class DeleteRepairUseCase {
     }
 
     await this.eventPublisher.publish(
-      new RepairDeletedEvent(repair.id, {
+      new RepairDeletedEvent(repair.id, input.createdBy, {
         description: repair.description,
         unitValue: repair.unitValue,
       }),

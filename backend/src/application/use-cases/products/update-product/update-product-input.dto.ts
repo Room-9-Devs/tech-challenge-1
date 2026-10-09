@@ -9,4 +9,5 @@ export interface UpdateProductInputDto {
   unit: ProductUnit;
   cost: number;
   salePrice: number;
+  createdBy?: string;
 }

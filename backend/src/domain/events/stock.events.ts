@@ -5,6 +5,7 @@ export class StockAdjustedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { productId: string; oldQuantity: number; newQuantity: number; reason?: string },
   ) {
     super();
@@ -16,6 +17,7 @@ export class StockReservedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { productId: string; quantity: number; reason?: string },
   ) {
     super();
@@ -27,6 +29,7 @@ export class StockReleasedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { productId: string; quantity: number; reason?: string },
   ) {
     super();

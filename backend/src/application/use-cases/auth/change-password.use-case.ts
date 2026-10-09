@@ -24,7 +24,7 @@ export class ChangePasswordUseCase {
     await this.refreshTokens.revokeAllByUserId(user.id);
 
     await this.eventPublisher.publish(
-      new UserPasswordChangedEvent(user.id),
+      new UserPasswordChangedEvent(user.id, user.username),
     );
   }
 }

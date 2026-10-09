@@ -114,7 +114,7 @@ export class CreateUserUseCase {
     });
 
     await this.eventPublisher.publish(
-      new UserCreatedEvent(result.id, {
+      new UserCreatedEvent(result.id, input.createdBy, {
         username: result.username,
         email: result.email,
         role: result.role,

@@ -8,7 +8,7 @@ import { CreateVehicleOutputDto } from './create-vehicle/create-vehicle-output.d
 import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
 import { VehicleUpdatedEvent } from '@/domain/events/vehicle.events';
 
-export type UpdateVehicleInput = Pick<VehicleProps, 'license_plate' | 'model' | 'brand' | 'year' | 'color'> & { id: string };
+export type UpdateVehicleInput = Pick<VehicleProps, 'license_plate' | 'model' | 'brand' | 'year' | 'color'> & { id: string; createdBy?: string };
 
 @Injectable()
 export class UpdateVehicleUseCase {
@@ -39,8 +39,8 @@ export class UpdateVehicleUseCase {
     const saved = await this.vehicles.save(vehicle);
 
     await this.eventPublisher.publish(
-      new VehicleUpdatedEvent(saved.id, {
-        changedFields: Object.keys(input).filter((key) => key !== 'id'),
+      new VehicleUpdatedEvent(saved.id, input.createdBy, {
+        changedFields: Object.keys(input).filter((key) => key !== 'id' && key !== 'createdBy'),
         old: oldValues,
         new: {
           license_plate: saved.license_plate,

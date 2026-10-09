@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from '@/application/use-cases/repairs/list-repairs/list-repairs.use-case';
@@ -61,6 +65,7 @@ export class RepairsController {
   ) {}
 
   @Post()
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cria um novo tipo de reparo/serviço' })
   @ApiBody({ type: CreateRepairRequestDto })
@@ -79,8 +84,9 @@ export class RepairsController {
   })
   async create(
     @Body() dto: CreateRepairRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<RepairResponseDto> {
-    return this.createRepairUseCase.execute(dto);
+    return this.createRepairUseCase.execute({ ...dto, createdBy: currentUser?.username });
   }
 
   @Get()
@@ -145,6 +151,7 @@ export class RepairsController {
   }
 
   @Put(':id')
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiOperation({ summary: 'Atualiza um tipo de reparo/serviço' })
   @ApiParam({
     name: 'id',
@@ -172,11 +179,13 @@ export class RepairsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateRepairRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<RepairResponseDto> {
-    return this.updateRepairUseCase.execute({ id, ...dto });
+    return this.updateRepairUseCase.execute({ id, ...dto, createdBy: currentUser?.username });
   }
 
   @Delete(':id')
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove um tipo de reparo/serviço' })
   @ApiParam({
@@ -192,7 +201,10 @@ export class RepairsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Tipo de reparo/serviço não encontrado',
   })
-  async delete(@Param('id') id: string): Promise<void> {
-    return this.deleteRepairUseCase.execute({ id });
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<void> {
+    return this.deleteRepairUseCase.execute({ id, createdBy: currentUser?.username });
   }
 }

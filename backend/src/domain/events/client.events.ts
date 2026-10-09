@@ -6,6 +6,7 @@ export class ClientCreatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { name: string; documentType: DocumentType; document: string },
   ) {
     super();
@@ -17,6 +18,7 @@ export class ClientUpdatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { changedFields: string[]; old: Record<string, unknown>; new: Record<string, unknown> },
   ) {
     super();

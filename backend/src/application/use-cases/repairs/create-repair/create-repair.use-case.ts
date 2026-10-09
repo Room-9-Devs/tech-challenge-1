@@ -35,7 +35,7 @@ export class CreateRepairUseCase {
     const savedRepair = await this.repairRepository.save(repair);
 
     await this.eventPublisher.publish(
-      new RepairCreatedEvent(savedRepair.id, {
+      new RepairCreatedEvent(savedRepair.id, input.createdBy, {
         description: savedRepair.description,
         unitValue: savedRepair.unitValue,
       }),

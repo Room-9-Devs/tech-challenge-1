@@ -6,6 +6,7 @@ export class ProductCreatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: {
       sku: string;
       name: string;
@@ -24,6 +25,7 @@ export class ProductUpdatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { changedFields: string[]; old: Record<string, unknown>; new: Record<string, unknown> },
   ) {
     super();
@@ -35,6 +37,7 @@ export class ProductPriceChangedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { oldCost: number; newCost: number; oldSalePrice: number; newSalePrice: number },
   ) {
     super();

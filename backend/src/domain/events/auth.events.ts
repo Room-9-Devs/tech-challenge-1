@@ -5,6 +5,7 @@ export class AuthLoginSucceededEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { ip?: string; userAgent?: string },
   ) {
     super();
@@ -16,6 +17,7 @@ export class AuthLoginFailedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { username: string; reason: string },
   ) {
     super();
@@ -27,6 +29,7 @@ export class AuthLogoutSucceededEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { userId: string },
   ) {
     super();

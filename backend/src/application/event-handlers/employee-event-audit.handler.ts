@@ -21,6 +21,7 @@ export class EmployeeEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'employee',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }
@@ -30,6 +31,7 @@ export class EmployeeEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'employee',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }

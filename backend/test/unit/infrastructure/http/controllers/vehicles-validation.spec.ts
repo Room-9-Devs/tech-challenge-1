@@ -9,12 +9,21 @@ import { UpdateVehicleUseCase } from '@/application/use-cases/vehicles/update-ve
 import { DeleteVehicleUseCase } from '@/application/use-cases/vehicles/delete-vehicle.use-case';
 import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-data.use-case';
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('Vehicle HTTP validation', () => {
   let app: INestApplication;
   const find = { execute: jest.fn() };
   const update = { execute: jest.fn() };
   const remove = { execute: jest.fn() };
+  const currentUser: CurrentUser = {
+    id: 'user-1',
+    username: 'admin',
+    role: 'admin',
+    entityType: 'employee',
+  };
   const details = {
     license_plate: 'ABC1D23',
     model: 'Civic',
@@ -37,6 +46,11 @@ describe('Vehicle HTTP validation', () => {
           provide: TOKEN_SERVICE,
           useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-id', role: 'admin' }) },
         },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
+        },
+        CurrentUserInterceptor,
       ],
     }).compile();
     app = module.createNestApplication();

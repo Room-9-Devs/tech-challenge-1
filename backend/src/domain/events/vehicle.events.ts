@@ -5,6 +5,7 @@ export class VehicleCreatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { licensePlate: string; model: string; brand: string; year: number; color: string },
   ) {
     super();
@@ -16,6 +17,7 @@ export class VehicleUpdatedEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { changedFields: string[]; old: Record<string, unknown>; new: Record<string, unknown> },
   ) {
     super();
@@ -27,6 +29,7 @@ export class VehicleAssociatedToUserEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { userId: string },
   ) {
     super();
@@ -38,6 +41,7 @@ export class VehicleDissociatedFromUserEvent extends DomainEvent {
 
   constructor(
     readonly entityId: string,
+    readonly createdBy: string | undefined,
     readonly metadata: { userId: string },
   ) {
     super();

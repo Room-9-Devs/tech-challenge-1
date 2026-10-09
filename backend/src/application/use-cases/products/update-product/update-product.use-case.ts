@@ -53,11 +53,11 @@ export class UpdateProductUseCase {
     const updatedProduct = await this.productRepository.save(product);
 
     const changedFields = Object.keys(input).filter(
-      (key) => key !== 'id' && oldValues[key as keyof typeof oldValues] !== input[key as keyof UpdateProductInputDto],
+      (key) => key !== 'id' && key !== 'createdBy' && oldValues[key as keyof typeof oldValues] !== input[key as keyof UpdateProductInputDto],
     );
 
     await this.eventPublisher.publish(
-      new ProductUpdatedEvent(updatedProduct.id, {
+      new ProductUpdatedEvent(updatedProduct.id, input.createdBy, {
         changedFields,
         old: oldValues,
         new: {
@@ -74,7 +74,7 @@ export class UpdateProductUseCase {
 
     if (oldValues.cost !== updatedProduct.cost || oldValues.salePrice !== updatedProduct.salePrice) {
       await this.eventPublisher.publish(
-        new ProductPriceChangedEvent(updatedProduct.id, {
+        new ProductPriceChangedEvent(updatedProduct.id, input.createdBy, {
           oldCost: oldValues.cost,
           newCost: updatedProduct.cost,
           oldSalePrice: oldValues.salePrice,

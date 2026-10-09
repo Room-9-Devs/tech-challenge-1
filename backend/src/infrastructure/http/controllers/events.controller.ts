@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -21,6 +22,9 @@ import { ListEventsByEntityIdUseCase } from '@/application/use-cases/events/list
 import { RecordEventRequestDto } from '../dtos/record-event-request.dto';
 import { EventResponseDto } from '../dtos/event-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
 
 @ApiTags('Eventos')
@@ -33,6 +37,7 @@ export class EventsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Registrar evento manualmente' })
@@ -42,8 +47,14 @@ export class EventsController {
     description: 'Evento registrado com sucesso',
     type: EventResponseDto,
   })
-  async create(@Body() dto: RecordEventRequestDto): Promise<EventResponseDto> {
-    return this.recordEventUseCase.execute(dto);
+  async create(
+    @Body() dto: RecordEventRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<EventResponseDto> {
+    return this.recordEventUseCase.execute({
+      ...dto,
+      createdBy: dto.createdBy ?? currentUser?.username,
+    });
   }
 
   @Get(':entityType/:entityId')

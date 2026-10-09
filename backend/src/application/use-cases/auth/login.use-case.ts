@@ -29,12 +29,12 @@ export class LoginUseCase {
     const login = input.login.toLowerCase();
     const user = login.includes('@') ? await this.users.findByEmail(login) : await this.users.findByUsername(input.login);
     if (!user || !(await this.passwords.compare(input.password, user.password))) {
-      await this.eventPublisher.publish(
-        new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', {
-          username: input.login,
-          reason: 'invalid_credentials',
-        }),
-      );
+    await this.eventPublisher.publish(
+      new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', undefined, {
+        username: input.login,
+        reason: 'invalid_credentials',
+      }),
+    );
       throw new AuthenticationError();
     }
     const role = await this.roles.findById(user.roleId);
@@ -44,7 +44,7 @@ export class LoginUseCase {
     await this.refreshTokens.save({ userId: user.id, tokenHash: this.refreshTokenService.hash(refreshToken), expiresAt, revokedAt: null });
 
     await this.eventPublisher.publish(
-      new AuthLoginSucceededEvent(user.id, {
+      new AuthLoginSucceededEvent(user.id, user.username, {
         ip: undefined,
         userAgent: undefined,
       }),

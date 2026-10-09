@@ -53,6 +53,8 @@ import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token.
 import { ChangePasswordUseCase } from './application/use-cases/auth/change-password.use-case';
 import { JwtAuthGuard } from './infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from './infrastructure/http/auth/roles.guard';
+import { CurrentUserInterceptor } from './infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from './application/use-cases/users/find-current-user/find-current-user.use-case';
 import { ListRolesUseCase } from './application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from './application/use-cases/permissions/change-role.use-case';
 import { CreateVehicleUseCase } from './application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
@@ -145,6 +147,8 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     RolesGuard,
     ListRolesUseCase,
     ChangeRoleUseCase,
+    FindCurrentUserUseCase,
+    CurrentUserInterceptor,
   ],
 })
 export class AppModule {}

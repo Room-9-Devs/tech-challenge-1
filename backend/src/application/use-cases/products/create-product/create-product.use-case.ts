@@ -38,7 +38,7 @@ export class CreateProductUseCase {
     const savedProduct = await this.productRepository.save(product);
 
     await this.eventPublisher.publish(
-      new ProductCreatedEvent(savedProduct.id, {
+      new ProductCreatedEvent(savedProduct.id, input.createdBy, {
         sku: savedProduct.sku,
         name: savedProduct.name,
         productType: savedProduct.productType,

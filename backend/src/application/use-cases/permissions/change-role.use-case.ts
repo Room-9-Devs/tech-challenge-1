@@ -29,7 +29,7 @@ export class ChangeRoleUseCase {
     await this.userRepository.save(user);
 
     await this.eventPublisher.publish(
-      new UserRoleChangedEvent(user.id, {
+      new UserRoleChangedEvent(user.id, user.username, {
         oldRole: oldRole?.slug ?? user.roleId,
         newRole: role.slug,
       }),

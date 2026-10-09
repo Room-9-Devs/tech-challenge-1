@@ -2,6 +2,7 @@ import { UsersController } from '@/infrastructure/http/controllers/users.control
 import { CreateUserRequestDto } from '@/infrastructure/http/dtos/create-user-request.dto';
 import { ListUsersQueryDto } from '@/infrastructure/http/dtos/list-users-query.dto';
 import { ForbiddenException } from '@nestjs/common';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('UsersController', () => {
   it('delegates client creation to the use case', async () => {
@@ -26,17 +27,18 @@ describe('UsersController', () => {
       phone: '11999999999',
     } as CreateUserRequestDto;
 
-    const request = {
-      user: {
-        role: 'admin',
-      },
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
     };
 
-    await expect(controller.create(input, request)).resolves.toEqual({
+    await expect(controller.create(input, currentUser)).resolves.toEqual({
       id: 'user-1',
     });
 
-    expect(create.execute).toHaveBeenCalledWith(input);
+    expect(create.execute).toHaveBeenCalledWith({ ...input, createdBy: 'admin' });
   });
 
   it('delegates me, find and list operations', async () => {
@@ -115,14 +117,15 @@ describe('UsersController', () => {
       entityType: 'employee',
     } as CreateUserRequestDto;
 
-    const request = {
-      user: {
-        role: 'staff',
-      },
+    const currentUser: CurrentUser = {
+      id: 'staff-1',
+      username: 'staff',
+      role: 'staff',
+      entityType: 'employee',
     };
 
     await expect(
-      controller.create(input, request),
+      controller.create(input, currentUser),
     ).rejects.toThrow(ForbiddenException);
 
     expect(create.execute).not.toHaveBeenCalled();
@@ -143,16 +146,17 @@ describe('UsersController', () => {
       entityType: 'employee',
     } as CreateUserRequestDto;
 
-    const request = {
-      user: {
-        role: 'admin',
-      },
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
     };
 
-    await expect(controller.create(input, request)).resolves.toEqual({
+    await expect(controller.create(input, currentUser)).resolves.toEqual({
       id: 'employee-1',
     });
 
-    expect(create.execute).toHaveBeenCalledWith(input);
+    expect(create.execute).toHaveBeenCalledWith({ ...input, createdBy: 'admin' });
   });
 });

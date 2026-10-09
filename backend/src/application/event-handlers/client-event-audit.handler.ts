@@ -21,6 +21,7 @@ export class ClientEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'client',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }
@@ -30,6 +31,7 @@ export class ClientEventAuditHandler implements OnApplicationBootstrap {
       eventTypeCode: event.eventType,
       entityType: 'client',
       entityId: event.entityId,
+      createdBy: event.createdBy,
       metadata: event.metadata,
     });
   }

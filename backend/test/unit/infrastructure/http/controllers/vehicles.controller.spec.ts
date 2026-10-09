@@ -9,6 +9,9 @@ import { DeleteVehicleUseCase } from '@/application/use-cases/vehicles/delete-ve
 import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-data.use-case';
 import { CreateVehicleRequestDto } from '@/infrastructure/http/dtos/create-vehicle-request.dto';
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('VehiclesController', () => {
   let controller: VehiclesController;
@@ -18,6 +21,13 @@ describe('VehiclesController', () => {
   let updateVehicleUseCase: jest.Mocked<UpdateVehicleUseCase>;
   let deleteVehicleUseCase: jest.Mocked<DeleteVehicleUseCase>;
   let getFipeDataUseCase: jest.Mocked<GetFipeDataUseCase>;
+
+  const currentUser: CurrentUser = {
+    id: 'user-1',
+    username: 'staff',
+    role: 'staff',
+    entityType: 'employee',
+  };
 
   beforeEach(async () => {
     const mockCreateVehicleUseCase = {
@@ -54,6 +64,11 @@ describe('VehiclesController', () => {
           provide: TOKEN_SERVICE,
           useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-id', role: 'admin' }) },
         },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
+        },
+        CurrentUserInterceptor,
       ],
     }).compile();
 
@@ -162,10 +177,10 @@ describe('VehiclesController', () => {
     const details = { license_plate: 'ABC1D23', model: 'Corolla', brand: 'Toyota', year: 2022, color: 'Black' };
     updateVehicleUseCase.execute.mockResolvedValue({ id: 'vehicle-1', user_id: 'user-1', ...details, createdAt: new Date(), updatedAt: new Date() });
     getFipeDataUseCase.execute.mockResolvedValue([]);
-    await controller.update('vehicle-1', details);
+    await controller.update('vehicle-1', details, currentUser);
     await controller.delete('vehicle-1');
     await controller.getFipeData('001004-9');
-    expect(updateVehicleUseCase.execute).toHaveBeenCalledWith({ id: 'vehicle-1', ...details });
+    expect(updateVehicleUseCase.execute).toHaveBeenCalledWith({ id: 'vehicle-1', ...details, createdBy: currentUser.username });
     expect(deleteVehicleUseCase.execute).toHaveBeenCalledWith('vehicle-1');
     expect(getFipeDataUseCase.execute).toHaveBeenCalledWith('001004-9');
   });

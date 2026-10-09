@@ -45,8 +45,8 @@ export class UpdateRepairUseCase {
     const updatedRepair = await this.repairRepository.save(repair);
 
     await this.eventPublisher.publish(
-      new RepairUpdatedEvent(updatedRepair.id, {
-        changedFields: Object.keys(input).filter((key) => key !== 'id'),
+      new RepairUpdatedEvent(updatedRepair.id, input.createdBy, {
+        changedFields: Object.keys(input).filter((key) => key !== 'id' && key !== 'createdBy'),
         old: oldValues,
         new: {
           description: updatedRepair.description,
