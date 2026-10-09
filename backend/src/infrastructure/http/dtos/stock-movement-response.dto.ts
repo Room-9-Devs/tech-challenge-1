@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { StockMovementType } from '@/domain/entities/stock-movement.entity';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class StockMovementStockResponseDto {
   @ApiProperty({
@@ -104,4 +106,12 @@ export class StockMovementResponseDto {
     type: StockMovementStockResponseDto,
   })
   stock: StockMovementStockResponseDto;
+
+  @ApiLinksProperty({
+    product: { href: '/products/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+    stock: { href: '/stock?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440001%22%7D', method: 'GET' },
+    'product-movements': { href: '/stock/movements?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440001%22%7D', method: 'GET' },
+    creator: { href: '/users/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+  })
+  _links?: Links;
 }

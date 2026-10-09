@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class EventResponseDto {
   @ApiProperty({ description: 'ID do evento.', format: 'uuid' })
@@ -27,4 +29,11 @@ export class EventResponseDto {
 
   @ApiProperty({ description: 'Data de ocorrência do evento.' })
   createdAt: Date;
+
+  @ApiLinksProperty({
+    history: { href: '/events/product/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+    'event-type': { href: '/event-types/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+    entity: { href: '/products/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+  })
+  _links?: Links;
 }

@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { StockMovementType } from '@/domain/entities/stock-movement.entity';
 import { StockProductResponseDto } from './stock-response.dto';
 import { PaginationMetaDto } from './pagination-meta.dto';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class StockMovementListItemResponseDto {
   @ApiProperty({
@@ -74,6 +76,14 @@ export class StockMovementListItemResponseDto {
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
+
+  @ApiLinksProperty({
+    product: { href: '/products/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+    stock: { href: '/stock?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440001%22%7D', method: 'GET' },
+    'product-movements': { href: '/stock/movements?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440001%22%7D', method: 'GET' },
+    creator: { href: '/users/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+  })
+  _links?: Links;
 }
 
 export class ListStockMovementsResponseDto {
@@ -88,4 +98,14 @@ export class ListStockMovementsResponseDto {
     type: PaginationMetaDto,
   })
   meta: PaginationMetaDto;
+
+  @ApiLinksProperty({
+    self: { href: '/stock/movements?page=1&limit=10', method: 'GET' },
+    first: { href: '/stock/movements?page=1&limit=10', method: 'GET' },
+    next: { href: '/stock/movements?page=2&limit=10', method: 'GET' },
+    last: { href: '/stock/movements?page=4&limit=10', method: 'GET' },
+    create: { href: '/stock/movements', method: 'POST' },
+    stock: { href: '/stock', method: 'GET' },
+  })
+  _links?: Links;
 }

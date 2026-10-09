@@ -26,6 +26,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
+import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
+import { eventLinks } from '../hateoas/resources/event.links';
 
 @ApiTags('Eventos')
 @Controller('events')
@@ -47,6 +49,7 @@ export class EventsController {
     description: 'Evento registrado com sucesso',
     type: EventResponseDto,
   })
+  @HateoasItem(eventLinks)
   async create(
     @Body() dto: RecordEventRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -68,6 +71,7 @@ export class EventsController {
     description: 'Lista de eventos da entidade',
     type: [EventResponseDto],
   })
+  @HateoasCollection(eventLinks)
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
     @Param('entityId') entityId: string,

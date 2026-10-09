@@ -40,6 +40,11 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import {
+  HateoasCollection,
+  HateoasItem,
+} from '../hateoas/hateoas.decorator';
+import { productLinks } from '../hateoas/resources/product.links';
 
 const ALLOWED_PRODUCT_SORT_COLUMNS = [
   'name',
@@ -95,6 +100,7 @@ export class ProductsController {
     status: HttpStatus.CONFLICT,
     description: 'Já existe um produto com este SKU',
   })
+  @HateoasItem(productLinks)
   async create(
     @Body() dto: CreateProductRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -126,6 +132,7 @@ export class ProductsController {
     description: 'Lista paginada de produtos',
     type: ListProductsResponseDto,
   })
+  @HateoasCollection(productLinks)
   async findAll(
     @Query() query: ListProductsQueryDto,
   ): Promise<ListProductsResponseDto> {
@@ -157,6 +164,7 @@ export class ProductsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Produto não encontrado',
   })
+  @HateoasItem(productLinks)
   async findById(@Param('id') id: string): Promise<ProductResponseDto> {
     return this.findProductUseCase.execute({ id });
   }
@@ -187,6 +195,7 @@ export class ProductsController {
     status: HttpStatus.CONFLICT,
     description: 'Já existe um produto com este SKU',
   })
+  @HateoasItem(productLinks)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductRequestDto,
