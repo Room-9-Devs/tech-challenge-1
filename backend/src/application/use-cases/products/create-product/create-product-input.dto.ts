@@ -8,4 +8,5 @@ export interface CreateProductInputDto {
   unit: ProductUnit;
   cost: number;
   salePrice: number;
+  createdBy?: string;
 }

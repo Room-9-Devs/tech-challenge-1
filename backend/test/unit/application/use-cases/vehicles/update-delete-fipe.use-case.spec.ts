@@ -5,6 +5,7 @@ import { DeleteVehicleUseCase } from '@/application/use-cases/vehicles/delete-ve
 import { GetFipeDataUseCase, InvalidFipeCodeError } from '@/application/use-cases/vehicles/get-fipe-data.use-case';
 import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exists.error';
 import { VehicleNotFoundError } from '@/domain/errors/vehicle-not-found.error';
+import { FakeDomainEventPublisher } from '../../../../fakes/fake-domain-event-publisher';
 
 const base = { user_id: 'user-1', license_plate: 'ABC1234', model: 'Corolla', brand: 'Toyota', year: 2022, color: 'Black' };
 
@@ -14,7 +15,7 @@ describe('Vehicle update/delete and FIPE', () => {
 
   it('replaces details and keeps owner and creation time', async () => {
     const vehicle = await repo.save(Vehicle.create(base));
-    const result = await new UpdateVehicleUseCase(repo).execute({ id: vehicle.id, license_plate: 'ABC1D23', model: 'Civic', brand: 'Honda', year: 2023, color: 'White' });
+    const result = await new UpdateVehicleUseCase(repo, new FakeDomainEventPublisher()).execute({ id: vehicle.id, license_plate: 'ABC1D23', model: 'Civic', brand: 'Honda', year: 2023, color: 'White' });
     expect(result).toMatchObject({ id: vehicle.id, user_id: 'user-1', license_plate: 'ABC1D23', model: 'Civic' });
     expect(result.createdAt).toEqual(vehicle.createdAt);
   });
@@ -22,7 +23,7 @@ describe('Vehicle update/delete and FIPE', () => {
   it('rejects duplicate plates and missing vehicles', async () => {
     const first = await repo.save(Vehicle.create(base));
     await repo.save(Vehicle.create({ ...base, license_plate: 'ABC1D23' }));
-    const update = new UpdateVehicleUseCase(repo);
+    const update = new UpdateVehicleUseCase(repo, new FakeDomainEventPublisher());
     await expect(update.execute({ id: first.id, ...base, license_plate: 'ABC1D23' })).rejects.toThrow(VehicleAlreadyExistsError);
     await expect(update.execute({ id: 'missing', ...base })).rejects.toThrow(VehicleNotFoundError);
   });

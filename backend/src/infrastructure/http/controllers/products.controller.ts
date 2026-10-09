@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,6 +37,9 @@ import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 
 const ALLOWED_PRODUCT_SORT_COLUMNS = [
   'name',
@@ -74,6 +78,7 @@ export class ProductsController {
   ) {}
 
   @Post()
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Cria um novo produto' })
   @ApiBody({ type: CreateProductRequestDto })
@@ -92,8 +97,9 @@ export class ProductsController {
   })
   async create(
     @Body() dto: CreateProductRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ProductResponseDto> {
-    return this.createProductUseCase.execute(dto);
+    return this.createProductUseCase.execute({ ...dto, createdBy: currentUser?.username });
   }
 
   @Get()
@@ -156,6 +162,7 @@ export class ProductsController {
   }
 
   @Put(':id')
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiOperation({ summary: 'Atualiza um produto' })
   @ApiParam({
     name: 'id',
@@ -183,8 +190,9 @@ export class ProductsController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ProductResponseDto> {
-    return this.updateProductUseCase.execute({ id, ...dto });
+    return this.updateProductUseCase.execute({ id, ...dto, createdBy: currentUser?.username });
   }
 
   @Delete(':id')

@@ -15,6 +15,9 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtAuthGuard } from '@/infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from '@/infrastructure/http/auth/roles.guard';
 import { ROLES_KEY } from '@/infrastructure/http/auth/roles.decorator';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -23,6 +26,13 @@ describe('ProductsController', () => {
   let findProductUseCase: jest.Mocked<FindProductUseCase>;
   let updateProductUseCase: jest.Mocked<UpdateProductUseCase>;
   let deleteProductUseCase: jest.Mocked<DeleteProductUseCase>;
+
+  const currentUser: CurrentUser = {
+    id: 'user-1',
+    username: 'staff',
+    role: 'staff',
+    entityType: 'employee',
+  };
 
   const productData = {
     sku: 'OLEO-5W30-1L',
@@ -64,6 +74,11 @@ describe('ProductsController', () => {
           provide: DeleteProductUseCase,
           useValue: mockDeleteProductUseCase,
         },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
+        },
+        CurrentUserInterceptor,
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -107,9 +122,9 @@ describe('ProductsController', () => {
 
       createProductUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, currentUser);
 
-      expect(createProductUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(createProductUseCase.execute).toHaveBeenCalledWith({ ...dto, createdBy: currentUser.username });
       expect(result).toEqual(expectedResult);
     });
   });
@@ -204,9 +219,9 @@ describe('ProductsController', () => {
 
       updateProductUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.update(id, dto);
+      const result = await controller.update(id, dto, currentUser);
 
-      expect(updateProductUseCase.execute).toHaveBeenCalledWith({ id, ...dto });
+      expect(updateProductUseCase.execute).toHaveBeenCalledWith({ id, ...dto, createdBy: currentUser.username });
       expect(result).toEqual(expectedResult);
     });
 
@@ -216,7 +231,7 @@ describe('ProductsController', () => {
       );
 
       await expect(
-        controller.update('uuid', { ...productData }),
+        controller.update('uuid', { ...productData }, currentUser),
       ).rejects.toThrow(ProductNotFoundError);
     });
   });

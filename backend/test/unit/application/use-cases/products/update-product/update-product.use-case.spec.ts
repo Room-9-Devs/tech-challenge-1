@@ -8,6 +8,7 @@ import {
   ProductType,
   ProductUnit,
 } from '@/domain/entities/product.entity';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
@@ -35,7 +36,7 @@ describe('UpdateProductUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeProductRepository();
-    useCase = new UpdateProductUseCase(fakeRepository);
+    useCase = new UpdateProductUseCase(fakeRepository, new FakeDomainEventPublisher());
   });
 
   it('should update an product with valid data', async () => {

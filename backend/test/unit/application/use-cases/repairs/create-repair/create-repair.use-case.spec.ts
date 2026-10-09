@@ -2,6 +2,7 @@ import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repa
 import { FakeRepairRepository } from '../../../../../fakes/fake-repair.repository';
 import { RepairAlreadyExistsError } from '@/domain/errors/repair-already-exists.error';
 import { InvalidRepairError } from '@/domain/errors/invalid-repair.error';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('CreateRepairUseCase', () => {
   let useCase: CreateRepairUseCase;
@@ -9,7 +10,7 @@ describe('CreateRepairUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeRepairRepository();
-    useCase = new CreateRepairUseCase(fakeRepository);
+    useCase = new CreateRepairUseCase(fakeRepository, new FakeDomainEventPublisher());
   });
 
   it('should create a repair with valid data', async () => {

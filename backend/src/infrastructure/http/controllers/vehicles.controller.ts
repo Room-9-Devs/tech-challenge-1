@@ -11,6 +11,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 
 import { CreateVehicleUseCase } from '@/application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
 import { FindVehicleUseCase } from '@/application/use-cases/vehicles/find-vehicle/find-vehicle.use-case';
@@ -111,14 +115,16 @@ export class VehiclesController {
   }
 
   @Put(':id')
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiOperation({ summary: 'Replace vehicle details' })
   @ApiBody({ type: UpdateVehicleRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: VehicleResponseDto })
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateVehicleRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<VehicleResponseDto> {
-    return this.updateVehicleUseCase.execute({ id, ...dto });
+    return this.updateVehicleUseCase.execute({ id, ...dto, createdBy: currentUser?.username });
   }
 
   @Delete(':id')

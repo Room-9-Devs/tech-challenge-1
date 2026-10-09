@@ -11,4 +11,5 @@ export interface CreateUserInputDto {
   document: string;
   phone: string;
   jobTitle?: string;
+  createdBy?: string;
 }

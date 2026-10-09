@@ -4,6 +4,7 @@ import { RepairNotFoundError } from '@/domain/errors/repair-not-found.error';
 import { RepairAlreadyExistsError } from '@/domain/errors/repair-already-exists.error';
 import { InvalidRepairError } from '@/domain/errors/invalid-repair.error';
 import { Repair } from '@/domain/entities/repair.entity';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('UpdateRepairUseCase', () => {
   let useCase: UpdateRepairUseCase;
@@ -11,7 +12,7 @@ describe('UpdateRepairUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeRepairRepository();
-    useCase = new UpdateRepairUseCase(fakeRepository);
+    useCase = new UpdateRepairUseCase(fakeRepository, new FakeDomainEventPublisher());
   });
 
   it('should update a repair with valid data', async () => {

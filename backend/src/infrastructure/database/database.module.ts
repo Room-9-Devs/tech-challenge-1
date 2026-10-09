@@ -10,6 +10,8 @@ import { VehicleOrmEntity } from './typeorm/entities/vehicle.orm-entity';
 import { RepairOrmEntity } from './typeorm/entities/repair.orm-entity';
 import { ProductOrmEntity } from './typeorm/entities/product.orm-entity';
 import { StockOrmEntity } from './typeorm/entities/stock.orm-entity';
+import { EventTypeOrmEntity } from './typeorm/entities/event-type.orm-entity';
+import { EventOrmEntity } from './typeorm/entities/event.orm-entity';
 import { StockMovementOrmEntity } from './typeorm/entities/stock-movement.orm-entity';
 import { TypeOrmUserRepository } from './typeorm/repositories/typeorm-user.repository';
 import { TypeOrmRepairRepository } from './typeorm/repositories/typeorm-repair.repository';
@@ -19,6 +21,8 @@ import { TypeOrmRoleRepository } from './typeorm/repositories/typeorm-role.repos
 import { TypeOrmProfileRepository } from './typeorm/repositories/typeorm-profile.repository';
 import { TypeOrmRefreshTokenRepository } from './typeorm/repositories/typeorm-refresh-token.repository';
 import { TypeOrmVehicleRepository } from './typeorm/repositories/typeorm-vehicle.repository';
+import { TypeOrmEventTypeRepository } from './typeorm/repositories/typeorm-event-type.repository';
+import { TypeOrmEventRepository } from './typeorm/repositories/typeorm-event.repository';
 import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/create-user.use-case';
 import { VEHICLE_REPOSITORY } from '@/application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
 import { REPAIR_REPOSITORY } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
@@ -27,6 +31,8 @@ import { STOCK_REPOSITORY } from '@/application/use-cases/products/delete-produc
 import { ROLE_REPOSITORY } from '@/application/ports/role.repository';
 import { PROFILE_REPOSITORY } from '@/application/ports/profile.repository';
 import { REFRESH_TOKEN_REPOSITORY } from '@/application/ports/refresh-token.repository';
+import { EVENT_TYPE_REPOSITORY } from '@/domain/repositories/event-type.repository';
+import { EVENT_REPOSITORY } from '@/domain/repositories/event.repository';
 import { USER_REGISTRATION_UNIT_OF_WORK } from '@/application/ports/user-registration-unit-of-work.port';
 import { TypeOrmUserRegistrationUnitOfWork } from './typeorm/typeorm-user-registration-unit-of-work';
 import { STOCK_MOVEMENT_UNIT_OF_WORK } from '@/application/ports/stock-movement-unit-of-work.port';
@@ -47,6 +53,8 @@ const ormEntities = [
   StockOrmEntity,
   StockMovementOrmEntity,
   VehicleOrmEntity,
+  EventTypeOrmEntity,
+  EventOrmEntity,
 ];
 
 @Module({
@@ -89,6 +97,8 @@ const ormEntities = [
       provide: USER_REGISTRATION_UNIT_OF_WORK,
       useClass: TypeOrmUserRegistrationUnitOfWork,
     },
+    { provide: EVENT_TYPE_REPOSITORY, useClass: TypeOrmEventTypeRepository },
+    { provide: EVENT_REPOSITORY, useClass: TypeOrmEventRepository },
     {
       provide: STOCK_MOVEMENT_UNIT_OF_WORK,
       useClass: TypeOrmStockMovementUnitOfWork,
@@ -109,6 +119,8 @@ const ormEntities = [
     REFRESH_TOKEN_REPOSITORY,
     VEHICLE_REPOSITORY,
     USER_REGISTRATION_UNIT_OF_WORK,
+    EVENT_TYPE_REPOSITORY,
+    EVENT_REPOSITORY,
     STOCK_MOVEMENT_UNIT_OF_WORK,
     PRODUCT_CREATION_UNIT_OF_WORK,
   ],

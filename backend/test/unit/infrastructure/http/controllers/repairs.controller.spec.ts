@@ -9,6 +9,9 @@ import { DeleteRepairUseCase } from '@/application/use-cases/repairs/delete-repa
 import { CreateRepairRequestDto } from '@/infrastructure/http/dtos/create-repair-request.dto';
 import { UpdateRepairRequestDto } from '@/infrastructure/http/dtos/update-repair-request.dto';
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('RepairsController', () => {
   let controller: RepairsController;
@@ -17,6 +20,13 @@ describe('RepairsController', () => {
   let listRepairsUseCase: jest.Mocked<ListRepairsUseCase>;
   let updateRepairUseCase: jest.Mocked<UpdateRepairUseCase>;
   let deleteRepairUseCase: jest.Mocked<DeleteRepairUseCase>;
+
+  const currentUser: CurrentUser = {
+    id: 'user-1',
+    username: 'admin',
+    role: 'admin',
+    entityType: 'employee',
+  };
 
   beforeEach(async () => {
     const mockCreateRepairUseCase = { execute: jest.fn() };
@@ -52,6 +62,11 @@ describe('RepairsController', () => {
           provide: TOKEN_SERVICE,
           useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-id', role: 'admin' }) },
         },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
+        },
+        CurrentUserInterceptor,
       ],
     }).compile();
 
@@ -80,9 +95,9 @@ describe('RepairsController', () => {
 
       createRepairUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, currentUser);
 
-      expect(createRepairUseCase.execute).toHaveBeenCalledWith(dto);
+      expect(createRepairUseCase.execute).toHaveBeenCalledWith({ ...dto, createdBy: currentUser.username });
       expect(result).toEqual(expectedResult);
     });
   });
@@ -169,11 +184,12 @@ describe('RepairsController', () => {
 
       updateRepairUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.update(id, dto);
+      const result = await controller.update(id, dto, currentUser);
 
       expect(updateRepairUseCase.execute).toHaveBeenCalledWith({
         id,
         ...dto,
+        createdBy: currentUser.username,
       });
       expect(result).toEqual(expectedResult);
     });
@@ -185,9 +201,9 @@ describe('RepairsController', () => {
 
       deleteRepairUseCase.execute.mockResolvedValue(undefined);
 
-      await controller.delete(id);
+      await controller.delete(id, currentUser);
 
-      expect(deleteRepairUseCase.execute).toHaveBeenCalledWith({ id });
+      expect(deleteRepairUseCase.execute).toHaveBeenCalledWith({ id, createdBy: currentUser.username });
     });
   });
 });

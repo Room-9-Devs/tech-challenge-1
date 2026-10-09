@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
   ForbiddenException,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,9 @@ import { ListUsersResponseDto } from '../dtos/list-users-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { ListUsersFiltersInputDto } from '@/application/use-cases/users/list-users/list-users-input.dto';
 import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
@@ -64,6 +68,7 @@ export class UsersController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @Roles('admin', 'staff')
   @HttpCode(HttpStatus.CREATED)
@@ -90,11 +95,14 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Acesso negado para registrar funcionários',
   })
-  async create(@Body() dto: CreateUserRequestDto, @Req() request: { user: { role: string } }): Promise<UserResponseDto> {
+  async create(
+    @Body() dto: CreateUserRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<UserResponseDto> {
 
-    if (dto.entityType === 'employee' && request.user.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+    if (dto.entityType === 'employee' && currentUser?.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
 
-    return this.createUserUseCase.execute(dto);
+    return this.createUserUseCase.execute({ ...dto, createdBy: currentUser?.username });
   }
 
   @Get('me')
