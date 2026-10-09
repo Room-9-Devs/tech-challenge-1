@@ -12,6 +12,7 @@ import { ProductOrmEntity } from './typeorm/entities/product.orm-entity';
 import { StockOrmEntity } from './typeorm/entities/stock.orm-entity';
 import { EventTypeOrmEntity } from './typeorm/entities/event-type.orm-entity';
 import { EventOrmEntity } from './typeorm/entities/event.orm-entity';
+import { StockMovementOrmEntity } from './typeorm/entities/stock-movement.orm-entity';
 import { TypeOrmUserRepository } from './typeorm/repositories/typeorm-user.repository';
 import { TypeOrmRepairRepository } from './typeorm/repositories/typeorm-repair.repository';
 import { TypeOrmProductRepository } from './typeorm/repositories/typeorm-product.repository';
@@ -34,6 +35,12 @@ import { EVENT_TYPE_REPOSITORY } from '@/domain/repositories/event-type.reposito
 import { EVENT_REPOSITORY } from '@/domain/repositories/event.repository';
 import { USER_REGISTRATION_UNIT_OF_WORK } from '@/application/ports/user-registration-unit-of-work.port';
 import { TypeOrmUserRegistrationUnitOfWork } from './typeorm/typeorm-user-registration-unit-of-work';
+import { STOCK_MOVEMENT_UNIT_OF_WORK } from '@/application/ports/stock-movement-unit-of-work.port';
+import { TypeOrmStockMovementUnitOfWork } from './typeorm/typeorm-stock-movement-unit-of-work';
+import { TypeOrmStockMovementRepository } from './typeorm/repositories/typeorm-stock-movement.repository';
+import { STOCK_MOVEMENT_REPOSITORY } from '@/application/use-cases/stock/list-stock-movements/list-stock-movements.use-case';
+import { PRODUCT_CREATION_UNIT_OF_WORK } from '@/application/ports/product-creation-unit-of-work.port';
+import { TypeOrmProductCreationUnitOfWork } from './typeorm/typeorm-product-creation-unit-of-work';
 
 const ormEntities = [
   UserOrmEntity,
@@ -44,6 +51,7 @@ const ormEntities = [
   RepairOrmEntity,
   ProductOrmEntity,
   StockOrmEntity,
+  StockMovementOrmEntity,
   VehicleOrmEntity,
   EventTypeOrmEntity,
   EventOrmEntity,
@@ -74,6 +82,10 @@ const ormEntities = [
     { provide: REPAIR_REPOSITORY, useClass: TypeOrmRepairRepository },
     { provide: PRODUCT_REPOSITORY, useClass: TypeOrmProductRepository },
     { provide: STOCK_REPOSITORY, useClass: TypeOrmStockRepository },
+    {
+      provide: STOCK_MOVEMENT_REPOSITORY,
+      useClass: TypeOrmStockMovementRepository,
+    },
     { provide: ROLE_REPOSITORY, useClass: TypeOrmRoleRepository },
     { provide: PROFILE_REPOSITORY, useClass: TypeOrmProfileRepository },
     {
@@ -87,12 +99,21 @@ const ormEntities = [
     },
     { provide: EVENT_TYPE_REPOSITORY, useClass: TypeOrmEventTypeRepository },
     { provide: EVENT_REPOSITORY, useClass: TypeOrmEventRepository },
+    {
+      provide: STOCK_MOVEMENT_UNIT_OF_WORK,
+      useClass: TypeOrmStockMovementUnitOfWork,
+    },
+    {
+      provide: PRODUCT_CREATION_UNIT_OF_WORK,
+      useClass: TypeOrmProductCreationUnitOfWork,
+    },
   ],
   exports: [
     USER_REPOSITORY,
     REPAIR_REPOSITORY,
     PRODUCT_REPOSITORY,
     STOCK_REPOSITORY,
+    STOCK_MOVEMENT_REPOSITORY,
     ROLE_REPOSITORY,
     PROFILE_REPOSITORY,
     REFRESH_TOKEN_REPOSITORY,
@@ -100,6 +121,8 @@ const ormEntities = [
     USER_REGISTRATION_UNIT_OF_WORK,
     EVENT_TYPE_REPOSITORY,
     EVENT_REPOSITORY,
+    STOCK_MOVEMENT_UNIT_OF_WORK,
+    PRODUCT_CREATION_UNIT_OF_WORK,
   ],
 })
 export class DatabaseModule {}

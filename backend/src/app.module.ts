@@ -7,6 +7,7 @@ import { EmailModule } from './infrastructure/services/email/email.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
 import { RepairsController } from './infrastructure/http/controllers/repairs.controller';
 import { ProductsController } from './infrastructure/http/controllers/products.controller';
+import { StockController } from './infrastructure/http/controllers/stock.controller';
 import { AuthController } from './infrastructure/http/auth/auth.controller';
 import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
 import { VehiclesController } from './infrastructure/http/controllers/vehicles.controller';
@@ -25,6 +26,9 @@ import { ListProductsUseCase } from './application/use-cases/products/list-produ
 import { FindProductUseCase } from './application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
+import { ListStockUseCase } from './application/use-cases/stock/list-stock/list-stock.use-case';
+import { CreateStockMovementUseCase } from './application/use-cases/stock/create-stock-movement/create-stock-movement.use-case';
+import { ListStockMovementsUseCase } from './application/use-cases/stock/list-stock-movements/list-stock-movements.use-case';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 import { EventTypeSeedService } from './infrastructure/database/seeds/event-type.seed';
@@ -89,6 +93,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     UsersController,
     RepairsController,
     ProductsController,
+    StockController,
     VehiclesController,
     EventTypesController,
     EventsController,
@@ -134,6 +139,9 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     FindProductUseCase,
     UpdateProductUseCase,
     DeleteProductUseCase,
+    ListStockUseCase,
+    CreateStockMovementUseCase,
+    ListStockMovementsUseCase,
     RepairSeedService,
     ProductSeedService,
     { provide: PASSWORD_HASHER, useClass: ScryptPasswordHasherService },

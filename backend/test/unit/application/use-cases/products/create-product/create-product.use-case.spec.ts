@@ -1,5 +1,7 @@
 import { CreateProductUseCase } from '@/application/use-cases/products/create-product/create-product.use-case';
 import { FakeProductRepository } from '../../../../../fakes/fake-product.repository';
+import { FakeStockRepository } from '../../../../../fakes/fake-stock.repository';
+import { FakeProductCreationUnitOfWork } from '../../../../../fakes/fake-product-creation-unit-of-work';
 import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
 import { InvalidProductError } from '@/domain/errors/invalid-product.error';
 import {
@@ -12,6 +14,7 @@ import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event
 describe('CreateProductUseCase', () => {
   let useCase: CreateProductUseCase;
   let fakeRepository: FakeProductRepository;
+  let fakeStockRepository: FakeStockRepository;
 
   const input = {
     sku: 'OLEO-5W30-1L',
@@ -26,6 +29,11 @@ describe('CreateProductUseCase', () => {
   beforeEach(() => {
     fakeRepository = new FakeProductRepository();
     useCase = new CreateProductUseCase(fakeRepository, new FakeDomainEventPublisher());
+    fakeStockRepository = new FakeStockRepository(fakeRepository);
+    useCase = new CreateProductUseCase(
+      fakeRepository,
+      new FakeProductCreationUnitOfWork(fakeRepository, fakeStockRepository),
+    );
   });
 
   it('should create an active product with valid data', async () => {
@@ -50,6 +58,28 @@ describe('CreateProductUseCase', () => {
 
     expect(persistedProduct).not.toBeNull();
     expect(persistedProduct!.sku).toBe('OLEO-5W30-1L');
+  });
+
+  it('should create an empty stock for the product', async () => {
+    const result = await useCase.execute(input);
+
+    const stock = await fakeStockRepository.findByProductId(result.id);
+
+    expect(stock).not.toBeNull();
+    expect(stock!.quantity).toBe(0);
+    expect(stock!.reserved).toBe(0);
+  });
+
+  it('should not persist the product when creating the stock fails', async () => {
+    jest
+      .spyOn(fakeStockRepository, 'save')
+      .mockRejectedValueOnce(new Error('Failed to create stock'));
+
+    await expect(useCase.execute(input)).rejects.toThrow(
+      'Failed to create stock',
+    );
+
+    expect(await fakeRepository.findBySku(input.sku)).toBeNull();
   });
 
   it('should throw ProductAlreadyExistsError when sku already exists', async () => {

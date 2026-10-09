@@ -1,7 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Product } from '@/domain/entities/product.entity';
+import { Stock } from '@/domain/entities/stock.entity';
 import { ProductRepository } from '@/domain/repositories/product.repository';
 import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import {
+  PRODUCT_CREATION_UNIT_OF_WORK,
+  ProductCreationUnitOfWork,
+} from '@/application/ports/product-creation-unit-of-work.port';
 import { CreateProductInputDto } from './create-product-input.dto';
 import { CreateProductOutputDto } from './create-product-output.dto';
 import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
@@ -16,6 +21,8 @@ export class CreateProductUseCase {
     private readonly productRepository: ProductRepository,
     @Inject(DOMAIN_EVENT_PUBLISHER)
     private readonly eventPublisher: DomainEventPublisher,
+    @Inject(PRODUCT_CREATION_UNIT_OF_WORK)
+    private readonly unitOfWork: ProductCreationUnitOfWork,
   ) {}
 
   async execute(input: CreateProductInputDto): Promise<CreateProductOutputDto> {
@@ -35,7 +42,13 @@ export class CreateProductUseCase {
       salePrice: input.salePrice,
     });
 
-    const savedProduct = await this.productRepository.save(product);
+    const savedProduct = await this.unitOfWork.run(
+      async ({ products, stocks }) => {
+        const saved = await products.save(product);
+        await stocks.save(Stock.create({ productId: saved.id }));
+        return saved;
+      },
+    );
 
     await this.eventPublisher.publish(
       new ProductCreatedEvent(savedProduct.id, input.createdBy, {

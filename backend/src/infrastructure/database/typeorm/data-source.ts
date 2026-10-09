@@ -11,6 +11,7 @@ import { ProductOrmEntity } from './entities/product.orm-entity';
 import { StockOrmEntity } from './entities/stock.orm-entity';
 import { EventTypeOrmEntity } from './entities/event-type.orm-entity';
 import { EventOrmEntity } from './entities/event.orm-entity';
+import { StockMovementOrmEntity } from './entities/stock-movement.orm-entity';
 
 loadEnvironment();
 
@@ -33,6 +34,7 @@ export const AppDataSource = new DataSource({
     StockOrmEntity,
     EventTypeOrmEntity,
     EventOrmEntity,
+    StockMovementOrmEntity,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
