@@ -7,6 +7,7 @@ import {
   ProductType,
   ProductUnit,
 } from '@/domain/entities/product.entity';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('CreateProductUseCase', () => {
   let useCase: CreateProductUseCase;
@@ -24,7 +25,7 @@ describe('CreateProductUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeProductRepository();
-    useCase = new CreateProductUseCase(fakeRepository);
+    useCase = new CreateProductUseCase(fakeRepository, new FakeDomainEventPublisher());
   });
 
   it('should create an active product with valid data', async () => {

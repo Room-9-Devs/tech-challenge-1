@@ -10,6 +10,8 @@ import { ProductsController } from './infrastructure/http/controllers/products.c
 import { AuthController } from './infrastructure/http/auth/auth.controller';
 import { PermissionsController } from './infrastructure/http/permissions/permissions.controller';
 import { VehiclesController } from './infrastructure/http/controllers/vehicles.controller';
+import { EventTypesController } from './infrastructure/http/controllers/event-types.controller';
+import { EventsController } from './infrastructure/http/controllers/events.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
@@ -25,12 +27,26 @@ import { UpdateProductUseCase } from './application/use-cases/products/update-pr
 import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
+import { EventTypeSeedService } from './infrastructure/database/seeds/event-type.seed';
 import { ScryptPasswordHasherService } from './infrastructure/services/password/scrypt-password-hasher.service';
 import { JwtTokenService } from './infrastructure/services/jwt/jwt-token.service';
 import { OpaqueRefreshTokenService } from './infrastructure/services/jwt/opaque-refresh-token.service';
+import { EventRecorderService } from './application/services/event-recorder.service';
+import { NestDomainEventPublisher } from './infrastructure/services/events/nest-domain-event-publisher.service';
+import { DomainEventEmitter } from './infrastructure/services/events/domain-event-emitter.service';
+import { UserEventAuditHandler } from './application/event-handlers/user-event-audit.handler';
+import { VehicleEventAuditHandler } from './application/event-handlers/vehicle-event-audit.handler';
+import { ProductEventAuditHandler } from './application/event-handlers/product-event-audit.handler';
+import { StockEventAuditHandler } from './application/event-handlers/stock-event-audit.handler';
+import { RepairEventAuditHandler } from './application/event-handlers/repair-event-audit.handler';
+import { ClientEventAuditHandler } from './application/event-handlers/client-event-audit.handler';
+import { EmployeeEventAuditHandler } from './application/event-handlers/employee-event-audit.handler';
+import { AuthEventAuditHandler } from './application/event-handlers/auth-event-audit.handler';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
+import { EVENT_RECORDER } from './application/ports/event-recorder.port';
+import { DOMAIN_EVENT_PUBLISHER } from './application/ports/domain-event-publisher.port';
 import { LoginUseCase } from './application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from './application/use-cases/auth/logout.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token.use-case';
@@ -45,6 +61,12 @@ import { ListVehiclesUseCase } from './application/use-cases/vehicles/list-vehic
 import { UpdateVehicleUseCase } from './application/use-cases/vehicles/update-vehicle.use-case';
 import { DeleteVehicleUseCase } from './application/use-cases/vehicles/delete-vehicle.use-case';
 import { GetFipeDataUseCase } from './application/use-cases/vehicles/get-fipe-data.use-case';
+import { CreateEventTypeUseCase } from './application/use-cases/events/event-type/create-event-type/create-event-type.use-case';
+import { UpdateEventTypeUseCase } from './application/use-cases/events/event-type/update-event-type/update-event-type.use-case';
+import { ListEventTypesUseCase } from './application/use-cases/events/event-type/list-event-types/list-event-types.use-case';
+import { FindEventTypeUseCase } from './application/use-cases/events/event-type/find-event-type/find-event-type.use-case';
+import { RecordEventUseCase } from './application/use-cases/events/record-event/record-event.use-case';
+import { ListEventsByEntityIdUseCase } from './application/use-cases/events/list-events-by-entity-id/list-events-by-entity-id.use-case';
 import { FIPE_GATEWAY } from './application/ports/fipe.gateway';
 import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum-fipe.gateway';
 
@@ -66,6 +88,8 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     RepairsController,
     ProductsController,
     VehiclesController,
+    EventTypesController,
+    EventsController,
     AuthController,
     PermissionsController,
   ],
@@ -79,6 +103,24 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     UpdateVehicleUseCase,
     DeleteVehicleUseCase,
     GetFipeDataUseCase,
+    CreateEventTypeUseCase,
+    UpdateEventTypeUseCase,
+    ListEventTypesUseCase,
+    FindEventTypeUseCase,
+    RecordEventUseCase,
+    ListEventsByEntityIdUseCase,
+    DomainEventEmitter,
+    { provide: EVENT_RECORDER, useClass: EventRecorderService },
+    { provide: DOMAIN_EVENT_PUBLISHER, useClass: NestDomainEventPublisher },
+    UserEventAuditHandler,
+    VehicleEventAuditHandler,
+    ProductEventAuditHandler,
+    StockEventAuditHandler,
+    RepairEventAuditHandler,
+    ClientEventAuditHandler,
+    EmployeeEventAuditHandler,
+    AuthEventAuditHandler,
+    EventTypeSeedService,
     { provide: FIPE_GATEWAY, useClass: ParallelumFipeGateway },
     CreateRepairUseCase,
     FindRepairUseCase,

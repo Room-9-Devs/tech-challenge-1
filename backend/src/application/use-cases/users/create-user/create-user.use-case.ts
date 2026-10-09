@@ -21,6 +21,8 @@ import { CreateUserInputDto } from './create-user-input.dto';
 import { CreateUserOutputDto } from './create-user-output.dto';
 import { Cpf, Cnpj, Phone } from '@/domain/value-objects';
 import { InvalidUserError } from '@/domain/errors/invalid-user.error';
+import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
+import { UserCreatedEvent } from '@/domain/events/user.events';
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
@@ -33,6 +35,8 @@ export class CreateUserUseCase {
     @Inject(USER_REGISTRATION_UNIT_OF_WORK)
     private readonly registration: UserRegistrationUnitOfWork,
     @Inject(ROLE_REPOSITORY) private readonly roleRepository: RoleRepository,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
 
   async execute(input: CreateUserInputDto): Promise<CreateUserOutputDto> {
@@ -80,7 +84,7 @@ export class CreateUserUseCase {
       roleId: role.id,
     });
 
-    return this.registration.run(async ({ users, profiles }) => {
+    const result = await this.registration.run(async ({ users, profiles }) => {
       const profileInput = {
         id: profileId,
         name: input.name,
@@ -108,5 +112,15 @@ export class CreateUserUseCase {
         updatedAt: savedUser.updatedAt,
       };
     });
+
+    await this.eventPublisher.publish(
+      new UserCreatedEvent(result.id, {
+        username: result.username,
+        email: result.email,
+        role: result.role,
+      }),
+    );
+
+    return result;
   }
 }

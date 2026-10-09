@@ -6,6 +6,7 @@ import { FakePasswordHasher } from '../../../../../fakes/fake-password-hasher';
 import { UserAlreadyExistsError } from '@/domain/errors/user-already-exists.error';
 import { InvalidUserError } from '@/domain/errors/invalid-user.error';
 import { FakeUserRegistrationUnitOfWork } from '../../../../../fakes/fake-user-registration-unit-of-work';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('CreateUserUseCase', () => {
   let useCase: CreateUserUseCase;
@@ -22,6 +23,7 @@ describe('CreateUserUseCase', () => {
       new FakePasswordHasher(),
       registration,
       new FakeRoleRepository(),
+      new FakeDomainEventPublisher(),
     );
   });
 
@@ -114,6 +116,7 @@ describe('CreateUserUseCase', () => {
         new FakePasswordHasher(),
         registration,
         missingRole as never,
+        new FakeDomainEventPublisher(),
       ).execute(input),
     ).rejects.toThrow('Role with slug client not found');
     const incompatibleRole = {
@@ -131,6 +134,7 @@ describe('CreateUserUseCase', () => {
         new FakePasswordHasher(),
         registration,
         incompatibleRole as never,
+        new FakeDomainEventPublisher(),
       ).execute(input),
     ).rejects.toThrow('cannot be assigned');
   });

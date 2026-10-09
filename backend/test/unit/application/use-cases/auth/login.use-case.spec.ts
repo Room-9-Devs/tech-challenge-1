@@ -6,6 +6,7 @@ import { FakePasswordHasher } from '../../../../fakes/fake-password-hasher';
 import { FakeRefreshTokenService, FakeTokenService } from '../../../../fakes/fake-token-services';
 import { makeUser } from '../../../../fakes/user-fixture';
 import { AuthenticationError } from '@/domain/errors/authentication.error';
+import { FakeDomainEventPublisher } from '../../../../fakes/fake-domain-event-publisher';
 
 describe('LoginUseCase', () => {
   let users: FakeUserRepository;
@@ -16,7 +17,7 @@ describe('LoginUseCase', () => {
     users = new FakeUserRepository();
     await users.save(makeUser({ password: 'hash:password123', roleId: 'role-staff' }));
     refreshTokens = new FakeRefreshTokenRepository();
-    useCase = new LoginUseCase(users, new FakePasswordHasher(), new FakeRoleRepository(), refreshTokens, new FakeRefreshTokenService(), new FakeTokenService());
+    useCase = new LoginUseCase(users, new FakePasswordHasher(), new FakeRoleRepository(), refreshTokens, new FakeRefreshTokenService(), new FakeTokenService(), new FakeDomainEventPublisher());
   });
 
   it('authenticates by email and persists a hashed refresh token', async () => {

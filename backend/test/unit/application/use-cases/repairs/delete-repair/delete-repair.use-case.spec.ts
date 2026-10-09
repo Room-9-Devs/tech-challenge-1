@@ -2,6 +2,7 @@ import { DeleteRepairUseCase } from '@/application/use-cases/repairs/delete-repa
 import { FakeRepairRepository } from '../../../../../fakes/fake-repair.repository';
 import { RepairNotFoundError } from '@/domain/errors/repair-not-found.error';
 import { Repair } from '@/domain/entities/repair.entity';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('DeleteRepairUseCase', () => {
   let useCase: DeleteRepairUseCase;
@@ -9,7 +10,7 @@ describe('DeleteRepairUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeRepairRepository();
-    useCase = new DeleteRepairUseCase(fakeRepository);
+    useCase = new DeleteRepairUseCase(fakeRepository, new FakeDomainEventPublisher());
   });
 
   it('should soft delete an existing repair', async () => {

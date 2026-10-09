@@ -7,6 +7,8 @@ import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.reposi
 import { REFRESH_TOKEN_REPOSITORY, RefreshTokenRepository } from '@/application/ports/refresh-token.repository';
 import { REFRESH_TOKEN_SERVICE, RefreshTokenService } from '@/application/ports/refresh-token-service.port';
 import { TOKEN_SERVICE, TokenService } from '@/application/ports/token-service.port';
+import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
+import { AuthLoginSucceededEvent, AuthLoginFailedEvent } from '@/domain/events/auth.events';
 
 export interface LoginInput { login: string; password: string; }
 export interface LoginOutput { accessToken: string; refreshToken: string; expiresIn: number; user: { id: string; username: string; email: string; role: string; entityType: string; }; }
@@ -20,17 +22,34 @@ export class LoginUseCase {
     @Inject(REFRESH_TOKEN_REPOSITORY) private readonly refreshTokens: RefreshTokenRepository,
     @Inject(REFRESH_TOKEN_SERVICE) private readonly refreshTokenService: RefreshTokenService,
     @Inject(TOKEN_SERVICE) private readonly tokens: TokenService,
+    @Inject(DOMAIN_EVENT_PUBLISHER) private readonly eventPublisher: DomainEventPublisher,
   ) { }
 
   async execute(input: LoginInput): Promise<LoginOutput> {
     const login = input.login.toLowerCase();
     const user = login.includes('@') ? await this.users.findByEmail(login) : await this.users.findByUsername(input.login);
-    if (!user || !(await this.passwords.compare(input.password, user.password))) throw new AuthenticationError();
+    if (!user || !(await this.passwords.compare(input.password, user.password))) {
+      await this.eventPublisher.publish(
+        new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', {
+          username: input.login,
+          reason: 'invalid_credentials',
+        }),
+      );
+      throw new AuthenticationError();
+    }
     const role = await this.roles.findById(user.roleId);
     const accessToken = this.tokens.sign({ sub: user.id, role: role?.slug || user.roleId, entityType: user.entityType });
     const refreshToken = this.refreshTokenService.generate();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await this.refreshTokens.save({ userId: user.id, tokenHash: this.refreshTokenService.hash(refreshToken), expiresAt, revokedAt: null });
+
+    await this.eventPublisher.publish(
+      new AuthLoginSucceededEvent(user.id, {
+        ip: undefined,
+        userAgent: undefined,
+      }),
+    );
+
     return { accessToken, refreshToken, expiresIn: 900, user: { id: user.id, username: user.username, email: user.email, role: role?.slug || user.roleId, entityType: user.entityType } };
   }
 }
