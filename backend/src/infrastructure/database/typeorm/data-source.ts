@@ -9,6 +9,7 @@ import { VehicleOrmEntity } from './entities/vehicle.orm-entity';
 import { RepairOrmEntity } from './entities/repair.orm-entity';
 import { ProductOrmEntity } from './entities/product.orm-entity';
 import { StockOrmEntity } from './entities/stock.orm-entity';
+import { StockMovementOrmEntity } from './entities/stock-movement.orm-entity';
 
 loadEnvironment();
 
@@ -29,6 +30,7 @@ export const AppDataSource = new DataSource({
     RepairOrmEntity,
     ProductOrmEntity,
     StockOrmEntity,
+    StockMovementOrmEntity,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
