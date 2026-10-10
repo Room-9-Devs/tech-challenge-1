@@ -23,7 +23,7 @@ export class EventTypeOrmEntity {
   @Column({
     name: 'allowed_entity_types',
     type: 'enum',
-    enum: ['client', 'employee', 'user', 'vehicle', 'product', 'stock', 'repair'],
+    enum: ['client', 'employee', 'user', 'vehicle', 'product', 'stock', 'repair', 'work_order'],
     array: true,
     default: '{}',
   })

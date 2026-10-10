@@ -6,6 +6,7 @@ export const EVENT_ENTITY_TYPES = [
   'product',
   'stock',
   'repair',
+  'work_order',
 ] as const;
 
 export type EventEntityType = (typeof EVENT_ENTITY_TYPES)[number];
