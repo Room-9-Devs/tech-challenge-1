@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -40,6 +41,9 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { stockLinks, stockMovementLinks } from '../hateoas/resources/stock.links';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
+import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 
 const ALLOWED_STOCK_SORT_COLUMNS = [
   'quantity',
@@ -220,6 +224,7 @@ export class StockController {
   }
 
   @Post('movements')
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Registra uma movimentação de estoque' })
   @ApiBody({ type: CreateStockMovementRequestDto })
@@ -245,10 +250,12 @@ export class StockController {
   async createMovement(
     @Req() request: Request & { user: AccessTokenPayload },
     @Body() dto: CreateStockMovementRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<StockMovementResponseDto> {
     return this.createStockMovementUseCase.execute({
       ...dto,
       createdBy: request.user.sub,
+      createdByUsername: currentUser?.username,
     });
   }
 }

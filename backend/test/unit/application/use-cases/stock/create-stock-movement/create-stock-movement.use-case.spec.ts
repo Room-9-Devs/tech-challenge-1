@@ -15,12 +15,15 @@ import { StockNotFoundError } from '@/domain/errors/stock-not-found.error';
 import { InsufficientStockError } from '@/domain/errors/insufficient-stock.error';
 import { StockBelowReservedError } from '@/domain/errors/stock-below-reserved.error';
 import { InvalidStockMovementError } from '@/domain/errors/invalid-stock-movement.error';
+import { StockAdjustedEvent } from '@/domain/events/stock.events';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 
 describe('CreateStockMovementUseCase', () => {
   let useCase: CreateStockMovementUseCase;
   let fakeProductRepository: FakeProductRepository;
   let fakeStockRepository: FakeStockRepository;
   let fakeStockMovementRepository: FakeStockMovementRepository;
+  let eventPublisher: FakeDomainEventPublisher;
   let product: Product;
 
   const userId = '660e8400-e29b-41d4-a716-446655440000';
@@ -31,12 +34,14 @@ describe('CreateStockMovementUseCase', () => {
     fakeStockMovementRepository = new FakeStockMovementRepository(
       fakeProductRepository,
     );
+    eventPublisher = new FakeDomainEventPublisher();
     useCase = new CreateStockMovementUseCase(
       fakeProductRepository,
       new FakeStockMovementUnitOfWork(
         fakeStockRepository,
         fakeStockMovementRepository,
       ),
+      eventPublisher,
     );
 
     product = Product.create({
@@ -348,6 +353,78 @@ describe('CreateStockMovementUseCase', () => {
 
       expect(await currentQuantity()).toBe(10);
       expect(fakeStockMovementRepository.items()).toHaveLength(0);
+    });
+  });
+
+  describe('audit event', () => {
+    it.each([
+      [StockMovementType.IN, 5, 10, 15],
+      [StockMovementType.OUT, 4, 10, 6],
+      [StockMovementType.ADJUSTMENT, 3, 10, 3],
+    ])(
+      'should publish StockAdjustedEvent for %s movements',
+      async (movementType, quantity, before, after) => {
+        addStock(before);
+
+        const result = await useCase.execute({
+          productId: product.id,
+          movementType,
+          quantity,
+          description: 'Contagem de inventário',
+          createdBy: userId,
+          createdByUsername: 'quiteria.dantas',
+        });
+
+        const events = eventPublisher.getPublishedEvents();
+        expect(events).toHaveLength(1);
+
+        const event = events[0] as StockAdjustedEvent;
+        expect(event).toBeInstanceOf(StockAdjustedEvent);
+        expect(event.entityId).toBe(result.stock.id);
+        expect(event.createdBy).toBe('quiteria.dantas');
+        expect(event.metadata).toEqual({
+          productId: product.id,
+          oldQuantity: before,
+          newQuantity: after,
+          reason: 'Contagem de inventário',
+          movementId: result.id,
+          movementType,
+          quantity,
+        });
+      },
+    );
+
+    it('should not publish an event when the movement is rejected', async () => {
+      addStock(2);
+
+      await expect(
+        useCase.execute({
+          productId: product.id,
+          movementType: StockMovementType.OUT,
+          quantity: 5,
+          createdBy: userId,
+        }),
+      ).rejects.toThrow(InsufficientStockError);
+
+      expect(eventPublisher.getPublishedEvents()).toHaveLength(0);
+    });
+
+    it('should not publish an event when the transaction is rolled back', async () => {
+      addStock(10);
+      jest
+        .spyOn(fakeStockMovementRepository, 'save')
+        .mockRejectedValueOnce(new Error('Failed to register movement'));
+
+      await expect(
+        useCase.execute({
+          productId: product.id,
+          movementType: StockMovementType.IN,
+          quantity: 1,
+          createdBy: userId,
+        }),
+      ).rejects.toThrow('Failed to register movement');
+
+      expect(eventPublisher.getPublishedEvents()).toHaveLength(0);
     });
   });
 });

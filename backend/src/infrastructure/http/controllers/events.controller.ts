@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -25,9 +26,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
-import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventLinks } from '../hateoas/resources/event.links';
+import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
+import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
 
 @ApiTags('Eventos')
 @Controller('events')
@@ -35,6 +37,7 @@ export class EventsController {
   constructor(
     private readonly recordEventUseCase: RecordEventUseCase,
     private readonly listEventsByEntityIdUseCase: ListEventsByEntityIdUseCase,
+    private readonly findWorkOrder: FindWorkOrderUseCase,
   ) {}
 
   @Post()
@@ -54,6 +57,11 @@ export class EventsController {
     @Body() dto: RecordEventRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<EventResponseDto> {
+    if (dto.entityType === 'work_order') {
+      throw new ForbiddenException(
+        'Eventos de ordem de serviço são gerados pelo sistema',
+      );
+    }
     return this.recordEventUseCase.execute({
       ...dto,
       createdBy: dto.createdBy ?? currentUser?.username,
@@ -62,9 +70,14 @@ export class EventsController {
 
   @Get(':entityType/:entityId')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Listar eventos por entidade' })
-  @ApiParam({ name: 'entityType', description: 'Tipo da entidade', enum: EVENT_ENTITY_TYPES })
+  @ApiParam({
+    name: 'entityType',
+    description: 'Tipo da entidade',
+    enum: EVENT_ENTITY_TYPES,
+  })
   @ApiParam({ name: 'entityId', description: 'ID da entidade', format: 'uuid' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -75,7 +88,18 @@ export class EventsController {
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
     @Param('entityId') entityId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<EventResponseDto[]> {
+    if (entityType === 'work_order') {
+      await this.findWorkOrder.execute({
+        id: entityId,
+        actor: {
+          id: currentUser.id,
+          username: currentUser.username,
+          entityType: currentUser.entityType,
+        },
+      });
+    }
     return this.listEventsByEntityIdUseCase.execute({ entityType, entityId });
   }
 }

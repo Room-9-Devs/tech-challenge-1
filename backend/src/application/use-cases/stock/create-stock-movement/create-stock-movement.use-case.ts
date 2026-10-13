@@ -7,6 +7,11 @@ import {
   STOCK_MOVEMENT_UNIT_OF_WORK,
   StockMovementUnitOfWork,
 } from '@/application/ports/stock-movement-unit-of-work.port';
+import {
+  DOMAIN_EVENT_PUBLISHER,
+  DomainEventPublisher,
+} from '@/application/ports/domain-event-publisher.port';
+import { StockAdjustedEvent } from '@/domain/events/stock.events';
 import { PRODUCT_REPOSITORY } from '../../products/create-product/create-product.use-case';
 import { CreateStockMovementInputDto } from './create-stock-movement-input.dto';
 import { CreateStockMovementOutputDto } from './create-stock-movement-output.dto';
@@ -18,6 +23,8 @@ export class CreateStockMovementUseCase {
     private readonly productRepository: ProductRepository,
     @Inject(STOCK_MOVEMENT_UNIT_OF_WORK)
     private readonly unitOfWork: StockMovementUnitOfWork,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
 
   async execute(
@@ -29,7 +36,7 @@ export class CreateStockMovementUseCase {
       throw new ProductNotFoundError(input.productId);
     }
 
-    return this.unitOfWork.run(async ({ stocks, stockMovements }) => {
+    const result = await this.unitOfWork.run(async ({ stocks, stockMovements }) => {
       const stock = await stocks.findByProductId(product.id);
 
       if (!stock) {
@@ -72,5 +79,21 @@ export class CreateStockMovementUseCase {
         },
       };
     });
+
+    // Publicado só depois do commit, para não auditar uma movimentação desfeita.
+    // events.created_by referencia users.username, então o autor vai pelo username.
+    await this.eventPublisher.publish(
+      new StockAdjustedEvent(result.stock.id, input.createdByUsername, {
+        productId: result.productId,
+        oldQuantity: result.previousQuantity,
+        newQuantity: result.stock.quantity,
+        reason: result.description ?? undefined,
+        movementId: result.id,
+        movementType: result.movementType,
+        quantity: result.quantity,
+      }),
+    );
+
+    return result;
   }
 }

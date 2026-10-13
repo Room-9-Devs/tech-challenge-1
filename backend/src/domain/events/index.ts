@@ -7,3 +7,4 @@ export * from './repair.events';
 export * from './client.events';
 export * from './employee.events';
 export * from './auth.events';
+export * from './work-order.events';

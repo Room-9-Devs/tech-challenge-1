@@ -1,0 +1,5831 @@
+{
+  "info": {
+    "name": "Oficina Mecânica API",
+    "description": "Collection para testar a API da oficina mecânica.\n\n1. Rode `Autenticação > Login (admin)`: o token é salvo automaticamente na variável `accessToken`. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão (403).\n2. As rotas protegidas usam o token do admin pela autenticação Bearer da collection.\n3. Os requests de criação geram dados únicos a cada execução e salvam o ID criado em variáveis (`productId`, `stockProductId`, `stockMovementId`, `repairId`, `vehicleId`, `userId`, `clientUserId`, `employeeUserId`, `eventTypeId`).\n4. Cada pasta cobre o fluxo feliz e os erros esperados (400, 401, 403, 404, 409).\n5. A pasta `Bugs conhecidos (falham até corrigir)` valida o comportamento correto em casos que hoje estão errados. Ela fica vermelha até os bugs serem corrigidos.\n6. A pasta `Encerramento` altera a senha (e restaura) e faz logout.\n7. A pasta `Crash de auditoria` derruba o servidor de propósito. Fica desligada; para rodar, defina `runCrashTest` = `true`.\n\nTodos os requests validam o status HTTP esperado, então dá para usar o Collection Runner.\nOs usuários de desenvolvimento são criados com `npm run seed` (senha `password123`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "clientUserId",
+      "value": ""
+    },
+    {
+      "key": "employeeUserId",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "productSku",
+      "value": ""
+    },
+    {
+      "key": "repairId",
+      "value": ""
+    },
+    {
+      "key": "repairDescription",
+      "value": ""
+    },
+    {
+      "key": "vehicleId",
+      "value": ""
+    },
+    {
+      "key": "licensePlate",
+      "value": ""
+    },
+    {
+      "key": "stockProductId",
+      "value": ""
+    },
+    {
+      "key": "stockProductSku",
+      "value": ""
+    },
+    {
+      "key": "stockMovementId",
+      "value": ""
+    },
+    {
+      "key": "staffToken",
+      "value": ""
+    },
+    {
+      "key": "clientToken",
+      "value": ""
+    },
+    {
+      "key": "rotatedRefreshToken",
+      "value": ""
+    },
+    {
+      "key": "clientUniq",
+      "value": ""
+    },
+    {
+      "key": "clientDocument",
+      "value": ""
+    },
+    {
+      "key": "eventTypeId",
+      "value": ""
+    },
+    {
+      "key": "eventTypeCode",
+      "value": ""
+    },
+    {
+      "key": "crashVehicleId",
+      "value": ""
+    },
+    {
+      "key": "crashEventTypeId",
+      "value": ""
+    },
+    {
+      "key": "runCrashTest",
+      "value": "false"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (login)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "  pm.collectionVariables.set(\"refreshToken\", body.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"jose.silveira\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Admin do seed. Outros usuários: quiteria.dantas e jeremias.lopes (staff), agnaldo.guimaraes (client). Senha: password123."
+          }
+        },
+        {
+          "name": "Login (staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (login staff)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"staffToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"quiteria.dantas\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Token salvo em `staffToken`, usado nos testes de permissão."
+          }
+        },
+        {
+          "name": "Login (client)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (login client)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"clientToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"agnaldo.guimaraes\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Token salvo em `clientToken`, usado nos testes de permissão."
+          }
+        },
+        {
+          "name": "Login com senha errada (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (senha errada)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"jose.silveira\",\n  \"password\": \"senhaerrada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login com usuário inexistente (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (usuário inexistente)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"nao.existe\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login sem body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (body vazio)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"rotatedRefreshToken\", pm.collectionVariables.get(\"refreshToken\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tokens renovados)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.accessToken) pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "  if (body.refreshToken) pm.collectionVariables.set(\"refreshToken\", body.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh com token já rotacionado (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (token rotacionado não vale mais)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{rotatedRefreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Reusa o refresh token que o request anterior trocou por um novo."
+          }
+        },
+        {
+          "name": "Refresh com token inválido (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (token inválido)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"token-invalido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rota protegida sem token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (sem token)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rota protegida com token inválido (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"invalidToken\", \"abc.def.ghi\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (token inválido)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{invalidToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "description": "Requer login com role admin ou staff (exceto \"Meu perfil\", que aceita qualquer usuário logado).",
+      "item": [
+        {
+          "name": "Cadastrar usuário (cliente)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));",
+                  "pm.collectionVariables.set(\"clientUniq\", pm.variables.get(\"uniq\"));",
+                  "pm.collectionVariables.set(\"clientDocument\", pm.variables.get(\"document\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (cliente cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"userId\", pm.response.json().id);",
+                  "  pm.collectionVariables.set(\"clientUserId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"maria.souza.{{uniq}}\",\n  \"email\": \"maria.souza.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Maria Souza\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 98888-7777\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "O ID também é salvo em `clientUserId`, usado como dono no cadastro de veículo."
+          }
+        },
+        {
+          "name": "Cadastrar usuário (funcionário)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (funcionário cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"userId\", pm.response.json().id);",
+                  "  pm.collectionVariables.set(\"employeeUserId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"carlos.santos.{{uniq}}\",\n  \"email\": \"carlos.santos.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"employee\",\n  \"name\": \"Carlos Santos\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-6666\",\n  \"jobTitle\": \"Mecânico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "O ID também é salvo em `employeeUserId`, usado em Permissões > Alterar role do usuário."
+          }
+        },
+        {
+          "name": "Cadastrar usuário duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (usuário duplicado)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"maria.souza.{{clientUniq}}\",\n  \"email\": \"maria.souza.{{clientUniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Maria Souza\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{clientDocument}}\",\n  \"phone\": \"(11) 98888-7777\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Reusa username, e-mail e CPF do último \"Cadastrar usuário (cliente)\"."
+          }
+        },
+        {
+          "name": "Cadastrar usuário com CPF inválido (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (CPF inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"cpf.invalido.{{uniq}}\",\n  \"email\": \"cpf.invalido.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Maria Souza\",\n  \"documentType\": \"CPF\",\n  \"document\": \"111.111.111-11\",\n  \"phone\": \"(11) 98888-7777\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar usuário com campo extra (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (campo não permitido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"extra.{{uniq}}\",\n  \"email\": \"extra.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Maria Souza\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 98888-7777\",\n  \"roleId\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "O ValidationPipe rejeita propriedades fora do DTO (`forbidNonWhitelisted`)."
+          }
+        },
+        {
+          "name": "Cadastrar usuário como client (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não cadastra)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"por.client.{{uniq}}\",\n  \"email\": \"por.client.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Maria Souza\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 98888-7777\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Meu perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (perfil)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuários",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuários por tipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem por tipo)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?filters={\"entityType\":\"employee\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"entityType\":\"employee\"}"
+                }
+              ]
+            },
+            "description": "Filtro por `entityType` (client ou employee). O antigo `?type=` hoje retorna 400."
+          }
+        },
+        {
+          "name": "Listar usuários com limit acima do máximo (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (limit > 100)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?limit=1000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuários com sort em campo não permitido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (campo de sort não permitido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?sort=[{\"field\":\"password\",\"order\":\"asc\"}]",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"password\",\"order\":\"asc\"}]"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuários com sort inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (sort não é JSON)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?sort=xx",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "xx"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuários como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não lista usuários)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuário por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (usuário encontrado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuário inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (usuário inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissões",
+      "description": "Somente admin.",
+      "item": [
+        {
+          "name": "Listar roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (roles)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/permissions/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar role do usuário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (role alterado)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"staff\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/users/{{employeeUserId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "users",
+                "{{employeeUserId}}",
+                "role"
+              ]
+            },
+            "description": "Altera o role do último funcionário cadastrado em Usuários (variável `employeeUserId`). Roles: admin, staff, client."
+          }
+        },
+        {
+          "name": "Listar roles como staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (só admin)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar para role inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (role inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"superuser\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/users/{{employeeUserId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "users",
+                "{{employeeUserId}}",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar role de usuário inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (usuário inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/users/00000000-0000-4000-8000-000000000000/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "users",
+                "00000000-0000-4000-8000-000000000000",
+                "role"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tipos de Reparo/Serviço",
+      "description": "Rotas públicas (sem token).",
+      "item": [
+        {
+          "name": "Listar reparos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar reparos (paginação, busca e filtros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem paginada)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs?page=1&limit=10&search=troca&sort=[{\"field\":\"description\",\"order\":\"asc\"}]&filters={\"unitValue\":120}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "troca"
+                },
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"description\",\"order\":\"asc\"}]"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"unitValue\":120}"
+                }
+              ]
+            },
+            "description": "sort: JSON com field (description, unitValue, createdAt, updatedAt) e order (asc|desc). filters: JSON com description e/ou unitValue."
+          }
+        },
+        {
+          "name": "Criar reparo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"repairDescription\", \"Troca de embreagem \" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (reparo criado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"repairId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"{{repairDescription}}\",\n  \"unitValue\": 380\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar reparo por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (reparo encontrado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs/{{repairId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "{{repairId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar reparo duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (descrição duplicada)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"{{repairDescription}}\",\n  \"unitValue\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar reparo como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não cria reparo)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Reparo do client\",\n  \"unitValue\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar reparos como client (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (client pode listar)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar reparo inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (reparo inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar reparo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (reparo atualizado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"{{repairDescription}} - completa\",\n  \"unitValue\": 420\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs/{{repairId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "{{repairId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover reparo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (reparo removido)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs/{{repairId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "{{repairId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar reparo removido (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (reparo removido)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs/{{repairId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "{{repairId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "description": "Requer login com role admin ou staff.",
+      "item": [
+        {
+          "name": "Listar produtos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar produtos (paginação, busca e filtros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem paginada)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=10&search=filtro&sort=[{\"field\":\"name\",\"order\":\"asc\"}]&filters={\"productType\":\"PART\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "filtro"
+                },
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"name\",\"order\":\"asc\"}]"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"productType\":\"PART\"}"
+                }
+              ]
+            },
+            "description": "sort: JSON com field (name, description, sku, productType, unit, cost, salePrice, createdAt, updatedAt) e order (asc|desc). filters: JSON com sku, name, productType e/ou unit."
+          }
+        },
+        {
+          "name": "Criar produto",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"productSku\", \"KIT-EMBREAGEM-\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (produto criado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"productId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{productSku}}\",\n  \"name\": \"Kit de embreagem\",\n  \"description\": \"Platô, disco e rolamento\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 450,\n  \"salePrice\": 720\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "productType: PART | CONSUMABLE. unit: UNIT | LITER | KILOGRAM | METER."
+          }
+        },
+        {
+          "name": "Buscar produto por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto encontrado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar produto (SKU duplicado - 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (SKU duplicado)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{productSku}}\",\n  \"name\": \"Kit de embreagem\",\n  \"description\": \"Platô, disco e rolamento\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 450,\n  \"salePrice\": 720\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "Reusa o SKU do último \"Criar produto\"."
+          }
+        },
+        {
+          "name": "Criar produto (inválido - 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (dados inválidos)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"X\",\n  \"name\": \"A\",\n  \"productType\": \"FOO\",\n  \"unit\": \"LITER\",\n  \"cost\": -1,\n  \"salePrice\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar produto como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não cria produto)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"CLIENT-1\",\n  \"name\": \"x\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 1,\n  \"salePrice\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar produto inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (produto inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar produto com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ID inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar produto com custo acima do máximo (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"uniq\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (custo > 99999999.99)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"OVERFLOW-{{uniq}}\",\n  \"name\": \"Produto caro\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 100000000,\n  \"salePrice\": 100000001\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "cost e salePrice aceitam no máximo 99999999.99 (coluna numeric(10,2))."
+          }
+        },
+        {
+          "name": "Criar produto com 3 casas decimais (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"uniq\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (no máximo 2 casas decimais)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"ARRED-{{uniq}}\",\n  \"name\": \"Produto arredondado\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 10.555,\n  \"salePrice\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar produtos com filtro de enum inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (productType inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?filters={\"productType\":\"FOO\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productType\":\"FOO\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar produto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto atualizado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{productSku}}\",\n  \"name\": \"Kit de embreagem reforçado\",\n  \"description\": \"Platô, disco e rolamento\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 480,\n  \"salePrice\": 760\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Desativar produto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (produto desativado)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "204 se desativado; 409 se houver estoque; 404 se não existir ou já estiver inativo."
+          }
+        },
+        {
+          "name": "Buscar produto desativado (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (produto inativo não encontrado)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "Depois de desativado, o produto não é mais encontrado."
+          }
+        },
+        {
+          "name": "Reativar produto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto reativado)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test(\"Produto volta ativo\", () => pm.expect(pm.response.json().active).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "activate"
+              ]
+            },
+            "description": "Reativa o produto desativado em \"Desativar produto\". O SKU continua o mesmo."
+          }
+        },
+        {
+          "name": "Buscar produto reativado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto encontrado de novo)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto já ativo (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (já está ativo)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (produto inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/00000000-0000-4000-8000-000000000000/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "00000000-0000-4000-8000-000000000000",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ID inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/abc/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "abc",
+                "activate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estoque",
+      "description": "Requer login com role admin ou staff. A pasta cria o próprio produto (`stockProductId`), que já nasce com estoque 0, para não interferir na desativação feita em Produtos. Rode na ordem: os testes conferem o saldo anterior (`previousQuantity`) e o saldo resultante de cada movimentação (IN 10 → OUT 4 → ADJUSTMENT 8). Saída e ajuste respeitam a quantidade reservada: disponível = quantity - reserved.",
+      "item": [
+        {
+          "name": "Criar produto para estoque",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"stockProductSku\", \"FILTRO-OLEO-\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (produto criado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"stockProductId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{stockProductSku}}\",\n  \"name\": \"Filtro de óleo\",\n  \"description\": \"Filtro de óleo para motores 1.0 a 2.0\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 25,\n  \"salePrice\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "Cria um produto novo (não busca um existente). O SKU é gerado no pre-request. O estoque do produto é criado junto, com saldo 0."
+          }
+        },
+        {
+          "name": "Estoque criado com o produto (saldo 0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estoque do produto)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Produto novo já tem estoque com saldo 0\", () => {",
+                  "    pm.expect(body.data).to.have.lengthOf(1);",
+                  "    pm.expect(body.data[0].quantity).to.eql(0);",
+                  "    pm.expect(body.data[0].reserved).to.eql(0);",
+                  "    pm.expect(body.data[0].available).to.eql(0);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{stockProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Entrada de estoque (IN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (entrada registrada)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"stockMovementId\", body.id);",
+                  "  pm.test(\"Saldo anterior 0\", () => pm.expect(body.previousQuantity).to.eql(0));",
+                  "  pm.test(\"Estoque atualizado para 10\", () => {",
+                  "    pm.expect(body.stock.quantity).to.eql(10);",
+                  "    pm.expect(body.stock.available).to.eql(10);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"IN\",\n  \"quantity\": 10,\n  \"description\": \"Compra de 10 filtros de óleo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            },
+            "description": "movementType: IN (soma), OUT (subtrai) ou ADJUSTMENT (define o saldo). quantity: inteiro maior que 0 (ADJUSTMENT aceita 0). Opcionais: description, referenceType (até 50 caracteres) e referenceId (UUID). O usuário responsável (createdBy) vem do token."
+          }
+        },
+        {
+          "name": "Consultar estoque",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estoque)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar estoque (paginação, busca e filtros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estoque filtrado)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Retorna somente o produto filtrado\", () => {",
+                  "    pm.expect(body.data).to.have.lengthOf(1);",
+                  "    pm.expect(body.data[0].productId).to.eql(pm.collectionVariables.get(\"stockProductId\"));",
+                  "    pm.expect(body.data[0].quantity).to.eql(10);",
+                  "    pm.expect(body.data[0].available).to.eql(10);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?page=1&limit=10&search=filtro&sort=[{\"field\":\"quantity\",\"order\":\"desc\"}]&filters={\"productId\":\"{{stockProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "filtro"
+                },
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"quantity\",\"order\":\"desc\"}]"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\"}"
+                }
+              ]
+            },
+            "description": "search: nome ou SKU do produto. sort: JSON com field (quantity, reserved, createdAt, updatedAt) e order (asc|desc). filters: JSON com productId (UUID)."
+          }
+        },
+        {
+          "name": "Saída de estoque (OUT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (saída registrada)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Saldo anterior 10\", () => pm.expect(body.previousQuantity).to.eql(10));",
+                  "  pm.test(\"Estoque atualizado para 6\", () => pm.expect(body.stock.quantity).to.eql(6));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"OUT\",\n  \"quantity\": 4,\n  \"description\": \"Saída de 4 filtros de óleo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Saída maior que o saldo (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (estoque insuficiente)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"OUT\",\n  \"quantity\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            },
+            "description": "A saída é limitada ao disponível (quantity - reserved). Com 10 em estoque e 5 reservados, só é possível retirar 5. A saída é rejeitada e nada é gravado."
+          }
+        },
+        {
+          "name": "Ajuste de estoque (ADJUSTMENT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (ajuste registrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Saldo anterior 6\", () => pm.expect(body.previousQuantity).to.eql(6));",
+                  "  pm.test(\"Estoque ajustado para 8\", () => pm.expect(body.stock.quantity).to.eql(8));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"ADJUSTMENT\",\n  \"quantity\": 8,\n  \"description\": \"Contagem de inventário\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            },
+            "description": "Define o saldo atual com a quantidade informada (contagem de inventário). Não pode ficar abaixo da quantidade reservada (409). O previousQuantity guarda o saldo anterior, então a diferença do ajuste é quantity - previousQuantity."
+          }
+        },
+        {
+          "name": "Movimentação inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (dados inválidos)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"TRANSFER\",\n  \"quantity\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Movimentação com quantidade negativa (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (quantidade negativa)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"IN\",\n  \"quantity\": -5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Movimentação de produto inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (produto não encontrado)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"00000000-0000-4000-8000-000000000000\",\n  \"movementType\": \"IN\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Histórico de movimentações",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (histórico)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            },
+            "description": "Lista as movimentações da mais recente para a mais antiga, com o resumo do produto e o previousQuantity."
+          }
+        },
+        {
+          "name": "Histórico de movimentações (filtros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (histórico filtrado)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Retorna somente a saída do produto\", () => {",
+                  "    pm.expect(body.data).to.have.lengthOf(1);",
+                  "    pm.expect(body.data[0].movementType).to.eql(\"OUT\");",
+                  "    pm.expect(body.data[0].quantity).to.eql(4);",
+                  "    pm.expect(body.data[0].previousQuantity).to.eql(10);",
+                  "    pm.expect(body.data[0].product.sku).to.eql(pm.collectionVariables.get(\"stockProductSku\"));",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements?page=1&limit=10&search=filtro&sort=[{\"field\":\"createdAt\",\"order\":\"desc\"}]&filters={\"productId\":\"{{stockProductId}}\",\"movementType\":\"OUT\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "filtro"
+                },
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"createdAt\",\"order\":\"desc\"}]"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\",\"movementType\":\"OUT\"}"
+                }
+              ]
+            },
+            "description": "search: nome ou SKU do produto. sort: JSON com field (createdAt, quantity, movementType) e order (asc|desc). filters: JSON com productId (UUID), movementType (IN | OUT | ADJUSTMENT) e/ou createdBy (UUID do usuário)."
+          }
+        },
+        {
+          "name": "Histórico de movimentações (período)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"historyStartDate\", new Date(Date.now() - 60 * 60 * 1000).toISOString());",
+                  "pm.variables.set(\"historyEndDate\", new Date(Date.now() + 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (histórico por período)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Retorna as 3 movimentações do produto, da mais recente para a mais antiga\", () => {",
+                  "    pm.expect(body.data.map((item) => item.movementType)).to.eql([\"ADJUSTMENT\", \"OUT\", \"IN\"]);",
+                  "    pm.expect(body.data.map((item) => item.previousQuantity)).to.eql([6, 10, 0]);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements?filters={\"productId\":\"{{stockProductId}}\"}&startDate={{historyStartDate}}&endDate={{historyEndDate}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\"}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "{{historyStartDate}}"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{historyEndDate}}"
+                }
+              ]
+            },
+            "description": "startDate e endDate em ISO 8601. O pre-request usa a última hora como período. startDate depois de endDate retorna 400."
+          }
+        },
+        {
+          "name": "Histórico de movimentações (filtro inválido - 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (filtro inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements?filters={\"movementType\":\"TRANSFER\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"movementType\":\"TRANSFER\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Histórico com data inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (data inválida)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements?startDate=data-invalida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "data-invalida"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consultar estoque como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não vê estoque)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Desativar produto com estoque (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (produto com saldo)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{stockProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{stockProductId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar unidade de produto com estoque (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (unidade bloqueada com saldo)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{stockProductSku}}\",\n  \"name\": \"Filtro de óleo\",\n  \"description\": \"Filtro de óleo para motores 1.0 a 2.0\",\n  \"productType\": \"PART\",\n  \"unit\": \"LITER\",\n  \"cost\": 25,\n  \"salePrice\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{stockProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{stockProductId}}"
+              ]
+            },
+            "description": "Com saldo em estoque, a unidade e o tipo do produto não podem mudar: o saldo passaria a significar outra coisa."
+          }
+        },
+        {
+          "name": "Ajustar saldo para 10 (preparo da concorrência)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (saldo ajustado)\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{stockProductId}}\",\n  \"movementType\": \"ADJUSTMENT\",\n  \"quantity\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "15 saídas concorrentes com saldo 10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (consulta do saldo)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "const token = pm.collectionVariables.get(\"accessToken\");",
+                  "const productId = pm.collectionVariables.get(\"stockProductId\");",
+                  "const body = { productId, movementType: \"OUT\", quantity: 1 };",
+                  "Promise.all(Array.from({ length: 15 }, () => send(\"POST\", \"/stock/movements\", token, body)))",
+                  "  .then(async (responses) => {",
+                  "    const ok = responses.filter((r) => r.code === 201).length;",
+                  "    const stock = (await send(\"GET\", \"/stock?filters=\" + encodeURIComponent(JSON.stringify({ productId })), token)).json().data[0];",
+                  "    pm.test(\"Exatamente 10 saídas aceitas (recebido: \" + ok + \")\", () => pm.expect(ok).to.equal(10));",
+                  "    pm.test(\"Saldo final 0, nunca negativo (recebido: \" + stock.quantity + \")\", () => pm.expect(stock.quantity).to.equal(0));",
+                  "  });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{stockProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\"}"
+                }
+              ]
+            },
+            "description": "Dispara 15 OUT de 1 unidade ao mesmo tempo. O lock da transação deve aceitar exatamente 10 e deixar o saldo em 0."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Veículos",
+      "description": "Rotas públicas (sem token). O dono do veículo é o último cliente cadastrado em Usuários (variável `clientUserId`).",
+      "item": [
+        {
+          "name": "Cadastrar veículo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                  "const digit = () => Math.floor(Math.random() * 10);",
+                  "pm.collectionVariables.set(\"licensePlate\", letter() + letter() + letter() + digit() + letter() + digit() + digit());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (veículo cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"vehicleId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{licensePlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            },
+            "description": "O dono vai na rota (`clientUserId`). Placa gerada aleatoriamente no formato Mercosul (ABC1D23). Também aceita o formato antigo ABC-1234."
+          }
+        },
+        {
+          "name": "Cadastrar veículo com placa duplicada (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (placa duplicada)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{licensePlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar veículo para dono inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (dono inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"ZZZ9Z99\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar veículo com dono não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (user_id inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{licensePlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar veículo com ano inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ano inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"QQQ1Q11\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 1500,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar veículo com placa inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (placa inválida)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"!!\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar veículo como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não cadastra veículo)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{licensePlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar veículos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar veículo por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (veículo encontrado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar veículo inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (veículo inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar veículo com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ID inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar veículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (veículo atualizado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{licensePlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Prata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            },
+            "description": "O dono (user_id) não pode ser alterado."
+          }
+        },
+        {
+          "name": "Consultar FIPE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (preços FIPE)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/fipe/001004-9",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "fipe",
+                "001004-9"
+              ]
+            },
+            "description": "Consulta a API pública da FIPE (fipe.parallelum.com.br). Depende de internet e da disponibilidade desse serviço."
+          }
+        },
+        {
+          "name": "Consultar FIPE com código inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (código FIPE inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/fipe/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "fipe",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover veículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (veículo removido)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar veículo removido (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (veículo removido)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{vehicleId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tipos de Evento",
+      "item": [
+        {
+          "name": "Criar tipo de evento",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"eventTypeCode\", \"teste.evento\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (tipo criado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"eventTypeId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{eventTypeCode}}\",\n  \"name\": \"Evento de teste\",\n  \"description\": \"Criado pela collection\",\n  \"allowedEntityTypes\": [\"user\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar tipos de evento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/event-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar tipo de evento por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (busca por ID)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{eventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{eventTypeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar tipo de evento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tipo atualizado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Evento de teste (editado)\",\n  \"allowedEntityTypes\": [\n    \"user\",\n    \"vehicle\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{eventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{eventTypeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar tipo de evento como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não cria tipo)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"client.teste\",\n  \"name\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Eventos",
+      "item": [
+        {
+          "name": "Registrar evento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (evento registrado)\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"note\": \"Evento registrado pela collection\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar eventos de um usuário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (eventos do usuário)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Retorna o evento registrado\", () => pm.expect(pm.response.json().some((e) => e.eventTypeCode === \"user.updated\")).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/user/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "user",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bugs conhecidos (falham até corrigir)",
+      "item": [
+        {
+          "name": "Autenticação",
+          "item": [
+            {
+              "name": "Refresh concorrente com o mesmo token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (login)\", () => pm.response.to.have.status(200));",
+                      "",
+                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                      "  method,",
+                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                      "const refreshToken = pm.response.json().refreshToken;",
+                      "Promise.all([1, 2, 3].map(() => send(\"POST\", \"/auth/refresh\", \"\", { refreshToken })))",
+                      "  .then((responses) => {",
+                      "    const codes = responses.map((r) => r.code);",
+                      "    pm.test(\"Só 1 de 3 refreshes simultâneos pode passar (recebido: \" + codes.join(\", \") + \")\", () => pm.expect(codes.filter((c) => c === 200).length).to.equal(1));",
+                      "  });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"login\": \"jeremias.lopes\",\n  \"password\": \"password123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Faz login e manda 3 refreshes ao mesmo tempo com o mesmo token. Hoje mais de um recebe 200 (revogação não atômica)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuários e permissões",
+          "item": [
+            {
+              "name": "Buscar usuário com ID não-UUID (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "abc"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Alterar role com userId não-UUID (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"client\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/permissions/users/abc/role",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "permissions",
+                    "users",
+                    "abc",
+                    "role"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Staff cadastrando funcionário (403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                      "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                      "const checkDigit = (base) => {",
+                      "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                      "  const rest = (sum * 10) % 11;",
+                      "  return rest === 10 ? 0 : rest;",
+                      "};",
+                      "digits.push(checkDigit(digits));",
+                      "digits.push(checkDigit(digits));",
+                      "pm.variables.set(\"uniq\", Date.now().toString());",
+                      "pm.variables.set(\"document\", digits.join(\"\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403 (hoje retorna 201)\", () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{staffToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"func.staff.{{uniq}}\",\n  \"email\": \"func.staff.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"employee\",\n  \"name\": \"Funcionário via Staff\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-6666\",\n  \"jobTitle\": \"Mecânico\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                },
+                "description": "A checagem compara o UUID do papel com \"staff\" e nunca bloqueia."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estoque",
+          "item": [
+            {
+              "name": "Movimentação de estoque gera evento de auditoria",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                      "",
+                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                      "  method,",
+                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                      "const stock = pm.response.json().data[0];",
+                      "send(\"GET\", \"/events/stock/\" + stock.id, pm.collectionVariables.get(\"accessToken\")).then((res) => {",
+                      "  pm.test(\"Existem eventos de estoque registrados (recebido: \" + res.json().length + \")\", () => pm.expect(res.json().length).to.be.above(0));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{stockProductId}}\"}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stock"
+                  ],
+                  "query": [
+                    {
+                      "key": "filters",
+                      "value": "{\"productId\":\"{{stockProductId}}\"}"
+                    }
+                  ]
+                },
+                "description": "Usa o produto da pasta Estoque, que já teve IN, OUT e ADJUSTMENT. Hoje nenhum evento stock.* é gravado."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Veículos",
+          "item": [
+            {
+              "name": "Busca por placa com hífen encontra o veículo",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                      "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                      "const digit = () => Math.floor(Math.random() * 10);",
+                      "pm.variables.set(\"oldPlate\", letter() + letter() + letter() + \"-\" + digit() + digit() + digit() + digit());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201 (veículo com placa antiga criado)\", () => pm.response.to.have.status(201));",
+                      "",
+                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                      "  method,",
+                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                      "if (pm.response.code === 201) {",
+                      "  const token = pm.collectionVariables.get(\"accessToken\");",
+                      "  const plate = pm.variables.get(\"oldPlate\");",
+                      "  const id = pm.response.json().id;",
+                      "  send(\"GET\", \"/vehicles?search=\" + encodeURIComponent(plate), token).then((res) => {",
+                      "    pm.test(\"Busca por \" + plate + \" encontra o veículo (recebido: \" + res.json().data.length + \")\", () => pm.expect(res.json().data.length).to.be.above(0));",
+                      "    return send(\"DELETE\", \"/vehicles/\" + id, token);",
+                      "  });",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"license_plate\": \"{{oldPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "vehicles",
+                    "{{clientUserId}}"
+                  ]
+                },
+                "description": "Cadastra com placa ABC-1234 (salva como ABC1234) e busca com hífen. O veículo é removido no final."
+              }
+            },
+            {
+              "name": "Listar veículos com filtro userId inválido (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/vehicles?filters={\"userId\":\"abc\"}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "vehicles"
+                  ],
+                  "query": [
+                    {
+                      "key": "filters",
+                      "value": "{\"userId\":\"abc\"}"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reparos",
+          "item": [
+            {
+              "name": "Buscar reparo com ID não-UUID (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/repairs/abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "repairs",
+                    "abc"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Criar reparo com valor acima de numeric(10,2) (400)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.variables.set(\"uniq\", Date.now().toString());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Reparo caro {{uniq}}\",\n  \"unitValue\": 100000000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/repairs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "repairs"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Recriar reparo com descrição de um removido (201)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201 (hoje retorna 500)\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"{{repairDescription}}\",\n  \"unitValue\": 100\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/repairs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "repairs"
+                  ]
+                },
+                "description": "Usa a descrição do reparo removido na pasta Tipos de Reparo/Serviço. A constraint UNIQUE não considera o soft delete."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipos de evento e eventos",
+          "item": [
+            {
+              "name": "Criar tipo de evento com código duplicado (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 409 (hoje retorna 500)\", () => pm.response.to.have.status(409));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{eventTypeCode}}\",\n  \"name\": \"Duplicado\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/event-types",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "event-types"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Criar tipo de evento com código inválido (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"User.Created X\",\n  \"name\": \"Inválido\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/event-types",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "event-types"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Buscar tipo de evento inexistente (404)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 404 (hoje retorna 500)\", () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/event-types/00000000-0000-4000-8000-000000000000",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "event-types",
+                    "00000000-0000-4000-8000-000000000000"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Buscar tipo de evento com ID não-UUID (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/event-types/abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "event-types",
+                    "abc"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Atualizar tipo de evento com nome vazio (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 200)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/event-types/{{eventTypeId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "event-types",
+                    "{{eventTypeId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Registrar evento não permitido para a entidade (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"vehicle\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Registrar evento com tipo inexistente (404)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 404 (hoje retorna 500)\", () => pm.response.to.have.status(404));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"eventTypeCode\": \"nao.existe\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Registrar evento com createdBy inexistente (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"usuario.fantasma\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Client registrando evento em nome de outro (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403 (hoje retorna 201)\", () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"jose.silveira\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Client lendo auditoria (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403 (hoje retorna 200)\", () => pm.response.to.have.status(403));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/events/user/{{clientUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events",
+                    "user",
+                    "{{clientUserId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Listar eventos com entityType inválido (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/events/foo/{{clientUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events",
+                    "foo",
+                    "{{clientUserId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Listar eventos com entityId não-UUID (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/events/user/abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "events",
+                    "user",
+                    "abc"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Cada request aqui valida o comportamento CORRETO. Enquanto o bug existir, o teste falha; depois da correção, passa."
+    },
+    {
+      "name": "Encerramento",
+      "description": "Rotas que alteram a sessão ou a senha. Ficam no final para não quebrar as demais durante o Runner.",
+      "item": [
+        {
+          "name": "Alterar senha",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (senha alterada)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"novaSenha123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
+            },
+            "description": "Troca a senha do admin para novaSenha123. Rode \"Restaurar senha\" em seguida para voltar para password123."
+          }
+        },
+        {
+          "name": "Restaurar senha",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (senha restaurada)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"novaSenha123\",\n  \"newPassword\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
+            },
+            "description": "Volta a senha do admin para password123."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (logout)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revoga o refresh token. Rode Login (admin) novamente para continuar testando."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crash de auditoria (desligado por padrão)",
+      "item": [
+        {
+          "name": "Cadastrar veículo para o teste",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                  "const digit = () => Math.floor(Math.random() * 10);",
+                  "pm.variables.set(\"crashPlate\", letter() + letter() + letter() + digit() + letter() + digit() + digit());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (veículo criado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"crashVehicleId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quebrar o tipo vehicle.updated",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "send(\"GET\", \"/event-types\", pm.collectionVariables.get(\"accessToken\")).then((res) => {",
+                  "  pm.collectionVariables.set(\"crashEventTypeId\", res.json().find((t) => t.code === \"vehicle.updated\").id);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tipo alterado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"client\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{crashEventTypeId}}"
+              ]
+            },
+            "description": "Faz a gravação do evento vehicle.updated falhar."
+          }
+        },
+        {
+          "name": "Atualizar veículo (dispara a falha na auditoria)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (resposta antes do crash)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{crashVehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Servidor continua no ar",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 1500);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (hoje o processo morre)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Hoje falha com erro de conexão. Rode `docker restart backend` e depois os 2 próximos requests."
+          }
+        },
+        {
+          "name": "Restaurar o tipo vehicle.updated",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tipo restaurado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"vehicle\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{crashEventTypeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover veículo do teste",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (veículo removido)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{crashVehicleId}}"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Reproduz o crash do servidor quando um handler de auditoria falha. Só roda com a variável `runCrashTest` = `true`.\n\nDepois do crash, rode `docker restart backend`, faça o Login (admin) e execute \"Restaurar o tipo vehicle.updated\" e \"Remover veículo do teste\". Sem restaurar, todo update de veículo derruba o servidor.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.collectionVariables.get(\"runCrashTest\") !== \"true\") {",
+              "  pm.execution.skipRequest();",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -66,6 +66,10 @@ export class TypeOrmStockMovementRepository implements StockMovementRepository {
       allowedSortColumns: ['createdAt', 'quantity', 'movementType'],
     });
 
+    // Desempate estável: sem ele, itens com o mesmo valor de ordenação
+    // podem se repetir ou sumir entre páginas.
+    queryBuilder.addOrderBy('movement.id', 'ASC');
+
     const [ormEntities, totalItems] = await queryBuilder.getManyAndCount();
 
     return {

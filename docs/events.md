@@ -101,6 +101,17 @@ Registro imutável de cada ocorrência.
 | `repair.updated` | Serviço de reparo atualizado | `{ changedFields, old, new }` |
 | `repair.deleted` | Serviço de reparo removido | `{ description, unitValue }` |
 
+### `work_order`
+
+| Código | Descrição | Metadados sugeridos |
+|---|---|---|
+| `work_order.created` | Ordem de serviço criada | `{ number }` |
+| `work_order.status_changed` | Status da ordem de serviço alterado | `{ from, to, reason }` |
+| `work_order.payment_confirmed` | Pagamento da ordem de serviço confirmado | `{ kind }` |
+| `work_order.item_added` | Item adicionado à ordem de serviço | `{ itemId, itemType, serviceId, productId, quantity, unitPrice }` |
+| `work_order.item_quantity_changed` | Quantidade de item da ordem de serviço alterada | `{ itemId, itemType, serviceId, productId, quantity, unitPrice, previousQuantity, newQuantity }` |
+| `work_order.item_removed` | Item removido da ordem de serviço | `{ itemId, itemType, serviceId, productId, quantity, unitPrice }` |
+
 ### `auth`
 
 | Código | Descrição | Metadados sugeridos |

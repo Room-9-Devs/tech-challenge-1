@@ -161,6 +161,11 @@ export class Product {
     this._updatedAt = new Date();
   }
 
+  public activate(): void {
+    this._active = true;
+    this._updatedAt = new Date();
+  }
+
   private static validateSku(sku: string): void {
     if (!sku || sku.trim().length === 0) {
       throw new InvalidProductError('O SKU é obrigatório');

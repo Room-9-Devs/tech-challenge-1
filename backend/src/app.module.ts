@@ -26,6 +26,7 @@ import { ListProductsUseCase } from './application/use-cases/products/list-produ
 import { FindProductUseCase } from './application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
+import { ActivateProductUseCase } from './application/use-cases/products/activate-product/activate-product.use-case';
 import { ListStockUseCase } from './application/use-cases/stock/list-stock/list-stock.use-case';
 import { CreateStockMovementUseCase } from './application/use-cases/stock/create-stock-movement/create-stock-movement.use-case';
 import { ListStockMovementsUseCase } from './application/use-cases/stock/list-stock-movements/list-stock-movements.use-case';
@@ -46,6 +47,7 @@ import { RepairEventAuditHandler } from './application/event-handlers/repair-eve
 import { ClientEventAuditHandler } from './application/event-handlers/client-event-audit.handler';
 import { EmployeeEventAuditHandler } from './application/event-handlers/employee-event-audit.handler';
 import { AuthEventAuditHandler } from './application/event-handlers/auth-event-audit.handler';
+import { WorkOrderEventAuditHandler } from './application/event-handlers/work-order-event-audit.handler';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
@@ -75,6 +77,15 @@ import { RecordEventUseCase } from './application/use-cases/events/record-event/
 import { ListEventsByEntityIdUseCase } from './application/use-cases/events/list-events-by-entity-id/list-events-by-entity-id.use-case';
 import { FIPE_GATEWAY } from './application/ports/fipe.gateway';
 import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum-fipe.gateway';
+import { WorkOrdersController } from './infrastructure/http/controllers/work-orders.controller';
+import { CreateWorkOrderUseCase } from './application/use-cases/work-orders/create-work-order/create-work-order.use-case';
+import { ListWorkOrdersUseCase } from './application/use-cases/work-orders/list-work-orders/list-work-orders.use-case';
+import { FindWorkOrderUseCase } from './application/use-cases/work-orders/find-work-order/find-work-order.use-case';
+import { AddWorkOrderItemUseCase } from './application/use-cases/work-orders/add-work-order-item/add-work-order-item.use-case';
+import { ChangeWorkOrderItemUseCase } from './application/use-cases/work-orders/change-work-order-item/change-work-order-item.use-case';
+import { RemoveWorkOrderItemUseCase } from './application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
+import { ChangeWorkOrderStatusUseCase } from './application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
+import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
 
 @Module({
   imports: [
@@ -97,6 +108,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     VehiclesController,
     EventTypesController,
     EventsController,
+    WorkOrdersController,
     AuthController,
     PermissionsController,
   ],
@@ -127,6 +139,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     ClientEventAuditHandler,
     EmployeeEventAuditHandler,
     AuthEventAuditHandler,
+    WorkOrderEventAuditHandler,
     EventTypeSeedService,
     { provide: FIPE_GATEWAY, useClass: ParallelumFipeGateway },
     CreateRepairUseCase,
@@ -139,6 +152,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     FindProductUseCase,
     UpdateProductUseCase,
     DeleteProductUseCase,
+    ActivateProductUseCase,
     ListStockUseCase,
     CreateStockMovementUseCase,
     ListStockMovementsUseCase,
@@ -156,6 +170,14 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     ListRolesUseCase,
     ChangeRoleUseCase,
     FindCurrentUserUseCase,
+    CreateWorkOrderUseCase,
+    ListWorkOrdersUseCase,
+    FindWorkOrderUseCase,
+    AddWorkOrderItemUseCase,
+    ChangeWorkOrderItemUseCase,
+    RemoveWorkOrderItemUseCase,
+    ChangeWorkOrderStatusUseCase,
+    ConfirmWorkOrderPaymentUseCase,
     CurrentUserInterceptor,
   ],
 })

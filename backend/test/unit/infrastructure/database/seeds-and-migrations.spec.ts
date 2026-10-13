@@ -6,6 +6,7 @@ import { RepairSeedService } from '@/infrastructure/database/typeorm/seeds/repai
 import { CreateAuthUsersSchema1704067200000 } from '@/infrastructure/database/typeorm/migrations/1704067200000-create-auth-users-schema';
 import { AddEmployeeDocuments1704067201000 } from '@/infrastructure/database/typeorm/migrations/1704067201000-add-employee-documents';
 import { CreateRepairsTable1791168385775 } from '@/infrastructure/database/typeorm/migrations/1791168385775-create-repairs-table';
+import { AddStockCheckConstraints1791500000000 } from '@/infrastructure/database/typeorm/migrations/1791500000000-add-stock-check-constraints';
 
 describe('database seeds', () => {
   it('creates initial clients, employees and roles', async () => {
@@ -87,5 +88,16 @@ describe('database migrations', () => {
     await migration.up(queryRunner as never);
     await migration.down(queryRunner as never);
     expect(queryRunner.query).toHaveBeenCalledTimes(3);
+  });
+
+  it('runs and reverts stock check constraints migration', async () => {
+    const queryRunner = { query: jest.fn().mockResolvedValue(undefined) };
+    const migration = new AddStockCheckConstraints1791500000000();
+    await migration.up(queryRunner as never);
+    await migration.down(queryRunner as never);
+    expect(queryRunner.query).toHaveBeenCalledTimes(10);
+    expect(queryRunner.query).toHaveBeenCalledWith(
+      expect.stringContaining('CHECK ("reserved" <= "quantity")'),
+    );
   });
 });

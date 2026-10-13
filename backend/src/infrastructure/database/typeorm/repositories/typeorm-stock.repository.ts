@@ -67,6 +67,10 @@ export class TypeOrmStockRepository implements StockRepository {
       allowedSortColumns: ['quantity', 'reserved', 'createdAt', 'updatedAt'],
     });
 
+    // Desempate estável: sem ele, itens com o mesmo valor de ordenação
+    // podem se repetir ou sumir entre páginas.
+    queryBuilder.addOrderBy('stock.id', 'ASC');
+
     const [ormEntities, totalItems] = await queryBuilder.getManyAndCount();
 
     return {
