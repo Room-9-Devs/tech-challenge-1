@@ -50,9 +50,13 @@ export class CreateStockMovementRequestDto {
   @ApiPropertyOptional({
     description: 'Descrição da movimentação',
     example: 'Entrada de 10 litros de óleo 5W30',
+    maxLength: 500,
   })
   @IsOptional()
   @IsString({ message: 'A descrição deve ser uma string' })
+  @MaxLength(500, {
+    message: 'A descrição deve ter no máximo 500 caracteres',
+  })
   description?: string;
 
   @ApiPropertyOptional({

@@ -7,6 +7,8 @@ import { CreateStockMovementUseCase } from '@/application/use-cases/stock/create
 import { ListStockMovementsUseCase } from '@/application/use-cases/stock/list-stock-movements/list-stock-movements.use-case';
 import { JwtAuthGuard } from '@/infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from '@/infrastructure/http/auth/roles.guard';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
 
 describe('Stock HTTP validation', () => {
   let app: INestApplication;
@@ -26,6 +28,18 @@ describe('Stock HTTP validation', () => {
         { provide: ListStockUseCase, useValue: { execute: jest.fn() } },
         { provide: CreateStockMovementUseCase, useValue: create },
         { provide: ListStockMovementsUseCase, useValue: list },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({
+              id: userId,
+              username: 'quiteria.dantas',
+              role: 'staff',
+              entityType: 'employee',
+            }),
+          },
+        },
+        CurrentUserInterceptor,
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -68,7 +82,17 @@ describe('Stock HTTP validation', () => {
     expect(create.execute).toHaveBeenCalledWith({
       ...movement,
       createdBy: userId,
+      createdByUsername: 'quiteria.dantas',
     });
+  });
+
+  it('accepts a description with 500 characters', async () => {
+    create.execute.mockResolvedValue({ id: 'movement-uuid' });
+
+    await request(app.getHttpServer())
+      .post('/stock/movements')
+      .send({ ...movement, description: 'A'.repeat(500) })
+      .expect(201);
   });
 
   it.each([
@@ -81,6 +105,7 @@ describe('Stock HTTP validation', () => {
     ['malformed product id', { productId: 'not-a-uuid' }],
     ['malformed reference id', { referenceId: 'not-a-uuid' }],
     ['reference type longer than 50 characters', { referenceType: 'A'.repeat(51) }],
+    ['description longer than 500 characters', { description: 'A'.repeat(501) }],
     ['creator sent in the body', { createdBy: userId }],
   ])('rejects %s before invoking the use case', async (_, override) => {
     await request(app.getHttpServer())

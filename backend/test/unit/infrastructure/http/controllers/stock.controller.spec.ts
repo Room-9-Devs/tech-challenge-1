@@ -16,6 +16,9 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtAuthGuard } from '@/infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from '@/infrastructure/http/auth/roles.guard';
 import { ROLES_KEY } from '@/infrastructure/http/auth/roles.decorator';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
 
 describe('StockController', () => {
   let controller: StockController;
@@ -29,6 +32,13 @@ describe('StockController', () => {
   const request = {
     user: { sub: userId, role: 'staff', entityType: 'employee' },
   } as Request & { user: AccessTokenPayload };
+
+  const currentUser: CurrentUser = {
+    id: userId,
+    username: 'quiteria.dantas',
+    role: 'staff',
+    entityType: 'employee',
+  };
 
   beforeEach(async () => {
     const mockListStockUseCase = { execute: jest.fn() };
@@ -50,6 +60,11 @@ describe('StockController', () => {
           provide: ListStockMovementsUseCase,
           useValue: mockListStockMovementsUseCase,
         },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
+        },
+        CurrentUserInterceptor,
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -256,11 +271,12 @@ describe('StockController', () => {
 
       createStockMovementUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.createMovement(request, dto);
+      const result = await controller.createMovement(request, dto, currentUser);
 
       expect(createStockMovementUseCase.execute).toHaveBeenCalledWith({
         ...dto,
         createdBy: userId,
+        createdByUsername: 'quiteria.dantas',
       });
       expect(result).toEqual(expectedResult);
     });
@@ -275,7 +291,7 @@ describe('StockController', () => {
           productId,
           movementType: StockMovementType.IN,
           quantity: 1,
-        }),
+        }, currentUser),
       ).rejects.toThrow(ProductNotFoundError);
     });
 
@@ -289,7 +305,7 @@ describe('StockController', () => {
           productId,
           movementType: StockMovementType.OUT,
           quantity: 15,
-        }),
+        }, currentUser),
       ).rejects.toThrow(InsufficientStockError);
     });
   });

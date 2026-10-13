@@ -8,4 +8,5 @@ export interface CreateStockMovementInputDto {
   referenceType?: string;
   referenceId?: string;
   createdBy: string;
+  createdByUsername?: string;
 }
