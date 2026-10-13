@@ -8,6 +8,6 @@ export class NestDomainEventPublisher implements DomainEventPublisher {
   constructor(private readonly domainEventEmitter: DomainEventEmitter) {}
 
   async publish(event: DomainEvent): Promise<void> {
-    this.domainEventEmitter.emit(event);
+    await this.domainEventEmitter.emit(event);
   }
 }
