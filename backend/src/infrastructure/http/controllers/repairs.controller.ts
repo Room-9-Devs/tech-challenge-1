@@ -40,6 +40,11 @@ import { ListRepairsFiltersInputDto } from '@/application/use-cases/repairs/list
 import { ListRepairsResponseDto } from '../dtos/list-repairs-response.dto';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
 import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+import {
+  HateoasCollection,
+  HateoasItem,
+} from '../hateoas/hateoas.decorator';
+import { repairLinks } from '../hateoas/resources/repair.links';
 
 const ALLOWED_REPAIR_SORT_COLUMNS = [
   'description',
@@ -82,6 +87,7 @@ export class RepairsController {
     status: HttpStatus.CONFLICT,
     description: 'Já existe um tipo de reparo/serviço com esta descrição',
   })
+  @HateoasItem(repairLinks)
   async create(
     @Body() dto: CreateRepairRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -114,6 +120,7 @@ export class RepairsController {
     description: 'Lista paginada de tipos de reparo/serviço',
     type: ListRepairsResponseDto,
   })
+  @HateoasCollection(repairLinks)
   async findAll(
     @Query() query: ListRepairsQueryDto,
   ): Promise<ListRepairsResponseDto> {
@@ -146,6 +153,7 @@ export class RepairsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Tipo de reparo/serviço não encontrado',
   })
+  @HateoasItem(repairLinks)
   async findById(@Param('id') id: string): Promise<RepairResponseDto> {
     return this.findRepairUseCase.execute({ id });
   }
@@ -176,6 +184,7 @@ export class RepairsController {
     status: HttpStatus.CONFLICT,
     description: 'Já existe um tipo de reparo/serviço com esta descrição',
   })
+  @HateoasItem(repairLinks)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateRepairRequestDto,

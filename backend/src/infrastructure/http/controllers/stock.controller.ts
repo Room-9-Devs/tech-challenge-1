@@ -39,6 +39,8 @@ import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
+import { stockLinks, stockMovementLinks } from '../hateoas/resources/stock.links';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
@@ -115,6 +117,7 @@ export class StockController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Parâmetros de consulta inválidos',
   })
+  @HateoasCollection(stockLinks)
   async findAll(@Query() query: ListStockQueryDto): Promise<ListStockResponseDto> {
     const filters = parseFiltersQuery(
       query.filters,
@@ -178,6 +181,7 @@ export class StockController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Parâmetros de consulta inválidos',
   })
+  @HateoasCollection(stockMovementLinks)
   async findMovements(
     @Query() query: ListStockMovementsQueryDto,
   ): Promise<ListStockMovementsResponseDto> {
@@ -242,6 +246,7 @@ export class StockController {
     description:
       'Saída maior que a quantidade disponível (quantidade - reservada) ou ajuste abaixo da quantidade reservada',
   })
+  @HateoasItem(stockMovementLinks)
   async createMovement(
     @Req() request: Request & { user: AccessTokenPayload },
     @Body() dto: CreateStockMovementRequestDto,

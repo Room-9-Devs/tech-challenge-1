@@ -459,6 +459,43 @@ Lista todos os usuários.
 }
 ```
 
+## HATEOAS
+
+As respostas de `products`, `repairs`, `vehicles`, `users`, `stock`, `events` e
+`event-types` incluem o campo `_links`
+com as ações disponíveis para o recurso. Cada link tem `href` e `method`:
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "description": "Troca de óleo",
+  "_links": {
+    "self": { "href": "/repairs/550e8400-e29b-41d4-a716-446655440000", "method": "GET" },
+    "update": { "href": "/repairs/550e8400-e29b-41d4-a716-446655440000", "method": "PUT" },
+    "delete": { "href": "/repairs/550e8400-e29b-41d4-a716-446655440000", "method": "DELETE" }
+  }
+}
+```
+
+- **Coleções paginadas** trazem `self`, `first`, `prev`, `next` e `last`, mantendo
+  `search`, `sort` e `filters` da requisição; `prev`/`next` só aparecem quando existem.
+- **Links variam com a role**: um `client` em `/repairs` recebe apenas `self`, sem
+  `update`, `delete` ou `create`.
+- **Links variam com o estado**: produto inativo não expõe `delete`.
+- **Relacionamentos**: veículo aponta para o dono (`owner`); usuário cliente aponta
+  para seus veículos (`vehicles`) e para o cadastro de veículo (`add-vehicle`);
+  produto aponta para seu estoque (`stock`) e movimentações (`movements`);
+  movimentação aponta para produto, estoque e quem a registrou (`creator`).
+- **Histórico**: produtos, reparos, veículos, usuários e estoques têm o link `events`
+  (`/events/:entityType/:entityId`); cada evento aponta para o tipo de evento e para a
+  entidade de origem.
+- **Listas sem paginação** (`GET /event-types` e `GET /events/...`) continuam sendo
+  arrays: só os itens recebem `_links`, para não mudar o formato da resposta.
+
+A implementação fica toda na camada HTTP (`infrastructure/http/hateoas`): cada recurso
+tem um builder de links e as rotas usam `@HateoasItem(...)` ou `@HateoasCollection(...)`,
+aplicados por um interceptor. Domain e Use Cases não conhecem os links.
+
 ## Decisões Arquiteturais
 
 ### Por que Clean Architecture?

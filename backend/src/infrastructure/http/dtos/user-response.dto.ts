@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -62,4 +64,12 @@ export class UserResponseDto {
     example: '2024-01-01T00:00:00.000Z',
   })
   updatedAt: Date;
+
+  @ApiLinksProperty({
+    self: { href: '/users/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+    vehicles: { href: '/vehicles?filters=%7B%22userId%22%3A%22550e8400-e29b-41d4-a716-446655440000%22%7D', method: 'GET' },
+    'add-vehicle': { href: '/vehicles/550e8400-e29b-41d4-a716-446655440000', method: 'POST' },
+    events: { href: '/events/user/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+  })
+  _links?: Links;
 }

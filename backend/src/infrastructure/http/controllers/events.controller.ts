@@ -26,10 +26,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
-import {
-  EVENT_ENTITY_TYPES,
-  EventEntityType,
-} from '@/domain/types/entity-reference.type';
+import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
+import { eventLinks } from '../hateoas/resources/event.links';
+import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
 
 @ApiTags('Eventos')
@@ -53,6 +52,7 @@ export class EventsController {
     description: 'Evento registrado com sucesso',
     type: EventResponseDto,
   })
+  @HateoasItem(eventLinks)
   async create(
     @Body() dto: RecordEventRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -84,6 +84,7 @@ export class EventsController {
     description: 'Lista de eventos da entidade',
     type: [EventResponseDto],
   })
+  @HateoasCollection(eventLinks)
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
     @Param('entityId') entityId: string,
