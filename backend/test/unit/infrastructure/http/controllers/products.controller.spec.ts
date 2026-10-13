@@ -6,6 +6,8 @@ import { ListProductsUseCase } from '@/application/use-cases/products/list-produ
 import { FindProductUseCase } from '@/application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from '@/application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from '@/application/use-cases/products/delete-product/delete-product.use-case';
+import { ActivateProductUseCase } from '@/application/use-cases/products/activate-product/activate-product.use-case';
+import { ProductAlreadyActiveError } from '@/domain/errors/product-already-active.error';
 import { CreateProductRequestDto } from '@/infrastructure/http/dtos/create-product-request.dto';
 import { UpdateProductRequestDto } from '@/infrastructure/http/dtos/update-product-request.dto';
 import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
@@ -26,6 +28,7 @@ describe('ProductsController', () => {
   let findProductUseCase: jest.Mocked<FindProductUseCase>;
   let updateProductUseCase: jest.Mocked<UpdateProductUseCase>;
   let deleteProductUseCase: jest.Mocked<DeleteProductUseCase>;
+  let activateProductUseCase: jest.Mocked<ActivateProductUseCase>;
 
   const currentUser: CurrentUser = {
     id: 'user-1',
@@ -50,6 +53,7 @@ describe('ProductsController', () => {
     const mockFindProductUseCase = { execute: jest.fn() };
     const mockUpdateProductUseCase = { execute: jest.fn() };
     const mockDeleteProductUseCase = { execute: jest.fn() };
+    const mockActivateProductUseCase = { execute: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
@@ -75,6 +79,10 @@ describe('ProductsController', () => {
           useValue: mockDeleteProductUseCase,
         },
         {
+          provide: ActivateProductUseCase,
+          useValue: mockActivateProductUseCase,
+        },
+        {
           provide: FindCurrentUserUseCase,
           useValue: { execute: jest.fn().mockResolvedValue(currentUser) },
         },
@@ -93,6 +101,7 @@ describe('ProductsController', () => {
     findProductUseCase = module.get(FindProductUseCase);
     updateProductUseCase = module.get(UpdateProductUseCase);
     deleteProductUseCase = module.get(DeleteProductUseCase);
+    activateProductUseCase = module.get(ActivateProductUseCase);
   });
 
   describe('authorization', () => {
@@ -254,6 +263,36 @@ describe('ProductsController', () => {
 
       await expect(controller.delete('uuid')).rejects.toThrow(
         ProductHasStockError,
+      );
+    });
+  });
+
+  describe('activate', () => {
+    it('should call ActivateProductUseCase and return the result', async () => {
+      const id = 'uuid';
+      const expectedResult = {
+        id,
+        ...productData,
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      activateProductUseCase.execute.mockResolvedValue(expectedResult);
+
+      const result = await controller.activate(id);
+
+      expect(activateProductUseCase.execute).toHaveBeenCalledWith({ id });
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should propagate ProductAlreadyActiveError', async () => {
+      activateProductUseCase.execute.mockRejectedValue(
+        new ProductAlreadyActiveError('uuid'),
+      );
+
+      await expect(controller.activate('uuid')).rejects.toThrow(
+        ProductAlreadyActiveError,
       );
     });
   });

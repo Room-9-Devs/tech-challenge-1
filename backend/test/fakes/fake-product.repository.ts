@@ -27,6 +27,10 @@ export class FakeProductRepository implements ProductRepository {
     );
   }
 
+  async findByIdIncludingInactive(id: string): Promise<Product | null> {
+    return this.products.find((product) => product.id === id) ?? null;
+  }
+
   async findAll(
     query?: PaginationQuery & { filters?: Record<string, string | number | boolean> },
   ): Promise<PaginatedOutput<Product>> {

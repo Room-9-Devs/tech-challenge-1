@@ -5,11 +5,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   MinLength,
   MaxLength,
 } from 'class-validator';
 import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
+
+const MAX_PRICE = 99999999.99;
 
 export class CreateProductRequestDto {
   @ApiProperty({
@@ -68,17 +71,29 @@ export class CreateProductRequestDto {
     description: 'Custo do produto',
     example: 35.9,
     minimum: 0,
+    maximum: MAX_PRICE,
   })
-  @IsNumber({}, { message: 'O custo deve ser um número' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'O custo deve ser um número com no máximo 2 casas decimais' },
+  )
   @Min(0, { message: 'O custo deve ser maior ou igual a 0' })
+  @Max(MAX_PRICE, { message: 'O custo deve ser menor ou igual a 99999999.99' })
   cost: number;
 
   @ApiProperty({
     description: 'Preço de venda do produto',
     example: 59.9,
     minimum: 0,
+    maximum: MAX_PRICE,
   })
-  @IsNumber({}, { message: 'O preço de venda deve ser um número' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'O preço de venda deve ser um número com no máximo 2 casas decimais' },
+  )
   @Min(0, { message: 'O preço de venda deve ser maior ou igual a 0' })
+  @Max(MAX_PRICE, {
+    message: 'O preço de venda deve ser menor ou igual a 99999999.99',
+  })
   salePrice: number;
 }

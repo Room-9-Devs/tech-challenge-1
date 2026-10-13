@@ -26,6 +26,7 @@ import { ListProductsUseCase } from './application/use-cases/products/list-produ
 import { FindProductUseCase } from './application/use-cases/products/find-product/find-product.use-case';
 import { UpdateProductUseCase } from './application/use-cases/products/update-product/update-product.use-case';
 import { DeleteProductUseCase } from './application/use-cases/products/delete-product/delete-product.use-case';
+import { ActivateProductUseCase } from './application/use-cases/products/activate-product/activate-product.use-case';
 import { ListStockUseCase } from './application/use-cases/stock/list-stock/list-stock.use-case';
 import { CreateStockMovementUseCase } from './application/use-cases/stock/create-stock-movement/create-stock-movement.use-case';
 import { ListStockMovementsUseCase } from './application/use-cases/stock/list-stock-movements/list-stock-movements.use-case';
@@ -139,6 +140,7 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     FindProductUseCase,
     UpdateProductUseCase,
     DeleteProductUseCase,
+    ActivateProductUseCase,
     ListStockUseCase,
     CreateStockMovementUseCase,
     ListStockMovementsUseCase,

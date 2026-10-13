@@ -2234,6 +2234,168 @@
           }
         },
         {
+          "name": "Buscar produto com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ID inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar produto com custo acima do máximo (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"uniq\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (custo > 99999999.99)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"OVERFLOW-{{uniq}}\",\n  \"name\": \"Produto caro\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 100000000,\n  \"salePrice\": 100000001\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "cost e salePrice aceitam no máximo 99999999.99 (coluna numeric(10,2))."
+          }
+        },
+        {
+          "name": "Criar produto com 3 casas decimais (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"uniq\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (no máximo 2 casas decimais)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"ARRED-{{uniq}}\",\n  \"name\": \"Produto arredondado\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 10.555,\n  \"salePrice\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar produtos com filtro de enum inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (productType inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?filters={\"productType\":\"FOO\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productType\":\"FOO\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Atualizar produto",
           "event": [
             {
@@ -2331,6 +2493,155 @@
               ]
             },
             "description": "Depois de desativado, o produto não é mais encontrado."
+          }
+        },
+        {
+          "name": "Reativar produto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto reativado)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test(\"Produto volta ativo\", () => pm.expect(pm.response.json().active).to.be.true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "activate"
+              ]
+            },
+            "description": "Reativa o produto desativado em \"Desativar produto\". O SKU continua o mesmo."
+          }
+        },
+        {
+          "name": "Buscar produto reativado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (produto encontrado de novo)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto já ativo (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (já está ativo)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (produto inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/00000000-0000-4000-8000-000000000000/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "00000000-0000-4000-8000-000000000000",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reativar produto com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (ID inválido)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/abc/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "abc",
+                "activate"
+              ]
+            }
           }
         }
       ]
@@ -3118,6 +3429,49 @@
                 "{{stockProductId}}"
               ]
             }
+          }
+        },
+        {
+          "name": "Alterar unidade de produto com estoque (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (unidade bloqueada com saldo)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{stockProductSku}}\",\n  \"name\": \"Filtro de óleo\",\n  \"description\": \"Filtro de óleo para motores 1.0 a 2.0\",\n  \"productType\": \"PART\",\n  \"unit\": \"LITER\",\n  \"cost\": 25,\n  \"salePrice\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{stockProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{stockProductId}}"
+              ]
+            },
+            "description": "Com saldo em estoque, a unidade e o tipo do produto não podem mudar: o saldo passaria a significar outra coisa."
           }
         },
         {
@@ -4308,184 +4662,8 @@
           ]
         },
         {
-          "name": "Produtos e estoque",
+          "name": "Estoque",
           "item": [
-            {
-              "name": "Buscar produto com ID não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/products/abc",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "products",
-                    "abc"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Criar produto com custo acima de numeric(10,2) (400)",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.variables.set(\"uniq\", Date.now().toString());"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"sku\": \"OVERFLOW-{{uniq}}\",\n  \"name\": \"Produto caro\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 100000000,\n  \"salePrice\": 100000001\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/products",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "products"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Listar produtos com filtro de enum inválido (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/products?filters={\"productType\":\"FOO\"}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "products"
-                  ],
-                  "query": [
-                    {
-                      "key": "filters",
-                      "value": "{\"productType\":\"FOO\"}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Custo com 3 casas: resposta igual ao valor salvo",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.variables.set(\"uniq\", Date.now().toString());"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 201 (produto criado)\", () => pm.response.to.have.status(201));",
-                      "",
-                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
-                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
-                      "  method,",
-                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
-                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
-                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
-                      "if (pm.response.code === 201) {",
-                      "  const created = pm.response.json();",
-                      "  send(\"GET\", \"/products/\" + created.id, pm.collectionVariables.get(\"accessToken\")).then((res) => {",
-                      "    const saved = res.json().cost;",
-                      "    pm.test(\"POST devolve o mesmo custo que foi salvo (POST \" + created.cost + \" x banco \" + saved + \")\", () => pm.expect(created.cost).to.equal(saved));",
-                      "  });",
-                      "}"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"sku\": \"ARRED-{{uniq}}\",\n  \"name\": \"Produto arredondado\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 10.555,\n  \"salePrice\": 20\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/products",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "products"
-                  ]
-                },
-                "description": "O banco arredonda para 10.56, mas o POST responde 10.555."
-              }
-            },
             {
               "name": "Movimentação de estoque gera evento de auditoria",
               "event": [

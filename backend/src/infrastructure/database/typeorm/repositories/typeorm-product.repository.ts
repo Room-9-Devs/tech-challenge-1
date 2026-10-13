@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Product } from '@/domain/entities/product.entity';
 import { ProductRepository } from '@/domain/repositories/product.repository';
+import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
 import { applyPagination } from '@/shared/pagination/typeorm-pagination.helper';
 import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
 import { ProductOrmEntity } from '../entities/product.orm-entity';
@@ -17,14 +18,29 @@ export class TypeOrmProductRepository implements ProductRepository {
 
   async save(product: Product): Promise<Product> {
     const ormEntity = ProductMapper.toPersistence(product);
-    const saved = await this.repository.save(ormEntity);
-    return ProductMapper.toDomain(saved);
+    try {
+      const saved = await this.repository.save(ormEntity);
+      return ProductMapper.toDomain(saved);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === '23505'
+      ) {
+        throw new ProductAlreadyExistsError(product.sku);
+      }
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<Product | null> {
     const ormEntity = await this.repository.findOne({
       where: { id, active: true },
     });
+    return ormEntity ? ProductMapper.toDomain(ormEntity) : null;
+  }
+
+  async findByIdIncludingInactive(id: string): Promise<Product | null> {
+    const ormEntity = await this.repository.findOne({ where: { id } });
     return ormEntity ? ProductMapper.toDomain(ormEntity) : null;
   }
 
@@ -43,10 +59,9 @@ export class TypeOrmProductRepository implements ProductRepository {
     const allowedFilters = ['sku', 'name', 'productType', 'unit'];
 
     if (filters) {
-      for (const [key, rawValue] of Object.entries(filters)) {
+      for (const [key, value] of Object.entries(filters)) {
         if (!allowedFilters.includes(key)) continue;
 
-        const value = rawValue === 'true' ? true : rawValue === 'false' ? false : rawValue;
         const paramName = `filter_${key}`;
         queryBuilder.andWhere(`product.${key} = :${paramName}`, {
           [paramName]: value,
