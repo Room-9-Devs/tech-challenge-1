@@ -9,6 +9,11 @@ import {
   WORK_ORDER_UNIT_OF_WORK,
   WorkOrderUnitOfWork,
 } from '@/application/ports/work-order-unit-of-work.port';
+import {
+  DOMAIN_EVENT_PUBLISHER,
+  DomainEventPublisher,
+} from '@/application/ports/domain-event-publisher.port';
+import { WorkOrderItemQuantityChangedEvent } from '@/domain/events/work-order.events';
 import { requireWorkOrder } from '../work-order-transaction.helpers';
 import { ChangeWorkOrderItemInputDto } from './change-work-order-item-input.dto';
 import { ChangeWorkOrderItemOutputDto } from './change-work-order-item-output.dto';
@@ -17,14 +22,17 @@ import { ChangeWorkOrderItemOutputDto } from './change-work-order-item-output.dt
 export class ChangeWorkOrderItemUseCase {
   constructor(
     @Inject(WORK_ORDER_UNIT_OF_WORK) private readonly uow: WorkOrderUnitOfWork,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
   async execute(
     input: ChangeWorkOrderItemInputDto,
   ): Promise<ChangeWorkOrderItemOutputDto> {
-    return this.uow.run(async (r) => {
+    const result = await this.uow.run(async (r) => {
       const order = await requireWorkOrder(r, input.id);
       const item = order.items.find((i) => i.id === input.itemId);
       if (!item) throw new NotFoundException('Item não encontrado');
+      const previousQuantity = item.quantity;
       if (item.productId) {
         if (!Number.isInteger(input.quantity))
           throw new BadRequestException(
@@ -40,7 +48,24 @@ export class ChangeWorkOrderItemUseCase {
           throw new ConflictException('Saldo insuficiente em estoque');
       }
       order.changeItemQuantity(input.itemId, input.quantity);
-      return r.workOrders.save(order);
+      return { order: await r.workOrders.save(order), item, previousQuantity };
     });
+    await this.eventPublisher.publish(
+      new WorkOrderItemQuantityChangedEvent(
+        result.order.id,
+        input.actor.username,
+        {
+          itemId: result.item.id,
+          itemType: result.item.serviceId ? 'service' : 'product',
+          serviceId: result.item.serviceId,
+          productId: result.item.productId,
+          quantity: result.item.quantity,
+          unitPrice: result.item.unitPrice,
+          previousQuantity: result.previousQuantity,
+          newQuantity: result.item.quantity,
+        },
+      ),
+    );
+    return result.order;
   }
 }

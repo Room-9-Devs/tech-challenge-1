@@ -8,6 +8,11 @@ import {
 } from '@nestjs/common';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import {
+  DOMAIN_EVENT_PUBLISHER,
+  DomainEventPublisher,
+} from '@/application/ports/domain-event-publisher.port';
+import { WorkOrderStatusChangedEvent } from '@/domain/events/work-order.events';
+import {
   EMAIL_SENDER,
   EmailSender,
 } from '@/application/ports/email-sender.port';
@@ -23,7 +28,6 @@ import {
 } from '@/application/ports/work-order-unit-of-work.port';
 import {
   finishWorkOrderReservation,
-  recordWorkOrderEvent,
   reserveWorkOrderProducts,
 } from '../work-order-transaction.helpers';
 import { ChangeWorkOrderStatusInputDto } from './change-work-order-status-input.dto';
@@ -36,6 +40,8 @@ export class ChangeWorkOrderStatusUseCase {
     @Inject(WORK_ORDER_UNIT_OF_WORK) private readonly uow: WorkOrderUnitOfWork,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
   async execute(
     input: ChangeWorkOrderStatusInputDto,
@@ -56,11 +62,13 @@ export class ChangeWorkOrderStatusUseCase {
         'Cliente só pode aprovar ou recusar o orçamento da própria OS',
       );
     }
+    let previousStatus: WorkOrderStatus | undefined;
     const saved = await this.uow.run(async (r) => {
       const current = await r.workOrders.findById(input.id);
       if (!current)
         throw new NotFoundException('Ordem de serviço não encontrada');
       const previous = current.status;
+      previousStatus = previous;
       if (input.status === WorkOrderStatus.IN_PROGRESS) {
         const events = await r.events.findByEntity('work_order', input.id);
         if (!events.some((e) => e.metadata?.kind === 'payment_confirmation')) {
@@ -85,16 +93,20 @@ export class ChangeWorkOrderStatusUseCase {
       }
       current.changeStatus(input.status);
       const updated = await r.workOrders.save(current);
-      await recordWorkOrderEvent(
-        r,
-        'work_order.status_changed',
-        updated,
-        input.note,
-        { from: previous, to: input.status, reason: input.note },
-        input.actor.username,
-      );
       return updated;
     });
+    await this.eventPublisher.publish(
+      new WorkOrderStatusChangedEvent(
+        saved.id,
+        input.actor.username,
+        input.note,
+        {
+          from: previousStatus!,
+          to: input.status,
+          reason: input.note,
+        },
+      ),
+    );
     if (
       input.status === WorkOrderStatus.AWAITING_APPROVAL ||
       input.status === WorkOrderStatus.COMPLETED

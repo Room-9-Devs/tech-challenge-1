@@ -7,6 +7,11 @@ import {
 } from '@nestjs/common';
 import { WorkOrderItem } from '@/domain/entities/work-order-item.entity';
 import {
+  DOMAIN_EVENT_PUBLISHER,
+  DomainEventPublisher,
+} from '@/application/ports/domain-event-publisher.port';
+import { WorkOrderItemAddedEvent } from '@/domain/events/work-order.events';
+import {
   WORK_ORDER_UNIT_OF_WORK,
   WorkOrderUnitOfWork,
 } from '@/application/ports/work-order-unit-of-work.port';
@@ -18,11 +23,13 @@ import { AddWorkOrderItemOutputDto } from './add-work-order-item-output.dto';
 export class AddWorkOrderItemUseCase {
   constructor(
     @Inject(WORK_ORDER_UNIT_OF_WORK) private readonly uow: WorkOrderUnitOfWork,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
   async execute(
     input: AddWorkOrderItemInputDto,
   ): Promise<AddWorkOrderItemOutputDto> {
-    return this.uow.run(async (r) => {
+    const result = await this.uow.run(async (r) => {
       const order = await requireWorkOrder(r, input.id);
       const hasService = Boolean(input.serviceId),
         hasProduct = Boolean(input.productId);
@@ -51,15 +58,26 @@ export class AddWorkOrderItemUseCase {
           throw new ConflictException('Saldo insuficiente em estoque');
         unitPrice = product.salePrice;
       }
-      order.addItem(
-        WorkOrderItem.create({
-          serviceId: input.serviceId,
-          productId: input.productId,
-          quantity: input.quantity,
-          unitPrice,
-        }),
-      );
-      return r.workOrders.save(order);
+      const item = WorkOrderItem.create({
+        serviceId: input.serviceId,
+        productId: input.productId,
+        quantity: input.quantity,
+        unitPrice,
+      });
+      order.addItem(item);
+      return { order: await r.workOrders.save(order), item };
     });
+    const { item } = result;
+    await this.eventPublisher.publish(
+      new WorkOrderItemAddedEvent(result.order.id, input.actor.username, {
+        itemId: item.id,
+        itemType: item.serviceId ? 'service' : 'product',
+        serviceId: item.serviceId,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      }),
+    );
+    return result.order;
   }
 }

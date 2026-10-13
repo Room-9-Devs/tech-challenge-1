@@ -17,29 +17,6 @@ export async function requireWorkOrder(
   return order;
 }
 
-export async function recordWorkOrderEvent(
-  repositories: WorkOrderRepositories,
-  code: string,
-  order: WorkOrder,
-  note: string,
-  metadata: Record<string, unknown>,
-  username?: string,
-): Promise<void> {
-  const type = await repositories.eventTypes.findByCode(code);
-  if (!type)
-    throw new ConflictException(`Tipo de evento ${code} não cadastrado`);
-  await repositories.events.save(
-    Event.create({
-      eventTypeId: type.id,
-      entityType: 'work_order',
-      entityId: order.id,
-      createdBy: username ?? null,
-      note,
-      metadata,
-    }),
-  );
-}
-
 function productQuantities(order: WorkOrder): Map<string, number> {
   const quantities = new Map<string, number>();
   for (const item of order.items) {

@@ -1,6 +1,7 @@
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import { EventType } from '@/domain/entities/event-type.entity';
+import { Event } from '@/domain/entities/event.entity';
 import { CreateWorkOrderUseCase } from '@/application/use-cases/work-orders/create-work-order/create-work-order.use-case';
 import { ListWorkOrdersUseCase } from '@/application/use-cases/work-orders/list-work-orders/list-work-orders.use-case';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
@@ -29,6 +30,7 @@ describe('Work order use cases', () => {
   let profiles: any;
   let email: any;
   let unitOfWork: any;
+  let eventPublisher: any;
   let create: CreateWorkOrderUseCase;
   let list: ListWorkOrdersUseCase;
   let find: FindWorkOrderUseCase;
@@ -55,14 +57,12 @@ describe('Work order use cases', () => {
       }),
     };
     profiles = {
-      findById: jest
-        .fn()
-        .mockResolvedValue({
-          id: 'profile-id',
-          name: 'Cliente',
-          type: 'client',
-          phone: '11999999999',
-        }),
+      findById: jest.fn().mockResolvedValue({
+        id: 'profile-id',
+        name: 'Cliente',
+        type: 'client',
+        phone: '11999999999',
+      }),
     };
     email = { send: jest.fn().mockResolvedValue(undefined) };
     const stock = {
@@ -83,12 +83,10 @@ describe('Work order use cases', () => {
         findById: jest.fn(
           async (id: string) => orders.find((order) => order.id === id) ?? null,
         ),
-        findAll: jest
-          .fn()
-          .mockResolvedValue({
-            data: [],
-            meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
-          }),
+        findAll: jest.fn().mockResolvedValue({
+          data: [],
+          meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+        }),
         deleteItem: jest.fn(),
       },
       products: {
@@ -128,9 +126,31 @@ describe('Work order use cases', () => {
     unitOfWork = {
       run: jest.fn((callback: (r: any) => unknown) => callback(repositories)),
     };
-    create = new CreateWorkOrderUseCase(vehicles, unitOfWork, {
-      next: jest.fn().mockResolvedValue('OS-0001/2026'),
-    } as any);
+    eventPublisher = {
+      publish: jest.fn(async (event: any) => {
+        const eventType = await repositories.eventTypes.findByCode(
+          event.eventType,
+        );
+        await repositories.events.save(
+          Event.create({
+            eventTypeId: eventType.id,
+            entityType: 'work_order',
+            entityId: event.entityId,
+            createdBy: event.createdBy ?? null,
+            note: event.note ?? null,
+            metadata: event.metadata,
+          }),
+        );
+      }),
+    };
+    create = new CreateWorkOrderUseCase(
+      vehicles,
+      unitOfWork,
+      {
+        next: jest.fn().mockResolvedValue('OS-0001/2026'),
+      } as any,
+      eventPublisher,
+    );
     list = new ListWorkOrdersUseCase(repositories.workOrders);
     find = new FindWorkOrderUseCase(
       repositories.workOrders,
@@ -138,16 +158,20 @@ describe('Work order use cases', () => {
       users,
       profiles,
     );
-    addItem = new AddWorkOrderItemUseCase(unitOfWork);
-    changeItem = new ChangeWorkOrderItemUseCase(unitOfWork);
-    removeItem = new RemoveWorkOrderItemUseCase(unitOfWork);
+    addItem = new AddWorkOrderItemUseCase(unitOfWork, eventPublisher);
+    changeItem = new ChangeWorkOrderItemUseCase(unitOfWork, eventPublisher);
+    removeItem = new RemoveWorkOrderItemUseCase(unitOfWork, eventPublisher);
     changeStatus = new ChangeWorkOrderStatusUseCase(
       repositories.workOrders,
       unitOfWork,
       users,
       email,
+      eventPublisher,
     );
-    confirmPayment = new ConfirmWorkOrderPaymentUseCase(unitOfWork);
+    confirmPayment = new ConfirmWorkOrderPaymentUseCase(
+      unitOfWork,
+      eventPublisher,
+    );
   });
 
   async function createOrder() {

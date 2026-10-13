@@ -15,7 +15,11 @@ import {
   WORK_ORDER_NUMBER_GENERATOR,
   WorkOrderNumberGenerator,
 } from '@/application/ports/work-order-number-generator.port';
-import { recordWorkOrderEvent } from '../work-order-transaction.helpers';
+import {
+  DOMAIN_EVENT_PUBLISHER,
+  DomainEventPublisher,
+} from '@/application/ports/domain-event-publisher.port';
+import { WorkOrderCreatedEvent } from '@/domain/events/work-order.events';
 import { CreateWorkOrderInputDto } from './create-work-order-input.dto';
 import { CreateWorkOrderOutputDto } from './create-work-order-output.dto';
 
@@ -26,6 +30,8 @@ export class CreateWorkOrderUseCase {
     @Inject(WORK_ORDER_UNIT_OF_WORK) private readonly uow: WorkOrderUnitOfWork,
     @Inject(WORK_ORDER_NUMBER_GENERATOR)
     private readonly numbers: WorkOrderNumberGenerator,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
 
   async execute(
@@ -42,17 +48,18 @@ export class CreateWorkOrderUseCase {
       createdBy: input.actor.id,
       observations: input.observations,
     });
-    return this.uow.run(async (repositories) => {
+    const saved = await this.uow.run(async (repositories) => {
       const saved = await repositories.workOrders.save(order);
-      await recordWorkOrderEvent(
-        repositories,
-        'work_order.created',
-        saved,
-        'Ordem de serviço criada',
-        { number: saved.number },
-        input.actor.username,
-      );
       return saved;
     });
+    await this.eventPublisher.publish(
+      new WorkOrderCreatedEvent(
+        saved.id,
+        input.actor.username,
+        'Ordem de serviço criada',
+        { number: saved.number },
+      ),
+    );
+    return saved;
   }
 }
