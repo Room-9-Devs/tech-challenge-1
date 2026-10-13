@@ -28,10 +28,10 @@ describe('CreateProductUseCase', () => {
 
   beforeEach(() => {
     fakeRepository = new FakeProductRepository();
-    useCase = new CreateProductUseCase(fakeRepository, new FakeDomainEventPublisher());
     fakeStockRepository = new FakeStockRepository(fakeRepository);
     useCase = new CreateProductUseCase(
       fakeRepository,
+      new FakeDomainEventPublisher(),
       new FakeProductCreationUnitOfWork(fakeRepository, fakeStockRepository),
     );
   });

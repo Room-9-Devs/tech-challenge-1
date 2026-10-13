@@ -1,8 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ProductRepository } from '@/domain/repositories/product.repository';
+import { StockRepository } from '@/domain/repositories/stock.repository';
 import { ProductNotFoundError } from '@/domain/errors/product-not-found.error';
 import { ProductAlreadyExistsError } from '@/domain/errors/product-already-exists.error';
+import { ProductUnitChangeWithStockError } from '@/domain/errors/product-unit-change-with-stock.error';
 import { PRODUCT_REPOSITORY } from '../create-product/create-product.use-case';
+import { STOCK_REPOSITORY } from '../delete-product/delete-product.use-case';
 import { UpdateProductInputDto } from './update-product-input.dto';
 import { UpdateProductOutputDto } from './update-product-output.dto';
 import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
@@ -15,6 +18,8 @@ export class UpdateProductUseCase {
     private readonly productRepository: ProductRepository,
     @Inject(DOMAIN_EVENT_PUBLISHER)
     private readonly eventPublisher: DomainEventPublisher,
+    @Inject(STOCK_REPOSITORY)
+    private readonly stockRepository: StockRepository,
   ) {}
 
   async execute(input: UpdateProductInputDto): Promise<UpdateProductOutputDto> {
@@ -29,6 +34,14 @@ export class UpdateProductUseCase {
 
       if (existingProduct) {
         throw new ProductAlreadyExistsError(input.sku);
+      }
+    }
+
+    if (product.unit !== input.unit || product.productType !== input.productType) {
+      const stock = await this.stockRepository.findByProductId(product.id);
+
+      if (stock && stock.hasBalance()) {
+        throw new ProductUnitChangeWithStockError(product.id);
       }
     }
 
@@ -52,23 +65,25 @@ export class UpdateProductUseCase {
 
     const updatedProduct = await this.productRepository.save(product);
 
-    const changedFields = Object.keys(input).filter(
-      (key) => key !== 'id' && key !== 'createdBy' && oldValues[key as keyof typeof oldValues] !== input[key as keyof UpdateProductInputDto],
+    const newValues: typeof oldValues = {
+      sku: updatedProduct.sku,
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      productType: updatedProduct.productType,
+      unit: updatedProduct.unit,
+      cost: updatedProduct.cost,
+      salePrice: updatedProduct.salePrice,
+    };
+
+    const changedFields = (Object.keys(oldValues) as (keyof typeof oldValues)[]).filter(
+      (key) => oldValues[key] !== newValues[key],
     );
 
     await this.eventPublisher.publish(
       new ProductUpdatedEvent(updatedProduct.id, input.createdBy, {
         changedFields,
         old: oldValues,
-        new: {
-          sku: updatedProduct.sku,
-          name: updatedProduct.name,
-          description: updatedProduct.description,
-          productType: updatedProduct.productType,
-          unit: updatedProduct.unit,
-          cost: updatedProduct.cost,
-          salePrice: updatedProduct.salePrice,
-        },
+        new: newValues,
       }),
     );
 

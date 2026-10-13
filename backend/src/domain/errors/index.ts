@@ -17,6 +17,8 @@ export * from './invalid-product.error';
 export * from './product-not-found.error';
 export * from './product-already-exists.error';
 export * from './product-has-stock.error';
+export * from './product-already-active.error';
+export * from './product-unit-change-with-stock.error';
 export * from './invalid-stock-movement.error';
 export * from './insufficient-stock.error';
 export * from './stock-not-found.error';
