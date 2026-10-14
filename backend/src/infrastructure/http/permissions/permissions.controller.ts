@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ListRolesUseCase } from '@/application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from '@/application/use-cases/permissions/change-role.use-case';
@@ -30,8 +30,12 @@ export class PermissionsController {
   @ApiOperation({ summary: 'Alterar role de um usuário' })
   @ApiBody({ type: ChangeRoleRequestDto })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Role alterado com sucesso.' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'userId não é um UUID válido.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Usuário ou role não encontrado.' })
-  async changeRole(@Param('userId') userId: string, @Body() dto: ChangeRoleRequestDto) {
+  async changeRole(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Body() dto: ChangeRoleRequestDto,
+  ) {
     await this.changeRoleUseCase.execute(userId, dto.role);
   }
 }

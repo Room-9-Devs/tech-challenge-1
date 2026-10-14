@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   Req,
   HttpCode,
@@ -137,6 +138,10 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'ID não é um UUID válido',
+  })
+  @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Usuário não encontrado',
   })
@@ -148,7 +153,9 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a ver dados de outro usuário'
   })
-  async findById(@Param('id') id: string): Promise<UserResponseDto> {
+  async findById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id });
   }
 
