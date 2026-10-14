@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -100,9 +101,11 @@ export class UsersController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
 
-    if (dto.entityType === 'employee' && currentUser?.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+    if (!currentUser) throw new UnauthorizedException();
 
-    return this.createUserUseCase.execute({ ...dto, createdBy: currentUser?.username });
+    if (dto.entityType === 'employee' && currentUser.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+
+    return this.createUserUseCase.execute({ ...dto, createdBy: currentUser.username });
   }
 
   @Get('me')
