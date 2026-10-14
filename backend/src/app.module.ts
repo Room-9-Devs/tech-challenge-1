@@ -48,6 +48,7 @@ import { ClientEventAuditHandler } from './application/event-handlers/client-eve
 import { EmployeeEventAuditHandler } from './application/event-handlers/employee-event-audit.handler';
 import { AuthEventAuditHandler } from './application/event-handlers/auth-event-audit.handler';
 import { WorkOrderEventAuditHandler } from './application/event-handlers/work-order-event-audit.handler';
+import { WorkOrderNotificationHandler } from './application/event-handlers/work-order-notification.handler';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
@@ -86,6 +87,8 @@ import { ChangeWorkOrderItemUseCase } from './application/use-cases/work-orders/
 import { RemoveWorkOrderItemUseCase } from './application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
 import { ChangeWorkOrderStatusUseCase } from './application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
 import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
+import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
+import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
 
 @Module({
   imports: [
@@ -140,6 +143,7 @@ import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-ord
     EmployeeEventAuditHandler,
     AuthEventAuditHandler,
     WorkOrderEventAuditHandler,
+    WorkOrderNotificationHandler,
     EventTypeSeedService,
     { provide: FIPE_GATEWAY, useClass: ParallelumFipeGateway },
     CreateRepairUseCase,
@@ -178,6 +182,7 @@ import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-ord
     RemoveWorkOrderItemUseCase,
     ChangeWorkOrderStatusUseCase,
     ConfirmWorkOrderPaymentUseCase,
+    { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
     CurrentUserInterceptor,
   ],
 })

@@ -151,6 +151,17 @@ Todo evento armazena:
 
 Eventos não possuem `updated_at` nem `deleted_at` por serem registros imutáveis.
 
+## Reações a Eventos
+
+Além da auditoria, alguns eventos disparam reações automáticas (políticas do Event Storming):
+
+| Evento | Condição | Reação | Handler |
+|---|---|---|---|
+| `work_order.status_changed` | `to = awaiting_approval` | E-mail com o orçamento para o cliente | `WorkOrderNotificationHandler` |
+| `work_order.status_changed` | `to = completed` | E-mail de serviço concluído para o cliente | `WorkOrderNotificationHandler` |
+
+As notificações são best-effort: uma falha ao montar ou enviar o e-mail é registrada em log e não desfaz a mudança de status.
+
 ## Extensibilidade
 
 Para adicionar um novo evento:

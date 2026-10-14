@@ -13,12 +13,6 @@ import {
 } from '@/application/ports/domain-event-publisher.port';
 import { WorkOrderStatusChangedEvent } from '@/domain/events/work-order.events';
 import {
-  EMAIL_SENDER,
-  EmailSender,
-} from '@/application/ports/email-sender.port';
-import { USER_REPOSITORY } from '../../users/create-user/create-user.use-case';
-import { UserRepository } from '@/domain/repositories/user.repository';
-import {
   WORK_ORDER_REPOSITORY,
   WorkOrderRepository,
 } from '@/domain/repositories/work-order.repository';
@@ -38,8 +32,6 @@ export class ChangeWorkOrderStatusUseCase {
   constructor(
     @Inject(WORK_ORDER_REPOSITORY) private readonly orders: WorkOrderRepository,
     @Inject(WORK_ORDER_UNIT_OF_WORK) private readonly uow: WorkOrderUnitOfWork,
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
-    @Inject(EMAIL_SENDER) private readonly email: EmailSender,
     @Inject(DOMAIN_EVENT_PUBLISHER)
     private readonly eventPublisher: DomainEventPublisher,
   ) {}
@@ -107,26 +99,6 @@ export class ChangeWorkOrderStatusUseCase {
         },
       ),
     );
-    if (
-      input.status === WorkOrderStatus.AWAITING_APPROVAL ||
-      input.status === WorkOrderStatus.COMPLETED
-    ) {
-      const client = await this.users.findById(saved.clientId);
-      if (client) {
-        const isQuote = input.status === WorkOrderStatus.AWAITING_APPROVAL;
-        const message = isQuote
-          ? `O orçamento da ordem ${saved.number} está disponível para aprovação. Total: R$ ${saved.totalPrice.toFixed(2)}.`
-          : `O serviço da ordem ${saved.number} foi concluído.`;
-        await this.email.send({
-          to: client.email,
-          subject: isQuote
-            ? `Orçamento disponível - ${saved.number}`
-            : `Serviço concluído - ${saved.number}`,
-          text: message,
-          html: `<p>${message}</p>`,
-        });
-      }
-    }
     return saved;
   }
 }

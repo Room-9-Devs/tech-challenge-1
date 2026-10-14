@@ -28,7 +28,6 @@ describe('Work order use cases', () => {
   let vehicles: any;
   let users: any;
   let profiles: any;
-  let email: any;
   let unitOfWork: any;
   let eventPublisher: any;
   let create: CreateWorkOrderUseCase;
@@ -64,7 +63,6 @@ describe('Work order use cases', () => {
         phone: '11999999999',
       }),
     };
-    email = { send: jest.fn().mockResolvedValue(undefined) };
     const stock = {
       id: 'stock-id',
       available: 10,
@@ -164,8 +162,6 @@ describe('Work order use cases', () => {
     changeStatus = new ChangeWorkOrderStatusUseCase(
       repositories.workOrders,
       unitOfWork,
-      users,
-      email,
       eventPublisher,
     );
     confirmPayment = new ConfirmWorkOrderPaymentUseCase(
@@ -266,7 +262,7 @@ describe('Work order use cases', () => {
     ).rejects.toThrow('Saldo insuficiente');
   });
 
-  it('reserves stock and sends the quote email after persisting the approval request', async () => {
+  it('reserves stock and publishes the status change after persisting the approval request', async () => {
     const order = await createOrder();
     await addItem.execute({
       id: order.id,
@@ -288,8 +284,15 @@ describe('Work order use cases', () => {
     });
     expect(updated.status).toBe(WorkOrderStatus.AWAITING_APPROVAL);
     expect(repositories.stocks.findByProductId).toHaveBeenCalled();
-    expect(email.send).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'client@test.local' }),
+    expect(eventPublisher.publish).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        eventType: 'work_order.status_changed',
+        entityId: order.id,
+        metadata: expect.objectContaining({
+          from: WorkOrderStatus.UNDER_DIAGNOSIS,
+          to: WorkOrderStatus.AWAITING_APPROVAL,
+        }),
+      }),
     );
   });
 
@@ -370,5 +373,53 @@ describe('Work order use cases', () => {
     await expect(
       confirmPayment.execute({ id: order.id, actor: staff }),
     ).rejects.toThrow('Pagamento só pode ser confirmado');
+  });
+
+  it('publishes the status change when the service is completed', async () => {
+    const order = await createOrder();
+    await addItem.execute({
+      id: order.id,
+      serviceId: 'repair-id',
+      quantity: 1,
+      actor: staff,
+    });
+    for (const status of [
+      WorkOrderStatus.UNDER_DIAGNOSIS,
+      WorkOrderStatus.AWAITING_APPROVAL,
+      WorkOrderStatus.APPROVED,
+    ]) {
+      await changeStatus.execute({
+        id: order.id,
+        status,
+        note: status,
+        actor: staff,
+      });
+    }
+    await confirmPayment.execute({ id: order.id, actor: staff });
+    await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.IN_PROGRESS,
+      note: 'Início',
+      actor: staff,
+    });
+
+    const completed = await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.COMPLETED,
+      note: 'Serviço finalizado',
+      actor: staff,
+    });
+
+    expect(completed.status).toBe(WorkOrderStatus.COMPLETED);
+    expect(eventPublisher.publish).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        eventType: 'work_order.status_changed',
+        entityId: order.id,
+        metadata: expect.objectContaining({
+          from: WorkOrderStatus.IN_PROGRESS,
+          to: WorkOrderStatus.COMPLETED,
+        }),
+      }),
+    );
   });
 });
