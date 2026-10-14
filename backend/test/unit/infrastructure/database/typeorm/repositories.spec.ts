@@ -1,4 +1,4 @@
-import { Brackets } from 'typeorm';
+import { Brackets, IsNull } from 'typeorm';
 import { TypeOrmRoleRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-role.repository';
 import { TypeOrmRefreshTokenRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-refresh-token.repository';
 import { TypeOrmProfileRepository } from '@/infrastructure/database/typeorm/repositories/typeorm-profile.repository';
@@ -27,10 +27,26 @@ describe('TypeOrmRefreshTokenRepository', () => {
     const repository = { create: jest.fn().mockReturnValue(entity), save: jest.fn().mockResolvedValue(entity), findOne: jest.fn().mockResolvedValue(entity), update: jest.fn().mockResolvedValue(undefined) };
     const service = new TypeOrmRefreshTokenRepository(repository as never);
     await expect(service.save({ userId: entity.userId, tokenHash: entity.tokenHash, expiresAt: entity.expiresAt, revokedAt: null })).resolves.toMatchObject({ id: 'refresh-1' });
+    await expect(service.findByHash('hash')).resolves.toMatchObject({ userId: 'user-1' });
+    expect(repository.findOne).toHaveBeenLastCalledWith({ where: { tokenHash: 'hash' } });
     await expect(service.findValidByHash('hash')).resolves.toMatchObject({ userId: 'user-1' });
     await service.revoke('refresh-1');
     await service.revokeAllByUserId('user-1');
     expect(repository.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('revokes conditionally and reports whether the token was still active', async () => {
+    const repository = { update: jest.fn() };
+    repository.update
+      .mockResolvedValueOnce({ affected: 1 })
+      .mockResolvedValueOnce({ affected: 0 });
+    const service = new TypeOrmRefreshTokenRepository(repository as never);
+
+    await expect(service.revokeIfActive('refresh-1')).resolves.toBe(true);
+    await expect(service.revokeIfActive('refresh-1')).resolves.toBe(false);
+
+    expect(repository.update).toHaveBeenNthCalledWith(1, { id: 'refresh-1', revokedAt: IsNull() }, { revokedAt: expect.any(Date) });
+    expect(repository.update).toHaveBeenNthCalledWith(2, { id: 'refresh-1', revokedAt: IsNull() }, { revokedAt: expect.any(Date) });
   });
 });
 

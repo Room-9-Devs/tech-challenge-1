@@ -13,6 +13,11 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
     return this.toRecord(saved);
   }
 
+  async findByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
+    const token = await this.repository.findOne({ where: { tokenHash } });
+    return token ? this.toRecord(token) : null;
+  }
+
   async findValidByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
     const token = await this.repository.findOne({ where: { tokenHash, revokedAt: IsNull(), expiresAt: MoreThan(new Date()) } });
     return token ? this.toRecord(token) : null;
@@ -20,6 +25,11 @@ export class TypeOrmRefreshTokenRepository implements RefreshTokenRepository {
 
   async revoke(id: string): Promise<void> {
     await this.repository.update({ id }, { revokedAt: new Date() });
+  }
+
+  async revokeIfActive(id: string): Promise<boolean> {
+    const result = await this.repository.update({ id, revokedAt: IsNull() }, { revokedAt: new Date() });
+    return (result.affected ?? 0) === 1;
   }
 
   async revokeAllByUserId(userId: string): Promise<void> {

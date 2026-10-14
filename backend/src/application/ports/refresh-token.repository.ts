@@ -10,7 +10,9 @@ export interface RefreshTokenRecord {
 
 export interface RefreshTokenRepository {
   save(record: Omit<RefreshTokenRecord, 'id'>): Promise<RefreshTokenRecord>;
+  findByHash(tokenHash: string): Promise<RefreshTokenRecord | null>;
   findValidByHash(tokenHash: string): Promise<RefreshTokenRecord | null>;
   revoke(id: string): Promise<void>;
+  revokeIfActive(id: string): Promise<boolean>;
   revokeAllByUserId(userId: string): Promise<void>;
 }
