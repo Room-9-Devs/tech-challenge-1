@@ -6,12 +6,15 @@ import { ListRolesUseCase } from '@/application/use-cases/permissions/list-roles
 import { ChangeRoleUseCase } from '@/application/use-cases/permissions/change-role.use-case';
 import { JwtAuthGuard } from '@/infrastructure/http/auth/jwt-auth.guard';
 import { RolesGuard } from '@/infrastructure/http/auth/roles.guard';
+import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
 
 describe('Permissions HTTP validation', () => {
   let app: INestApplication;
   const listRoles = { execute: jest.fn() };
   const changeRole = { execute: jest.fn() };
   const userId = '550e8400-e29b-41d4-a716-446655440000';
+  const adminId = '0a7f8d5e-1c2b-4f3a-9d6e-7b8c9a0d1e2f';
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -19,6 +22,18 @@ describe('Permissions HTTP validation', () => {
       providers: [
         { provide: ListRolesUseCase, useValue: listRoles },
         { provide: ChangeRoleUseCase, useValue: changeRole },
+        {
+          provide: FindCurrentUserUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({
+              id: adminId,
+              username: 'rita.admin',
+              role: 'admin',
+              entityType: 'employee',
+            }),
+          },
+        },
+        CurrentUserInterceptor,
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -67,6 +82,6 @@ describe('Permissions HTTP validation', () => {
       .send({ role: 'admin' })
       .expect(204);
 
-    expect(changeRole.execute).toHaveBeenCalledWith(userId, 'admin');
+    expect(changeRole.execute).toHaveBeenCalledWith(userId, 'admin', 'rita.admin');
   });
 });
