@@ -42,13 +42,11 @@ export class ResendEmailSender implements EmailSender {
       return;
     }
 
-    const { to, subject } = this.applyRedirect(input);
-
     try {
       const { error } = await this.client.emails.send({
         from: this.from,
-        to,
-        subject,
+        to: this.resolveRecipients(input.to),
+        subject: input.subject,
         html: input.html,
         text: input.text,
         attachments: input.attachments,
@@ -68,19 +66,8 @@ export class ResendEmailSender implements EmailSender {
     }
   }
 
-  // Ambiente de avaliação: entrega tudo num endereço fixo e mantém o destinatário original no assunto.
-  private applyRedirect(
-    input: SendEmailInput,
-  ): Pick<SendEmailInput, 'to' | 'subject'> {
-    if (this.redirectTo.length === 0) {
-      return { to: input.to, subject: input.subject };
-    }
-
-    const originalRecipients = [input.to].flat().join(', ');
-
-    return {
-      to: this.redirectTo,
-      subject: `[Para: ${originalRecipients}] ${input.subject}`,
-    };
+  // Ambiente de avaliação: entrega tudo num endereço fixo em vez do destinatário original.
+  private resolveRecipients(to: SendEmailInput['to']): SendEmailInput['to'] {
+    return this.redirectTo.length > 0 ? this.redirectTo : to;
   }
 }

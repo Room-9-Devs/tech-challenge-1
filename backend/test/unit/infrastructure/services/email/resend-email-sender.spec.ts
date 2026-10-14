@@ -84,7 +84,7 @@ describe('ResendEmailSender', () => {
     );
   });
 
-  it('should redirect to EMAIL_REDIRECT_TO keeping the original recipient in the subject', async () => {
+  it('should redirect to EMAIL_REDIRECT_TO keeping the original subject', async () => {
     sendMock.mockResolvedValue({ data: { id: 'email-id' }, error: null });
     const sender = new ResendEmailSender(
       createConfigService({
@@ -99,7 +99,7 @@ describe('ResendEmailSender', () => {
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ['professor@example.com'],
-        subject: '[Para: cliente@example.com] Orçamento disponível',
+        subject: 'Orçamento disponível',
       }),
     );
     expect(warnSpy).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe('ResendEmailSender', () => {
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ['professor@example.com', 'monitor@example.com'],
-        subject: '[Para: a@example.com, b@example.com] Orçamento disponível',
+        subject: 'Orçamento disponível',
       }),
     );
   });
