@@ -10,6 +10,8 @@ services:
       - ./backend/.env
     environment:
       DATABASE_HOST: postgres
+      # Datas gravadas pelo Node (new Date()) e logs no horário de Brasília
+      TZ: America/Sao_Paulo
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
       TSC_WATCHFILE: DynamicPriorityPolling
@@ -30,8 +32,11 @@ services:
       - "5432:5432"
     env_file:
       - ./backend/.env
+    environment:
+      TZ: America/Sao_Paulo
+    # timezone: now() e DEFAULT now() no horário de Brasília
     command: >-
-      sh -c 'export POSTGRES_USER="$${DATABASE_USER}" POSTGRES_PASSWORD="$${DATABASE_PASSWORD}" POSTGRES_DB="$${DATABASE_NAME}"; exec docker-entrypoint.sh postgres'
+      sh -c 'export POSTGRES_USER="$${DATABASE_USER}" POSTGRES_PASSWORD="$${DATABASE_PASSWORD}" POSTGRES_DB="$${DATABASE_NAME}"; exec docker-entrypoint.sh postgres -c timezone=America/Sao_Paulo'
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
