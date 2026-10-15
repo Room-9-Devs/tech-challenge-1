@@ -7,11 +7,16 @@ import {
   renderEmailHeading,
   renderEmailLayout,
 } from './email-layout';
-import { escapeHtml, formatCurrency, formatDate } from './email-formatters';
+import {
+  escapeHtml,
+  formatCurrency,
+  formatDate,
+} from '@/shared/presentation/formatters';
 
 export interface WorkOrderEmailItem {
   description: string;
   quantity: number;
+  unitPrice: number;
   subtotal: number;
 }
 
@@ -22,11 +27,15 @@ export interface WorkOrderAwaitingApprovalEmailData {
   items: WorkOrderEmailItem[];
   total: number;
   generatedAt: Date;
-  approvalUrl?: string;
+  approveUrl?: string;
+  rejectUrl?: string;
 }
 
 const NO_LINK_MESSAGE =
   'Para aprovar ou recusar o orçamento, acesse o sistema da oficina.';
+
+const REVIEW_NOTICE =
+  'Você poderá revisar o orçamento antes de confirmar a sua resposta.';
 
 export function renderWorkOrderAwaitingApprovalEmail(
   data: WorkOrderAwaitingApprovalEmailData,
@@ -48,27 +57,35 @@ function renderContent(data: WorkOrderAwaitingApprovalEmailData): string {
   const colors = EMAIL_COLORS;
   const cellStyle = `font-family:${EMAIL_FONT};padding:12px 0;border-bottom:1px solid ${colors.border};font-size:14px;`;
   const headerCellStyle = `font-family:${EMAIL_FONT};padding:0 0 8px 0;border-bottom:1px solid ${colors.border};font-size:11px;font-weight:700;letter-spacing:1px;color:${colors.textMuted};`;
+  const numberCellSpacing = 'padding-left:12px;white-space:nowrap;';
 
   const itemRows = data.items
     .map(
       (item) => `
               <tr>
                 <td style="${cellStyle}color:${colors.text};">${escapeHtml(item.description)}</td>
-                <td align="center" style="${cellStyle}color:${colors.textSecondary};">${item.quantity}</td>
-                <td align="right" style="${cellStyle}color:${colors.text};white-space:nowrap;">${formatCurrency(item.subtotal)}</td>
+                <td align="center" style="${cellStyle}${numberCellSpacing}color:${colors.textSecondary};">${item.quantity}</td>
+                <td align="right" style="${cellStyle}${numberCellSpacing}color:${colors.textSecondary};">${formatCurrency(item.unitPrice)}</td>
+                <td align="right" style="${cellStyle}${numberCellSpacing}color:${colors.text};">${formatCurrency(item.subtotal)}</td>
               </tr>`,
     )
     .join('');
 
-  const callToAction = data.approvalUrl
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;">
+  const callToAction =
+    data.approveUrl && data.rejectUrl
+      ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;">
               <tr>
-                <td style="border:1px solid ${colors.primary};">
-                  <a href="${escapeHtml(data.approvalUrl)}" style="display:inline-block;padding:14px 40px;font-family:${EMAIL_FONT};font-size:14px;font-weight:700;letter-spacing:1px;color:${colors.primary};text-decoration:none;">APROVAR ORÇAMENTO</a>
+                <td bgcolor="${colors.primary}" style="background-color:${colors.primary};border:1px solid ${colors.primary};">
+                  <a href="${escapeHtml(data.approveUrl)}" style="display:inline-block;padding:14px 32px;font-family:${EMAIL_FONT};font-size:14px;font-weight:700;letter-spacing:1px;color:${colors.text};text-decoration:none;">APROVAR ORÇAMENTO</a>
+                </td>
+                <td style="width:12px;font-size:0;line-height:0;">&nbsp;</td>
+                <td style="border:1px solid ${colors.textMuted};">
+                  <a href="${escapeHtml(data.rejectUrl)}" style="display:inline-block;padding:14px 32px;font-family:${EMAIL_FONT};font-size:14px;font-weight:700;letter-spacing:1px;color:${colors.textSecondary};text-decoration:none;">RECUSAR</a>
                 </td>
               </tr>
-            </table>`
-    : `<p style="margin:32px 0 0 0;${EMAIL_TEXT_STYLE}">${NO_LINK_MESSAGE}</p>`;
+            </table>
+            <p style="margin:16px 0 0 0;font-family:${EMAIL_FONT};font-size:12px;line-height:18px;color:${colors.textMuted};">${REVIEW_NOTICE}</p>`
+      : `<p style="margin:32px 0 0 0;${EMAIL_TEXT_STYLE}">${NO_LINK_MESSAGE}</p>`;
 
   return `${renderEmailHeading({
     highlight: data.orderNumber,
@@ -84,11 +101,12 @@ function renderContent(data: WorkOrderAwaitingApprovalEmailData): string {
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="${headerCellStyle}">ITEM</td>
-                      <td align="center" style="${headerCellStyle}">QTD</td>
-                      <td align="right" style="${headerCellStyle}">VALOR</td>
+                      <td align="center" style="${headerCellStyle}${numberCellSpacing}">QTD</td>
+                      <td align="right" style="${headerCellStyle}${numberCellSpacing}">VALOR UNIT.</td>
+                      <td align="right" style="${headerCellStyle}${numberCellSpacing}">TOTAL</td>
                     </tr>${itemRows}
                     <tr>
-                      <td colspan="2" style="font-family:${EMAIL_FONT};padding-top:16px;font-size:14px;font-weight:700;letter-spacing:1px;color:${colors.text};">TOTAL</td>
+                      <td colspan="3" style="font-family:${EMAIL_FONT};padding-top:16px;font-size:14px;font-weight:700;letter-spacing:1px;color:${colors.text};">TOTAL</td>
                       <td align="right" style="font-family:${EMAIL_FONT};padding-top:16px;font-size:18px;font-weight:700;color:${colors.primary};white-space:nowrap;">${formatCurrency(data.total)}</td>
                     </tr>
                   </table>
@@ -102,13 +120,18 @@ function renderText(data: WorkOrderAwaitingApprovalEmailData): string {
   const items = data.items
     .map(
       (item) =>
-        `- ${item.description} (${item.quantity}x): ${formatCurrency(item.subtotal)}`,
+        `- ${item.description}: ${item.quantity} x ${formatCurrency(item.unitPrice)} = ${formatCurrency(item.subtotal)}`,
     )
     .join('\n');
 
-  const callToAction = data.approvalUrl
-    ? `Aprove o orçamento em: ${data.approvalUrl}`
-    : NO_LINK_MESSAGE;
+  const callToAction =
+    data.approveUrl && data.rejectUrl
+      ? [
+          `Aprovar o orçamento: ${data.approveUrl}`,
+          `Recusar o orçamento: ${data.rejectUrl}`,
+          REVIEW_NOTICE,
+        ].join('\n')
+      : NO_LINK_MESSAGE;
 
   return [
     `Olá, ${data.customerName}!`,

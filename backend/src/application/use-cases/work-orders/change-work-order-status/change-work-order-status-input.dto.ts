@@ -5,4 +5,6 @@ export interface ChangeWorkOrderStatusInputDto {
   status: WorkOrderStatus;
   note: string;
   actor: WorkOrderActorDto;
+  // Preenchido quando a decisão vem do link do e-mail: o token é consumido na mesma transação.
+  approvalTokenId?: string;
 }

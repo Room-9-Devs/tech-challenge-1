@@ -8,6 +8,7 @@ import {
   WORK_ORDER_NOTIFIER,
   WorkOrderNotifier,
 } from '@/application/ports/work-order-notifier.port';
+import { IssueWorkOrderApprovalTokenUseCase } from '@/application/use-cases/work-order-approvals/issue-work-order-approval-token/issue-work-order-approval-token.use-case';
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import { WorkOrderStatusChangedEvent } from '@/domain/events/work-order.events';
@@ -25,8 +26,11 @@ export class WorkOrderNotificationHandler implements OnApplicationBootstrap {
   private readonly notifications: Partial<
     Record<WorkOrderStatus, (order: WorkOrder) => Promise<void>>
   > = {
-    [WorkOrderStatus.AWAITING_APPROVAL]: (order) =>
-      this.notifier.notifyAwaitingApproval(order),
+    [WorkOrderStatus.AWAITING_APPROVAL]: async (order) =>
+      this.notifier.notifyAwaitingApproval(
+        order,
+        await this.issueApprovalToken(order),
+      ),
     [WorkOrderStatus.COMPLETED]: (order) =>
       this.notifier.notifyCompleted(order),
   };
@@ -35,6 +39,7 @@ export class WorkOrderNotificationHandler implements OnApplicationBootstrap {
     @Inject(WORK_ORDER_REPOSITORY) private readonly orders: WorkOrderRepository,
     @Inject(WORK_ORDER_NOTIFIER) private readonly notifier: WorkOrderNotifier,
     private readonly domainEventEmitter: DomainEventEmitter,
+    private readonly issueWorkOrderApprovalToken: IssueWorkOrderApprovalTokenUseCase,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -65,6 +70,22 @@ export class WorkOrderNotificationHandler implements OnApplicationBootstrap {
         `Falha ao notificar a mudança de status da OS ${event.entityId}: ${failure.message}`,
         failure.stack,
       );
+    }
+  }
+
+  // Sem token o e-mail ainda sai, só que sem os links: o cliente pode decidir pelo sistema.
+  private async issueApprovalToken(
+    order: WorkOrder,
+  ): Promise<string | undefined> {
+    try {
+      return await this.issueWorkOrderApprovalToken.execute(order);
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(
+        `Falha ao gerar o link de aprovação da ${order.number}: ${failure.message}`,
+        failure.stack,
+      );
+      return undefined;
     }
   }
 }
