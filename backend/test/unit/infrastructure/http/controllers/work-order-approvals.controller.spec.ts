@@ -64,6 +64,7 @@ describe('WorkOrderApprovalsController', () => {
     expect(getApproval.execute).toHaveBeenCalledWith(token);
     expect(decideApproval.execute).not.toHaveBeenCalled();
     expect(html).toContain('<form method="POST">');
+    expect(html).toContain('src="data:image/png;base64,');
     expect(html).toContain('CONFIRMAR APROVAÇÃO');
     expect(html).toContain('href="./reject"');
     expect(html).toContain('Alinhamento');

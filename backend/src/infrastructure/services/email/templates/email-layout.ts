@@ -1,5 +1,3 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   EmailAttachment,
   SendEmailInput,
@@ -10,6 +8,7 @@ import {
   BRAND_TITLE,
 } from '@/shared/presentation/brand';
 import { escapeHtml } from '@/shared/presentation/formatters';
+import { readBrandLogo } from '@/shared/presentation/logo';
 
 export type RenderedEmail = Omit<SendEmailInput, 'to'>;
 
@@ -17,18 +16,11 @@ export const EMAIL_TITLE = BRAND_TITLE;
 
 export const EMAIL_LOGO_CONTENT_ID = 'logo';
 
-// Copiado para o dist pelo "assets" do nest-cli.json
-const LOGO_PATH = join(__dirname, '..', 'assets', 'logo.png');
-
-let logo: Buffer | undefined;
-
 // Anexo inline: o Gmail bloqueia imagens em data URI, mas exibe cid:
 function logoAttachment(): EmailAttachment {
-  logo ??= readFileSync(LOGO_PATH);
-
   return {
     filename: 'logo.png',
-    content: logo,
+    content: readBrandLogo(),
     contentType: 'image/png',
     contentId: EMAIL_LOGO_CONTENT_ID,
   };

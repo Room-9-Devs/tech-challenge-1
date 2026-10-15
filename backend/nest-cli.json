@@ -6,7 +6,7 @@
     "deleteOutDir": true,
     "assets": [
       {
-        "include": "infrastructure/services/email/assets/**/*",
+        "include": "shared/presentation/assets/**/*",
         "watchAssets": true
       }
     ]

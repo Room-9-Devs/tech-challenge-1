@@ -5,12 +5,13 @@ import {
   BRAND_TITLE,
 } from '@/shared/presentation/brand';
 import { escapeHtml } from '@/shared/presentation/formatters';
+import { readBrandLogo } from '@/shared/presentation/logo';
 
 // Páginas sem JavaScript: a política pode bloquear tudo, exceto CSS inline e envio de formulário à própria API.
 export const HTML_PAGE_HEADERS: Record<string, string> = {
   'Content-Type': 'text/html; charset=utf-8',
   'Content-Security-Policy':
-    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   // O token está na URL: não pode vazar para outros sites nem ficar em cache ou em buscadores.
   'Referrer-Policy': 'no-referrer',
   'Cache-Control': 'no-store',
@@ -24,6 +25,14 @@ export function HtmlPage(): MethodDecorator {
       Header(name, value),
     ),
   );
+}
+
+let logoDataUri: string | undefined;
+
+// Embutida na página: dispensa uma rota pública só para a imagem e mantém a CSP restrita a data:
+function brandLogoDataUri(): string {
+  logoDataUri ??= `data:image/png;base64,${readBrandLogo().toString('base64')}`;
+  return logoDataUri;
 }
 
 export interface PageLayoutInput {
@@ -46,7 +55,8 @@ export function renderPageLayout({ title, content }: PageLayoutInput): string {
   * { box-sizing: border-box; }
   body { margin: 0; background: ${colors.background}; color: ${colors.textSecondary}; font-family: ${BRAND_FONT}; font-size: 15px; line-height: 24px; }
   main { max-width: 600px; margin: 0 auto; padding: 24px 16px; }
-  header { background: ${colors.surface}; padding: 20px 24px; font-size: 17px; letter-spacing: 1.5px; color: ${colors.text}; }
+  header { display: flex; align-items: center; gap: 16px; background: ${colors.surface}; padding: 20px 24px; font-size: 17px; line-height: 24px; letter-spacing: 1.5px; color: ${colors.text}; }
+  header img { display: block; width: 64px; height: 64px; flex-shrink: 0; }
   header span { color: ${colors.primary}; }
   section { padding: 32px 24px; }
   h1 { margin: 0; font-size: 20px; line-height: 28px; color: ${colors.text}; font-weight: 400; }
@@ -76,7 +86,10 @@ export function renderPageLayout({ title, content }: PageLayoutInput): string {
 </head>
 <body>
 <main>
-  <header><strong>OFICINA MECÂNICA</strong> <span>- TECH CHALLENGE</span></header>
+  <header>
+    <img src="${brandLogoDataUri()}" width="64" height="64" alt="Logo ${escapeHtml(BRAND_TITLE)}">
+    <div><strong>OFICINA MECÂNICA</strong> <span>- TECH CHALLENGE</span></div>
+  </header>
   <section>
     ${content}
   </section>

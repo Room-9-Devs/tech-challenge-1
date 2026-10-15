@@ -158,6 +158,9 @@ describe('Work order approval over HTTP', () => {
     expect(response.headers['content-security-policy']).toContain(
       "form-action 'self'",
     );
+    expect(response.headers['content-security-policy']).toContain(
+      'img-src data:',
+    );
     expect(response.text).toContain('CONFIRMAR APROVAÇÃO');
     expect(response.text).toContain('Fiat Uno - ABC1D23');
     expect(order.status).toBe(WorkOrderStatus.AWAITING_APPROVAL);
