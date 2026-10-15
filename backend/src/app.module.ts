@@ -13,6 +13,7 @@ import { PermissionsController } from './infrastructure/http/permissions/permiss
 import { VehiclesController } from './infrastructure/http/controllers/vehicles.controller';
 import { EventTypesController } from './infrastructure/http/controllers/event-types.controller';
 import { EventsController } from './infrastructure/http/controllers/events.controller';
+import { StatsController } from './infrastructure/http/controllers/stats.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
@@ -89,6 +90,7 @@ import { ChangeWorkOrderStatusUseCase } from './application/use-cases/work-order
 import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
 import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
 import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
+import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-stats/get-work-order-stats/get-work-order-stats.use-case';
 
 @Module({
   imports: [
@@ -112,6 +114,7 @@ import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-wo
     EventTypesController,
     EventsController,
     WorkOrdersController,
+    StatsController,
     AuthController,
     PermissionsController,
   ],
@@ -182,6 +185,7 @@ import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-wo
     RemoveWorkOrderItemUseCase,
     ChangeWorkOrderStatusUseCase,
     ConfirmWorkOrderPaymentUseCase,
+    GetWorkOrderStatsUseCase,
     { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
     CurrentUserInterceptor,
   ],
