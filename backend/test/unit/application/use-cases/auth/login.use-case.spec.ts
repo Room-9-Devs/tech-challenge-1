@@ -32,4 +32,19 @@ describe('LoginUseCase', () => {
   it('rejects invalid credentials', async () => {
     await expect(useCase.execute({ login: 'jose@example.com', password: 'wrong-password' })).rejects.toThrow(AuthenticationError);
   });
+
+  it('still runs the password comparison when the user does not exist', async () => {
+    const passwords = new FakePasswordHasher();
+    const compare = jest.spyOn(passwords, 'compare');
+    const loginUseCase = new LoginUseCase(users, passwords, new FakeRoleRepository(), refreshTokens, new FakeRefreshTokenService(), new FakeTokenService(), new FakeDomainEventPublisher());
+
+    await expect(loginUseCase.execute({ login: 'ghost@example.com', password: 'password123' })).rejects.toThrow(AuthenticationError);
+
+    expect(compare).toHaveBeenCalledTimes(1);
+    expect(compare).toHaveBeenCalledWith('password123', expect.stringContaining('scrypt$'));
+  });
+
+  it('rejects unknown usernames with the same error as wrong passwords', async () => {
+    await expect(useCase.execute({ login: 'ghost.silveira', password: 'password123' })).rejects.toThrow(AuthenticationError);
+  });
 });
