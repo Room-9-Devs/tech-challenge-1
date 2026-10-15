@@ -10,6 +10,7 @@ import { ChangeWorkOrderItemUseCase } from '@/application/use-cases/work-orders/
 import { RemoveWorkOrderItemUseCase } from '@/application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
 import { ChangeWorkOrderStatusUseCase } from '@/application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
 import { ConfirmWorkOrderPaymentUseCase } from '@/application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
+import { FakeWorkOrderApprovalTokenRepository } from '../../../fakes/fake-work-order-approval-token.repository';
 
 describe('Work order use cases', () => {
   const staff = {
@@ -25,6 +26,7 @@ describe('Work order use cases', () => {
   let orders: WorkOrder[];
   let events: any[];
   let repositories: any;
+  let approvalTokens: FakeWorkOrderApprovalTokenRepository;
   let vehicles: any;
   let users: any;
   let profiles: any;
@@ -42,6 +44,7 @@ describe('Work order use cases', () => {
   beforeEach(() => {
     orders = [];
     events = [];
+    approvalTokens = new FakeWorkOrderApprovalTokenRepository();
     vehicles = {
       findById: jest
         .fn()
@@ -120,6 +123,7 @@ describe('Work order use cases', () => {
           }),
         ),
       },
+      approvalTokens,
     };
     unitOfWork = {
       run: jest.fn((callback: (r: any) => unknown) => callback(repositories)),
@@ -331,6 +335,87 @@ describe('Work order use cases', () => {
       actor: client,
     });
     expect(approved.status).toBe(WorkOrderStatus.APPROVED);
+  });
+
+  async function createOrderAwaitingApproval() {
+    const order = await createOrder();
+    await addItem.execute({
+      id: order.id,
+      serviceId: 'repair-id',
+      quantity: 1,
+      actor: staff,
+    });
+    for (const status of [
+      WorkOrderStatus.UNDER_DIAGNOSIS,
+      WorkOrderStatus.AWAITING_APPROVAL,
+    ]) {
+      await changeStatus.execute({
+        id: order.id,
+        status,
+        note: status,
+        actor: staff,
+      });
+    }
+    return order;
+  }
+
+  function issueApprovalToken(workOrderId: string) {
+    return approvalTokens.save({
+      workOrderId,
+      clientId: client.id,
+      tokenHash: `hash-${approvalTokens.records.length}`,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+  }
+
+  it('revokes the email approval links when the quote is decided outside the link', async () => {
+    const order = await createOrderAwaitingApproval();
+    const token = await issueApprovalToken(order.id);
+
+    await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.APPROVED,
+      note: 'Aprovado pelo app',
+      actor: client,
+    });
+
+    expect(token.revokedAt).toBeInstanceOf(Date);
+    expect(token.usedAt).toBeNull();
+  });
+
+  it('consumes the approval token used in the decision and revokes the others', async () => {
+    const order = await createOrderAwaitingApproval();
+    const previous = await issueApprovalToken(order.id);
+    const used = await issueApprovalToken(order.id);
+
+    await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.CANCELLED,
+      note: 'Recusado pelo link',
+      actor: client,
+      approvalTokenId: used.id,
+    });
+
+    expect(used.usedAt).toBeInstanceOf(Date);
+    expect(used.revokedAt).toBeNull();
+    expect(previous.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it('rejects a decision with an approval token that is no longer valid', async () => {
+    const order = await createOrderAwaitingApproval();
+    const token = await issueApprovalToken(order.id);
+    token.revokedAt = new Date();
+
+    await expect(
+      changeStatus.execute({
+        id: order.id,
+        status: WorkOrderStatus.APPROVED,
+        note: 'Aprovado pelo link',
+        actor: client,
+        approvalTokenId: token.id,
+      }),
+    ).rejects.toThrow('Link de aprovação inválido ou expirado');
+    expect(orders[0].status).toBe(WorkOrderStatus.AWAITING_APPROVAL);
   });
 
   it('requires an approved order for payment and records payment before work starts', async () => {

@@ -27,3 +27,4 @@ export * from './invalid-work-order.error';
 export * from './invalid-work-order-item.error';
 export * from './work-order-not-found.error';
 export * from './work-order-conflict.error';
+export * from './work-order-approval-link-invalid.error';
