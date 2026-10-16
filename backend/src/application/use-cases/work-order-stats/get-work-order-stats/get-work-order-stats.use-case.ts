@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  WORK_ORDER_STATS_REPOSITORY,
+  WorkOrderStatsRepository,
+} from '@/application/ports/work-order-stats.repository';
 import { GetWorkOrderStatsInputDto } from './get-work-order-stats-input.dto';
 import { GetWorkOrderStatsOutputDto } from './get-work-order-stats-output.dto';
 import {
@@ -6,9 +10,16 @@ import {
   isValidIsoDate,
   resolveStatsPeriod,
 } from './resolve-stats-period';
+import { WORK_ORDER_STATS } from './stats/work-order-stats.registry';
+import { endOfLocalDay, startOfLocalDay } from './stats/local-day';
 
 @Injectable()
 export class GetWorkOrderStatsUseCase {
+  constructor(
+    @Inject(WORK_ORDER_STATS_REPOSITORY)
+    private readonly statsRepository: WorkOrderStatsRepository,
+  ) {}
+
   async execute(
     input: GetWorkOrderStatsInputDto = {},
     now: Date = new Date(),
@@ -38,11 +49,32 @@ export class GetWorkOrderStatsUseCase {
 
     const resolved = resolveStatsPeriod({ period, startDate, endDate }, now);
 
+    const startInstant = resolved.startDate
+      ? startOfLocalDay(resolved.startDate)
+      : null;
+    const endInstant = resolved.endDate ? endOfLocalDay(resolved.endDate) : now;
+
+    const records =
+      await this.statsRepository.findRecordsCreatedUntil(endInstant);
+
+    const stats: GetWorkOrderStatsOutputDto['stats'] = {};
+    for (const stat of WORK_ORDER_STATS) {
+      stats[stat.tag] = {
+        name: stat.name,
+        value: stat.compute({
+          startInstant,
+          endInstant,
+          records,
+        }),
+        hint: stat.hint,
+      };
+    }
+
     return {
       period: resolved.period,
       start_date: resolved.startDate,
       end_date: resolved.endDate,
-      stats: {},
+      stats,
     };
   }
 }

@@ -27,8 +27,24 @@ export class StatsResponseDto {
   end_date: string | null;
 
   @ApiProperty({
-    description: 'Estatísticas de ordens de serviço do período',
-    example: {},
+    description:
+      'Estatísticas de ordens de serviço do período, indexadas por tag. Cada entrada tem name, value e hint (explicação do cálculo, pensada como tooltip no frontend)',
+    type: 'object',
+    additionalProperties: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        value: { type: 'string' },
+        hint: { type: 'string' },
+      },
+    },
+    example: {
+      wo_started: {
+        name: 'Ordens de serviço iniciadas',
+        value: '12',
+        hint: 'Quantidade de ordens de serviço criadas com data de criação dentro do período.',
+      },
+    },
   })
-  stats: Record<string, never>;
+  stats: Record<string, { name: string; value: string; hint: string }>;
 }
