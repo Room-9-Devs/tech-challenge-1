@@ -92,6 +92,11 @@ export const DEFAULT_EVENT_TYPES = [
     allowedEntityTypes: ['stock' as const],
   },
   {
+    code: 'stock.consumed',
+    name: 'Estoque consumido',
+    allowedEntityTypes: ['stock' as const],
+  },
+  {
     code: 'stock.released',
     name: 'Estoque liberado',
     allowedEntityTypes: ['stock' as const],

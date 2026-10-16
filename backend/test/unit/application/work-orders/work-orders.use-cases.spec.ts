@@ -1,5 +1,7 @@
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
+import { Stock } from '@/domain/entities/stock.entity';
+import { StockMovementType } from '@/domain/entities/stock-movement.entity';
 import { EventType } from '@/domain/entities/event-type.entity';
 import { Event } from '@/domain/entities/event.entity';
 import { CreateWorkOrderUseCase } from '@/application/use-cases/work-orders/create-work-order/create-work-order.use-case';
@@ -25,6 +27,7 @@ describe('Work order use cases', () => {
   };
   let orders: WorkOrder[];
   let events: any[];
+  let stock: Stock;
   let repositories: any;
   let approvalTokens: FakeWorkOrderApprovalTokenRepository;
   let vehicles: any;
@@ -66,14 +69,12 @@ describe('Work order use cases', () => {
         phone: '11999999999',
       }),
     };
-    const stock = {
+    stock = Stock.reconstitute({
       id: 'stock-id',
-      available: 10,
+      productId: 'product-id',
       quantity: 10,
-      reserve: jest.fn(),
-      releaseReservation: jest.fn(),
-      consumeReservation: jest.fn(),
-    };
+      reserved: 0,
+    });
     repositories = {
       workOrders: {
         save: jest.fn(async (order: WorkOrder) => {
@@ -308,6 +309,12 @@ describe('Work order use cases', () => {
       quantity: 1,
       actor: staff,
     });
+    await addItem.execute({
+      id: order.id,
+      productId: 'product-id',
+      quantity: 2,
+      actor: staff,
+    });
     await changeStatus.execute({
       id: order.id,
       status: WorkOrderStatus.UNDER_DIAGNOSIS,
@@ -320,6 +327,7 @@ describe('Work order use cases', () => {
       note: 'Orçamento',
       actor: staff,
     });
+    expect(stock.available).toBe(8);
     await expect(
       changeStatus.execute({
         id: order.id,
@@ -335,6 +343,17 @@ describe('Work order use cases', () => {
       actor: client,
     });
     expect(approved.status).toBe(WorkOrderStatus.APPROVED);
+    expect(stock.quantity).toBe(8);
+    expect(stock.reserved).toBe(0);
+    expect(stock.available).toBe(8);
+    expect(repositories.stockMovements.save).toHaveBeenCalled();
+    const movement = repositories.stockMovements.save.mock.calls[0][0];
+    expect(movement.movementType).toBe(StockMovementType.OUT);
+    expect(movement.quantity).toBe(2);
+    expect(movement.previousQuantity).toBe(10);
+    expect(movement.referenceType).toBe('work_order');
+    expect(movement.referenceId).toBe(order.id);
+    expect(movement.createdBy).toBe(client.id);
   });
 
   async function createOrderAwaitingApproval() {
