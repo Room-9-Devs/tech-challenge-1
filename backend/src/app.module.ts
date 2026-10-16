@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ENV_FILE_PATH, requireEnvironmentVariable } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
@@ -47,6 +47,8 @@ import { RepairEventAuditHandler } from './application/event-handlers/repair-eve
 import { ClientEventAuditHandler } from './application/event-handlers/client-event-audit.handler';
 import { EmployeeEventAuditHandler } from './application/event-handlers/employee-event-audit.handler';
 import { AuthEventAuditHandler } from './application/event-handlers/auth-event-audit.handler';
+import { WorkOrderEventAuditHandler } from './application/event-handlers/work-order-event-audit.handler';
+import { WorkOrderNotificationHandler } from './application/event-handlers/work-order-notification.handler';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
@@ -76,6 +78,27 @@ import { RecordEventUseCase } from './application/use-cases/events/record-event/
 import { ListEventsByEntityIdUseCase } from './application/use-cases/events/list-events-by-entity-id/list-events-by-entity-id.use-case';
 import { FIPE_GATEWAY } from './application/ports/fipe.gateway';
 import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum-fipe.gateway';
+import { WorkOrdersController } from './infrastructure/http/controllers/work-orders.controller';
+import { CreateWorkOrderUseCase } from './application/use-cases/work-orders/create-work-order/create-work-order.use-case';
+import { ListWorkOrdersUseCase } from './application/use-cases/work-orders/list-work-orders/list-work-orders.use-case';
+import { FindWorkOrderUseCase } from './application/use-cases/work-orders/find-work-order/find-work-order.use-case';
+import { AddWorkOrderItemUseCase } from './application/use-cases/work-orders/add-work-order-item/add-work-order-item.use-case';
+import { ChangeWorkOrderItemUseCase } from './application/use-cases/work-orders/change-work-order-item/change-work-order-item.use-case';
+import { RemoveWorkOrderItemUseCase } from './application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
+import { ChangeWorkOrderStatusUseCase } from './application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
+import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
+import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
+import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
+import { WorkOrderApprovalsController } from './infrastructure/http/controllers/work-order-approvals.controller';
+import { WorkOrderQuoteService } from './application/services/work-order-quote.service';
+import {
+  IssueWorkOrderApprovalTokenUseCase,
+  WORK_ORDER_APPROVAL_TTL_HOURS,
+} from './application/use-cases/work-order-approvals/issue-work-order-approval-token/issue-work-order-approval-token.use-case';
+import { GetWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/get-work-order-approval/get-work-order-approval.use-case';
+import { DecideWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/decide-work-order-approval/decide-work-order-approval.use-case';
+
+const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
 
 @Module({
   imports: [
@@ -98,6 +121,8 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     VehiclesController,
     EventTypesController,
     EventsController,
+    WorkOrdersController,
+    WorkOrderApprovalsController,
     AuthController,
     PermissionsController,
   ],
@@ -128,6 +153,8 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     ClientEventAuditHandler,
     EmployeeEventAuditHandler,
     AuthEventAuditHandler,
+    WorkOrderEventAuditHandler,
+    WorkOrderNotificationHandler,
     EventTypeSeedService,
     { provide: FIPE_GATEWAY, useClass: ParallelumFipeGateway },
     CreateRepairUseCase,
@@ -158,6 +185,26 @@ import { ParallelumFipeGateway } from './infrastructure/services/fipe/parallelum
     ListRolesUseCase,
     ChangeRoleUseCase,
     FindCurrentUserUseCase,
+    CreateWorkOrderUseCase,
+    ListWorkOrdersUseCase,
+    FindWorkOrderUseCase,
+    AddWorkOrderItemUseCase,
+    ChangeWorkOrderItemUseCase,
+    RemoveWorkOrderItemUseCase,
+    ChangeWorkOrderStatusUseCase,
+    ConfirmWorkOrderPaymentUseCase,
+    { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
+    WorkOrderQuoteService,
+    {
+      provide: WORK_ORDER_APPROVAL_TTL_HOURS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        Number(config.get('WORK_ORDER_APPROVAL_TTL_HOURS')) ||
+        DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS,
+    },
+    IssueWorkOrderApprovalTokenUseCase,
+    GetWorkOrderApprovalUseCase,
+    DecideWorkOrderApprovalUseCase,
     CurrentUserInterceptor,
   ],
 })

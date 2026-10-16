@@ -60,6 +60,73 @@ describe('ResendEmailSender', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
+  it('should forward inline attachments to Resend', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'email-id' }, error: null });
+    const sender = new ResendEmailSender(
+      createConfigService({
+        RESEND_API_KEY: 're_test',
+        EMAIL_FROM: 'oficina@example.com',
+      }),
+    );
+    const attachments = [
+      {
+        filename: 'logo.png',
+        content: Buffer.from('png'),
+        contentType: 'image/png',
+        contentId: 'logo',
+      },
+    ];
+
+    await sender.send({ ...input, attachments });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({ attachments }),
+    );
+  });
+
+  it('should redirect to EMAIL_REDIRECT_TO keeping the original subject', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'email-id' }, error: null });
+    const sender = new ResendEmailSender(
+      createConfigService({
+        RESEND_API_KEY: 're_test',
+        EMAIL_FROM: 'oficina@example.com',
+        EMAIL_REDIRECT_TO: 'professor@example.com',
+      }),
+    );
+
+    await sender.send(input);
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: ['professor@example.com'],
+        subject: 'Orçamento disponível',
+      }),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('professor@example.com'),
+    );
+  });
+
+  it('should accept comma separated addresses in EMAIL_REDIRECT_TO', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'email-id' }, error: null });
+    const sender = new ResendEmailSender(
+      createConfigService({
+        RESEND_API_KEY: 're_test',
+        EMAIL_FROM: 'oficina@example.com',
+        EMAIL_REDIRECT_TO: ' professor@example.com, monitor@example.com ,',
+      }),
+    );
+
+    await sender.send({ ...input, to: ['a@example.com', 'b@example.com'] });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: ['professor@example.com', 'monitor@example.com'],
+        subject: 'Orçamento disponível',
+      }),
+    );
+  });
+
   it('should log and not throw when Resend returns an error', async () => {
     sendMock.mockResolvedValue({
       data: null,

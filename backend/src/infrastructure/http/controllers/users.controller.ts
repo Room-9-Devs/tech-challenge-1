@@ -38,6 +38,11 @@ import { ListUsersFiltersInputDto } from '@/application/use-cases/users/list-use
 import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
 import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+import {
+  HateoasCollection,
+  HateoasItem,
+} from '../hateoas/hateoas.decorator';
+import { userLinks } from '../hateoas/resources/user.links';
 
 const ALLOWED_USERS_SORT_COLUMNS = [
   'username',
@@ -97,6 +102,7 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Acesso negado para registrar funcionários',
   })
+  @HateoasItem(userLinks)
   async create(
     @Body() dto: CreateUserRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -118,6 +124,7 @@ export class UsersController {
     description: 'Dados do usuário logado',
     type: UserResponseDto,
   })
+  @HateoasItem(userLinks)
   async me(@Req() request: { user: { sub: string } }): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id: request.user.sub });
   }
@@ -153,6 +160,8 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a ver dados de outro usuário'
   })
+
+  @HateoasItem(userLinks)
   async findById(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<UserResponseDto> {
@@ -177,6 +186,7 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a listar usuários'
   })
+  @HateoasCollection(userLinks)
   async findAll(
     @Query() query: ListUsersQueryDto): Promise<ListUsersResponseDto> {
     return this.listUsersUseCase.execute({

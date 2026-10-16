@@ -10,11 +10,13 @@ import {
   ProductUnit,
 } from '@/domain/entities/product.entity';
 import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
+import { ProductCreatedEvent } from '@/domain/events/product.events';
 
 describe('CreateProductUseCase', () => {
   let useCase: CreateProductUseCase;
   let fakeRepository: FakeProductRepository;
   let fakeStockRepository: FakeStockRepository;
+  let fakeEventPublisher: FakeDomainEventPublisher;
 
   const input = {
     sku: 'OLEO-5W30-1L',
@@ -29,8 +31,10 @@ describe('CreateProductUseCase', () => {
   beforeEach(() => {
     fakeRepository = new FakeProductRepository();
     fakeStockRepository = new FakeStockRepository(fakeRepository);
+    fakeEventPublisher = new FakeDomainEventPublisher();
     useCase = new CreateProductUseCase(
       fakeRepository,
+      fakeEventPublisher,
       new FakeDomainEventPublisher(),
       new FakeProductCreationUnitOfWork(fakeRepository, fakeStockRepository),
     );
@@ -98,6 +102,26 @@ describe('CreateProductUseCase', () => {
     await expect(useCase.execute(input)).rejects.toThrow(
       ProductAlreadyExistsError,
     );
+  });
+
+  it('should publish ProductCreatedEvent with the author', async () => {
+    const result = await useCase.execute({ ...input, createdBy: 'jose.silveira' });
+
+    const events = fakeEventPublisher.getPublishedEvents();
+    expect(events).toHaveLength(1);
+    expect(events[0]).toBeInstanceOf(ProductCreatedEvent);
+    expect(events[0]).toMatchObject({
+      entityId: result.id,
+      createdBy: 'jose.silveira',
+      metadata: { sku: 'OLEO-5W30-1L', salePrice: 59.9 },
+    });
+  });
+
+  it('should not publish events when creation fails', async () => {
+    await expect(useCase.execute({ ...input, name: '' })).rejects.toThrow(
+      InvalidProductError,
+    );
+    expect(fakeEventPublisher.getPublishedEvents()).toHaveLength(0);
   });
 
   it('should throw InvalidProductError when name is invalid', async () => {

@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductType, ProductUnit } from '@/domain/entities/product.entity';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class ProductResponseDto {
   @ApiProperty({
@@ -70,4 +72,14 @@ export class ProductResponseDto {
     example: '2024-01-01T00:00:00.000Z',
   })
   updatedAt: Date;
+
+  @ApiLinksProperty({
+    self: { href: '/products/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+    update: { href: '/products/550e8400-e29b-41d4-a716-446655440000', method: 'PUT' },
+    delete: { href: '/products/550e8400-e29b-41d4-a716-446655440000', method: 'DELETE' },
+    stock: { href: '/stock?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440000%22%7D', method: 'GET' },
+    movements: { href: '/stock/movements?filters=%7B%22productId%22%3A%22550e8400-e29b-41d4-a716-446655440000%22%7D', method: 'GET' },
+    events: { href: '/events/product/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+  })
+  _links?: Links;
 }

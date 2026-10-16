@@ -87,11 +87,14 @@ Registro imutável de cada ocorrência.
 
 ### `stock`
 
+Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O movimento de reserva é manipulado diretamente no campo `reserved` da tabela `stocks` (sem gerar movement) e apenas o consumo físico na aprovação gera uma movimentação do tipo `OUT`. Os eventos carregam o estado completo do estoque antes e depois da operação para fins de auditoria.
+
 | Código | Descrição | Metadados sugeridos |
 |---|---|---|
 | `stock.adjusted` | Quantidade em estoque ajustada | `{ productId, oldQuantity, newQuantity, reason }` |
-| `stock.reserved` | Quantidade reservada | `{ productId, quantity, reason }` |
-| `stock.released` | Reserva liberada | `{ productId, quantity, reason }` |
+| `stock.reserved` | Reserva de estoque para a OS (transição para `awaiting_approval`); aumenta `reserved` e reduz o disponível | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
+| `stock.consumed` | Reserva consumida na aprovação da OS (transição para `approved`); reduz `reserved` e `quantity` fisicamente | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
+| `stock.released` | Reserva devolvida ao disponível no cancelamento da OS (transição para `cancelled`) | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
 
 ### `repair`
 
@@ -100,6 +103,17 @@ Registro imutável de cada ocorrência.
 | `repair.created` | Serviço de reparo cadastrado | `{ description, unitValue }` |
 | `repair.updated` | Serviço de reparo atualizado | `{ changedFields, old, new }` |
 | `repair.deleted` | Serviço de reparo removido | `{ description, unitValue }` |
+
+### `work_order`
+
+| Código | Descrição | Metadados sugeridos |
+|---|---|---|
+| `work_order.created` | Ordem de serviço criada | `{ number }` |
+| `work_order.status_changed` | Status da ordem de serviço alterado | `{ from, to, reason }` |
+| `work_order.payment_confirmed` | Pagamento da ordem de serviço confirmado | `{ kind }` |
+| `work_order.item_added` | Item adicionado à ordem de serviço | `{ itemId, itemType, serviceId, productId, quantity, unitPrice }` |
+| `work_order.item_quantity_changed` | Quantidade de item da ordem de serviço alterada | `{ itemId, itemType, serviceId, productId, quantity, unitPrice, previousQuantity, newQuantity }` |
+| `work_order.item_removed` | Item removido da ordem de serviço | `{ itemId, itemType, serviceId, productId, quantity, unitPrice }` |
 
 ### `auth`
 
@@ -139,6 +153,17 @@ Todo evento armazena:
 - `created_at` (imutável)
 
 Eventos não possuem `updated_at` nem `deleted_at` por serem registros imutáveis.
+
+## Reações a Eventos
+
+Além da auditoria, alguns eventos disparam reações automáticas (políticas do Event Storming):
+
+| Evento | Condição | Reação | Handler |
+|---|---|---|---|
+| `work_order.status_changed` | `to = awaiting_approval` | E-mail com o orçamento para o cliente | `WorkOrderNotificationHandler` |
+| `work_order.status_changed` | `to = completed` | E-mail de serviço concluído para o cliente | `WorkOrderNotificationHandler` |
+
+As notificações são best-effort: uma falha ao montar ou enviar o e-mail é registrada em log e não desfaz a mudança de status.
 
 ## Extensibilidade
 

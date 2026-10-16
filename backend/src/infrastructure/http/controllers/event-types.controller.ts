@@ -27,6 +27,8 @@ import { EventTypeResponseDto } from '../dtos/event-type-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
+import { eventTypeLinks } from '../hateoas/resources/event.links';
 
 @ApiTags('Tipos de Evento')
 @Controller('event-types')
@@ -50,6 +52,7 @@ export class EventTypesController {
     description: 'Tipo de evento cadastrado com sucesso',
     type: EventTypeResponseDto,
   })
+  @HateoasItem(eventTypeLinks)
   async create(@Body() dto: CreateEventTypeRequestDto): Promise<EventTypeResponseDto> {
     return this.createEventTypeUseCase.execute(dto);
   }
@@ -64,6 +67,7 @@ export class EventTypesController {
     description: 'Lista de tipos de evento',
     type: [EventTypeResponseDto],
   })
+  @HateoasCollection(eventTypeLinks)
   async findAll(): Promise<EventTypeResponseDto[]> {
     return this.listEventTypesUseCase.execute();
   }
@@ -80,6 +84,7 @@ export class EventTypesController {
     type: EventTypeResponseDto,
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Tipo de evento não encontrado' })
+  @HateoasItem(eventTypeLinks)
   async findById(@Param('id') id: string): Promise<EventTypeResponseDto> {
     return this.findEventTypeUseCase.execute(id);
   }
@@ -96,6 +101,7 @@ export class EventTypesController {
     description: 'Tipo de evento atualizado',
     type: EventTypeResponseDto,
   })
+  @HateoasItem(eventTypeLinks)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateEventTypeRequestDto,

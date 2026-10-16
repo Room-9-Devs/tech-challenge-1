@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
+import { EventTypeSeedService } from './infrastructure/database/seeds/event-type.seed';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +28,8 @@ async function bootstrap() {
     .addTag('Produtos')
     .addTag('Estoque')
     .addTag('Veículos')
+    .addTag('Ordens de Serviço')
+    .addTag('Aprovação de Orçamento')
     .addBearerAuth(
       {
         type: 'http',
@@ -44,12 +47,13 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-
   await app.get(RepairSeedService).run();
 
   const productSeedService = app.get(ProductSeedService);
   await productSeedService.run();
+  await app.get(EventTypeSeedService).run();
+
+  await app.listen(port);
 
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/docs`);

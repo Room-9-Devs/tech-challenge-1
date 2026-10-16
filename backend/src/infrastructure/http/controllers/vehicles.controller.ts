@@ -45,6 +45,11 @@ import { UpdateVehicleRequestDto } from '../dtos/update-vehicle-request.dto';
 import { ListVehiclesFiltersInputDto } from '@/application/use-cases/vehicles/list-vehicles/list-vehicles-input.dto';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
 import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
+import {
+  HateoasCollection,
+  HateoasItem,
+} from '../hateoas/hateoas.decorator';
+import { vehicleLinks } from '../hateoas/resources/vehicle.links';
 
 const ALLOWED_VEHICLE_SORT_COLUMNS = [
   'licensePlate',
@@ -99,6 +104,7 @@ export class VehiclesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Vehicle owner not found',
   })
+  @HateoasItem(vehicleLinks)
   async create(
     @Param('user_id', new ParseUUIDPipe()) user_id: string,
     @Body() dto: CreateVehicleRequestDto,
@@ -119,6 +125,7 @@ export class VehiclesController {
   @ApiOperation({ summary: 'Replace vehicle details' })
   @ApiBody({ type: UpdateVehicleRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: VehicleResponseDto })
+  @HateoasItem(vehicleLinks)
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateVehicleRequestDto,
@@ -151,6 +158,7 @@ export class VehiclesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Vehicle not found',
   })
+  @HateoasItem(vehicleLinks)
   async findById(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<VehicleResponseDto> {
@@ -186,6 +194,7 @@ export class VehiclesController {
     description: 'Paginated list of vehicles',
     type: ListVehiclesResponseDto,
   })
+  @HateoasCollection(vehicleLinks)
   async findAll(
     @Query() query: ListVehiclesQueryDto,
   ): Promise<ListVehiclesResponseDto> {

@@ -96,6 +96,46 @@ export class Stock {
     this._updatedAt = new Date();
   }
 
+  public reserve(quantity: number): void {
+    this.validateReservationQuantity(quantity);
+    if (quantity > this.available) {
+      throw new InsufficientStockError(this._productId, this.available, quantity);
+    }
+    this._reserved += quantity;
+    this._updatedAt = new Date();
+  }
+
+  public releaseReservation(quantity: number): void {
+    this.validateReservationQuantity(quantity);
+    if (quantity > this._reserved) {
+      throw new InvalidStockMovementError(
+        'A quantidade liberada não pode exceder o estoque reservado',
+      );
+    }
+    this._reserved -= quantity;
+    this._updatedAt = new Date();
+  }
+
+  public consumeReservation(quantity: number): void {
+    this.validateReservationQuantity(quantity);
+    if (quantity > this._reserved) {
+      throw new InvalidStockMovementError(
+        'A quantidade consumida não pode exceder o estoque reservado',
+      );
+    }
+    this._reserved -= quantity;
+    this._quantity -= quantity;
+    this._updatedAt = new Date();
+  }
+
+  private validateReservationQuantity(quantity: number): void {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new InvalidStockMovementError(
+        'A quantidade reservada deve ser um inteiro maior que zero',
+      );
+    }
+  }
+
   private increase(quantity: number): void {
     if (this._quantity + quantity > MAX_STOCK_QUANTITY) {
       throw new InvalidStockMovementError(
