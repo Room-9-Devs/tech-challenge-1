@@ -19,6 +19,11 @@ class FakeWorkOrderStatsRepository implements WorkOrderStatsRepository {
     this.requestedUntil = until;
     return this.records;
   }
+
+  async findRecordById(id: string): Promise<WorkOrderStatsRecord | null> {
+    void id;
+    return this.records.length ? this.records[0] : null;
+  }
 }
 
 describe('GetWorkOrderStatsUseCase', () => {

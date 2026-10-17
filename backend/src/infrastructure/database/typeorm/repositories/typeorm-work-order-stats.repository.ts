@@ -81,4 +81,57 @@ export class TypeOrmWorkOrderStatsRepository implements WorkOrderStatsRepository
 
     return [...records.values()];
   }
+
+  async findRecordById(id: string): Promise<WorkOrderStatsRecord | null> {
+    const row = await this.workOrders
+      .createQueryBuilder('wo')
+      .select(['wo.id AS id', 'wo.createdAt AS "createdAt"'])
+      .where('wo.id = :id', { id })
+      .getRawOne<{ id: string; createdAt: Date }>();
+    if (!row) return null;
+
+    const record: WorkOrderStatsRecord = {
+      id: row.id,
+      createdAt: new Date(row.createdAt),
+      transitions: [],
+    };
+
+    const statusChangedType = await this.eventTypes.findOne({
+      where: { code: WORK_ORDER_STATUS_CHANGED_CODE },
+    });
+    if (!statusChangedType) return record;
+
+    const statusEvents = await this.events
+      .createQueryBuilder('event')
+      .select([
+        'event.entityId AS "entityId"',
+        'event.createdAt AS "createdAt"',
+        "event.metadata->>'to' AS status",
+      ])
+      .where('event.eventTypeId = :eventTypeId', {
+        eventTypeId: statusChangedType.id,
+      })
+      .andWhere('event.entityType = :entityType', {
+        entityType: 'work_order',
+      })
+      .andWhere('event.entityId = :entityId', { entityId: id })
+      .orderBy('event.createdAt', 'ASC')
+      .getRawMany<{ entityId: string; createdAt: Date; status: string }>();
+
+    for (const eventRow of statusEvents) {
+      if (
+        !Object.values(WorkOrderStatus).includes(
+          eventRow.status as WorkOrderStatus,
+        )
+      ) {
+        continue;
+      }
+      record.transitions.push({
+        status: eventRow.status as WorkOrderStatus,
+        at: new Date(eventRow.createdAt),
+      });
+    }
+
+    return record;
+  }
 }

@@ -32,6 +32,7 @@ import { ChangeWorkOrderItemUseCase } from '@/application/use-cases/work-orders/
 import { RemoveWorkOrderItemUseCase } from '@/application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
 import { ChangeWorkOrderStatusUseCase } from '@/application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
 import { ConfirmWorkOrderPaymentUseCase } from '@/application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
+import { GetWorkOrderStatsDetailUseCase } from '@/application/use-cases/work-order-stats/get-work-order-stats-detail/get-work-order-stats-detail.use-case';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
@@ -50,6 +51,7 @@ import {
 } from '../dtos/work-order-response.dto';
 import { ListWorkOrdersResponseDto } from '../dtos/list-work-orders-response.dto';
 import { ConfirmWorkOrderPaymentResponseDto } from '../dtos/confirm-work-order-payment-response.dto';
+import { WorkOrderStatsDetailResponseDto } from '../dtos/work-order-stats-detail-response.dto';
 import { parseSortQuery } from '@/shared/pagination/parse-sort-query';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
 import { WorkOrder } from '@/domain/entities/work-order.entity';
@@ -107,6 +109,7 @@ export class WorkOrdersController {
     private readonly removeWorkOrderItem: RemoveWorkOrderItemUseCase,
     private readonly changeWorkOrderStatus: ChangeWorkOrderStatusUseCase,
     private readonly confirmWorkOrderPayment: ConfirmWorkOrderPaymentUseCase,
+    private readonly getWorkOrderStatsDetail: GetWorkOrderStatsDetailUseCase,
   ) {}
 
   @Post()
@@ -318,6 +321,45 @@ export class WorkOrdersController {
           }
         : null,
     };
+  }
+
+  @Get(':id/stats')
+  @Roles('admin', 'staff', 'client')
+  @ApiOperation({
+    summary:
+      'Estatísticas individuais da OS com comparativo das médias globais da oficina',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'UUID da ordem de serviço',
+    example: WORK_ORDER_ID_EXAMPLE,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Duração de cada etapa do ciclo de vida da OS, tempo total e tempo no status atual, com a média global correspondente para comparação',
+    type: WorkOrderStatsDetailResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Ordem de serviço não encontrada',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Cliente só pode consultar as próprias OS',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Autenticação obrigatória',
+  })
+  async stats(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: CurrentUserType,
+  ): Promise<WorkOrderStatsDetailResponseDto> {
+    return this.getWorkOrderStatsDetail.execute({
+      id,
+      actor: toWorkOrderActor(actor),
+    });
   }
 
   @Post(':id/items')

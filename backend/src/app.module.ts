@@ -91,6 +91,7 @@ import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-ord
 import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
 import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
 import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-stats/get-work-order-stats/get-work-order-stats.use-case';
+import { GetWorkOrderStatsDetailUseCase } from './application/use-cases/work-order-stats/get-work-order-stats-detail/get-work-order-stats-detail.use-case';
 import { WorkOrderApprovalsController } from './infrastructure/http/controllers/work-order-approvals.controller';
 import { WorkOrderQuoteService } from './application/services/work-order-quote.service';
 import {
@@ -196,6 +197,7 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     ChangeWorkOrderStatusUseCase,
     ConfirmWorkOrderPaymentUseCase,
     GetWorkOrderStatsUseCase,
+    GetWorkOrderStatsDetailUseCase,
     { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
     WorkOrderQuoteService,
     {
