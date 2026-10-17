@@ -52,6 +52,8 @@ import { TypeOrmWorkOrderNumberGenerator } from './typeorm/services/typeorm-work
 import { WORK_ORDER_REPOSITORY } from '@/domain/repositories/work-order.repository';
 import { WORK_ORDER_UNIT_OF_WORK } from '@/application/ports/work-order-unit-of-work.port';
 import { WORK_ORDER_NUMBER_GENERATOR } from '@/application/ports/work-order-number-generator.port';
+import { WORK_ORDER_STATS_REPOSITORY } from '@/application/ports/work-order-stats.repository';
+import { TypeOrmWorkOrderStatsRepository } from './typeorm/repositories/typeorm-work-order-stats.repository';
 
 const ormEntities = [
   UserOrmEntity,
@@ -105,6 +107,10 @@ const ormEntities = [
       useClass: TypeOrmWorkOrderNumberGenerator,
     },
     {
+      provide: WORK_ORDER_STATS_REPOSITORY,
+      useClass: TypeOrmWorkOrderStatsRepository,
+    },
+    {
       provide: WORK_ORDER_APPROVAL_TOKEN_REPOSITORY,
       useClass: TypeOrmWorkOrderApprovalTokenRepository,
     },
@@ -142,6 +148,7 @@ const ormEntities = [
     WORK_ORDER_REPOSITORY,
     WORK_ORDER_UNIT_OF_WORK,
     WORK_ORDER_NUMBER_GENERATOR,
+    WORK_ORDER_STATS_REPOSITORY,
     WORK_ORDER_APPROVAL_TOKEN_REPOSITORY,
     STOCK_REPOSITORY,
     STOCK_MOVEMENT_REPOSITORY,

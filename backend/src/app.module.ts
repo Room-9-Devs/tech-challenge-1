@@ -13,6 +13,7 @@ import { PermissionsController } from './infrastructure/http/permissions/permiss
 import { VehiclesController } from './infrastructure/http/controllers/vehicles.controller';
 import { EventTypesController } from './infrastructure/http/controllers/event-types.controller';
 import { EventsController } from './infrastructure/http/controllers/events.controller';
+import { StatsController } from './infrastructure/http/controllers/stats.controller';
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
@@ -89,6 +90,7 @@ import { ChangeWorkOrderStatusUseCase } from './application/use-cases/work-order
 import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
 import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
 import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
+import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-stats/get-work-order-stats/get-work-order-stats.use-case';
 import { WorkOrderApprovalsController } from './infrastructure/http/controllers/work-order-approvals.controller';
 import { WorkOrderQuoteService } from './application/services/work-order-quote.service';
 import {
@@ -97,7 +99,6 @@ import {
 } from './application/use-cases/work-order-approvals/issue-work-order-approval-token/issue-work-order-approval-token.use-case';
 import { GetWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/get-work-order-approval/get-work-order-approval.use-case';
 import { DecideWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/decide-work-order-approval/decide-work-order-approval.use-case';
-
 const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
 
 @Module({
@@ -122,6 +123,7 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     EventTypesController,
     EventsController,
     WorkOrdersController,
+    StatsController,
     WorkOrderApprovalsController,
     AuthController,
     PermissionsController,
@@ -193,6 +195,7 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     RemoveWorkOrderItemUseCase,
     ChangeWorkOrderStatusUseCase,
     ConfirmWorkOrderPaymentUseCase,
+    GetWorkOrderStatsUseCase,
     { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
     WorkOrderQuoteService,
     {

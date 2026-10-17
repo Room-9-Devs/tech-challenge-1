@@ -29,6 +29,7 @@ async function bootstrap() {
     .addTag('Estoque')
     .addTag('Veículos')
     .addTag('Ordens de Serviço')
+    .addTag('Estatísticas')
     .addTag('Aprovação de Orçamento')
     .addBearerAuth(
       {
