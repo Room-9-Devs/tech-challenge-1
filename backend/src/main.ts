@@ -30,6 +30,7 @@ async function bootstrap() {
     .addTag('Veículos')
     .addTag('Ordens de Serviço')
     .addTag('Estatísticas')
+    .addTag('Aprovação de Orçamento')
     .addBearerAuth(
       {
         type: 'http',

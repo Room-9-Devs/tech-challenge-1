@@ -87,11 +87,14 @@ Registro imutável de cada ocorrência.
 
 ### `stock`
 
+Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O movimento de reserva é manipulado diretamente no campo `reserved` da tabela `stocks` (sem gerar movement) e apenas o consumo físico na aprovação gera uma movimentação do tipo `OUT`. Os eventos carregam o estado completo do estoque antes e depois da operação para fins de auditoria.
+
 | Código | Descrição | Metadados sugeridos |
 |---|---|---|
 | `stock.adjusted` | Quantidade em estoque ajustada | `{ productId, oldQuantity, newQuantity, reason }` |
-| `stock.reserved` | Quantidade reservada | `{ productId, quantity, reason }` |
-| `stock.released` | Reserva liberada | `{ productId, quantity, reason }` |
+| `stock.reserved` | Reserva de estoque para a OS (transição para `awaiting_approval`); aumenta `reserved` e reduz o disponível | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
+| `stock.consumed` | Reserva consumida na aprovação da OS (transição para `approved`); reduz `reserved` e `quantity` fisicamente | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
+| `stock.released` | Reserva devolvida ao disponível no cancelamento da OS (transição para `cancelled`) | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
 
 ### `repair`
 

@@ -11,6 +11,7 @@ import { TypeOrmStockRepository } from './repositories/typeorm-stock.repository'
 import { TypeOrmStockMovementRepository } from './repositories/typeorm-stock-movement.repository';
 import { TypeOrmEventRepository } from './repositories/typeorm-event.repository';
 import { TypeOrmEventTypeRepository } from './repositories/typeorm-event-type.repository';
+import { TypeOrmWorkOrderApprovalTokenRepository } from './repositories/typeorm-work-order-approval-token.repository';
 import { WorkOrderOrmEntity } from './entities/work-order.orm-entity';
 import { WorkOrderItemOrmEntity } from './entities/work-order-item.orm-entity';
 import { ProductOrmEntity } from './entities/product.orm-entity';
@@ -19,6 +20,7 @@ import { StockOrmEntity } from './entities/stock.orm-entity';
 import { StockMovementOrmEntity } from './entities/stock-movement.orm-entity';
 import { EventOrmEntity } from './entities/event.orm-entity';
 import { EventTypeOrmEntity } from './entities/event-type.orm-entity';
+import { WorkOrderApprovalTokenOrmEntity } from './entities/work-order-approval-token.orm-entity';
 
 @Injectable()
 export class TypeOrmWorkOrderUnitOfWork implements WorkOrderUnitOfWork {
@@ -50,6 +52,9 @@ export class TypeOrmWorkOrderUnitOfWork implements WorkOrderUnitOfWork {
         ),
         eventTypes: new TypeOrmEventTypeRepository(
           manager.getRepository(EventTypeOrmEntity),
+        ),
+        approvalTokens: new TypeOrmWorkOrderApprovalTokenRepository(
+          manager.getRepository(WorkOrderApprovalTokenOrmEntity),
         ),
       }),
     );

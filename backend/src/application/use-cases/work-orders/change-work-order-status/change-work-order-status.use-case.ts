@@ -12,6 +12,7 @@ import {
   DomainEventPublisher,
 } from '@/application/ports/domain-event-publisher.port';
 import { WorkOrderStatusChangedEvent } from '@/domain/events/work-order.events';
+import { WorkOrderApprovalLinkInvalidError } from '@/domain/errors/work-order-approval-link-invalid.error';
 import {
   WORK_ORDER_REPOSITORY,
   WorkOrderRepository,
@@ -61,6 +62,13 @@ export class ChangeWorkOrderStatusUseCase {
         throw new NotFoundException('Ordem de serviço não encontrada');
       const previous = current.status;
       previousStatus = previous;
+      // A OS está travada (pessimistic_write): um segundo clique concorrente encontra o token já usado.
+      if (
+        input.approvalTokenId &&
+        !(await r.approvalTokens.markUsed(input.approvalTokenId))
+      ) {
+        throw new WorkOrderApprovalLinkInvalidError();
+      }
       if (input.status === WorkOrderStatus.IN_PROGRESS) {
         const events = await r.events.findByEntity('work_order', input.id);
         if (!events.some((e) => e.metadata?.kind === 'payment_confirmation')) {
@@ -85,6 +93,9 @@ export class ChangeWorkOrderStatusUseCase {
       }
       current.changeStatus(input.status);
       const updated = await r.workOrders.save(current);
+      // Decidido por qualquer caminho (link, app ou equipe), os links do e-mail deixam de valer.
+      if (previous === WorkOrderStatus.AWAITING_APPROVAL)
+        await r.approvalTokens.revokeAllByWorkOrder(current.id);
       return updated;
     });
     await this.eventPublisher.publish(

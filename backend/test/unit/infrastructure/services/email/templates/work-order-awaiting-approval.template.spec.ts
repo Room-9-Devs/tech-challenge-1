@@ -2,7 +2,6 @@ import {
   WorkOrderAwaitingApprovalEmailData,
   renderWorkOrderAwaitingApprovalEmail,
 } from '@/infrastructure/services/email/templates/work-order-awaiting-approval.template';
-import { escapeHtml } from '@/infrastructure/services/email/templates/email-formatters';
 
 describe('renderWorkOrderAwaitingApprovalEmail', () => {
   const data: WorkOrderAwaitingApprovalEmailData = {
@@ -10,8 +9,18 @@ describe('renderWorkOrderAwaitingApprovalEmail', () => {
     orderNumber: 'OS-0042/2026',
     vehicle: 'Fiat Uno - ABC1D23',
     items: [
-      { description: 'Troca de óleo', quantity: 1, subtotal: 120 },
-      { description: 'Filtro de ar', quantity: 2, subtotal: 91 },
+      {
+        description: 'Troca de óleo',
+        quantity: 1,
+        unitPrice: 120,
+        subtotal: 120,
+      },
+      {
+        description: 'Filtro de ar',
+        quantity: 2,
+        unitPrice: 45.5,
+        subtotal: 91,
+      },
     ],
     total: 211,
     generatedAt: new Date('2026-10-06T12:00:00Z'),
@@ -54,6 +63,8 @@ describe('renderWorkOrderAwaitingApprovalEmail', () => {
     expect(html).toContain(brl('120,00'));
     expect(html).toContain(brl('91,00'));
     expect(html).toContain(brl('211,00'));
+    expect(html).toContain('VALOR UNIT.');
+    expect(html).toContain(brl('45,50'));
     expect(html).toContain('GERADO EM 06/10/2026');
   });
 
@@ -67,18 +78,41 @@ describe('renderWorkOrderAwaitingApprovalEmail', () => {
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
   });
 
-  it('should render the approval button only when a link is provided', () => {
+  it('should render the approve and reject buttons only when the links are provided', () => {
     const withoutLink = renderWorkOrderAwaitingApprovalEmail(data);
     const withLink = renderWorkOrderAwaitingApprovalEmail({
       ...data,
-      approvalUrl: 'https://oficina.example.com/os/2026-0042?a=1&b=2',
+      approveUrl: 'https://oficina.example.com/aprovacao/abc/approve?a=1&b=2',
+      rejectUrl: 'https://oficina.example.com/aprovacao/abc/reject',
     });
 
     expect(withoutLink.html).not.toContain('APROVAR ORÇAMENTO');
+    expect(withoutLink.html).not.toContain('RECUSAR');
     expect(withoutLink.html).toContain('acesse o sistema da oficina');
     expect(withLink.html).toContain('APROVAR ORÇAMENTO');
+    expect(withLink.html).toContain('RECUSAR');
     expect(withLink.html).toContain(
-      'href="https://oficina.example.com/os/2026-0042?a=1&amp;b=2"',
+      'href="https://oficina.example.com/aprovacao/abc/approve?a=1&amp;b=2"',
+    );
+    expect(withLink.html).toContain(
+      'href="https://oficina.example.com/aprovacao/abc/reject"',
+    );
+    expect(withLink.html).toContain('revisar o orçamento antes de confirmar');
+    expect(withLink.html).not.toContain('acesse o sistema da oficina');
+  });
+
+  it('should list both links in the plain text version', () => {
+    const { text } = renderWorkOrderAwaitingApprovalEmail({
+      ...data,
+      approveUrl: 'https://oficina.example.com/aprovacao/abc/approve',
+      rejectUrl: 'https://oficina.example.com/aprovacao/abc/reject',
+    });
+
+    expect(text).toContain(
+      'Aprovar o orçamento: https://oficina.example.com/aprovacao/abc/approve',
+    );
+    expect(text).toContain(
+      'Recusar o orçamento: https://oficina.example.com/aprovacao/abc/reject',
     );
   });
 
@@ -86,7 +120,9 @@ describe('renderWorkOrderAwaitingApprovalEmail', () => {
     const { text } = renderWorkOrderAwaitingApprovalEmail(data);
 
     expect(text).toContain('Olá, Maria Silva!');
-    expect(text).toContain(`- Filtro de ar (2x): ${brl('91,00')}`);
+    expect(text).toContain(
+      `- Filtro de ar: 2 x ${brl('45,50')} = ${brl('91,00')}`,
+    );
     expect(text).toContain(`Total: ${brl('211,00')}`);
     expect(text).not.toMatch(/<[a-z]/i);
   });
@@ -98,13 +134,5 @@ describe('renderWorkOrderAwaitingApprovalEmail', () => {
     });
 
     expect(html).toContain('GERADO EM 06/10/2026');
-  });
-});
-
-describe('escapeHtml', () => {
-  it('should escape html special characters', () => {
-    expect(escapeHtml(`<a href="x">Tom & Jerry's</a>`)).toBe(
-      '&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&#39;s&lt;/a&gt;',
-    );
   });
 });

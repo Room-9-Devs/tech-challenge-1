@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ENV_FILE_PATH } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
@@ -91,6 +91,15 @@ import { ConfirmWorkOrderPaymentUseCase } from './application/use-cases/work-ord
 import { WORK_ORDER_NOTIFIER } from './application/ports/work-order-notifier.port';
 import { EmailWorkOrderNotifier } from './infrastructure/services/email/email-work-order-notifier';
 import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-stats/get-work-order-stats/get-work-order-stats.use-case';
+import { WorkOrderApprovalsController } from './infrastructure/http/controllers/work-order-approvals.controller';
+import { WorkOrderQuoteService } from './application/services/work-order-quote.service';
+import {
+  IssueWorkOrderApprovalTokenUseCase,
+  WORK_ORDER_APPROVAL_TTL_HOURS,
+} from './application/use-cases/work-order-approvals/issue-work-order-approval-token/issue-work-order-approval-token.use-case';
+import { GetWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/get-work-order-approval/get-work-order-approval.use-case';
+import { DecideWorkOrderApprovalUseCase } from './application/use-cases/work-order-approvals/decide-work-order-approval/decide-work-order-approval.use-case';
+const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
 
 @Module({
   imports: [
@@ -115,6 +124,7 @@ import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-sta
     EventsController,
     WorkOrdersController,
     StatsController,
+    WorkOrderApprovalsController,
     AuthController,
     PermissionsController,
   ],
@@ -187,6 +197,17 @@ import { GetWorkOrderStatsUseCase } from './application/use-cases/work-order-sta
     ConfirmWorkOrderPaymentUseCase,
     GetWorkOrderStatsUseCase,
     { provide: WORK_ORDER_NOTIFIER, useClass: EmailWorkOrderNotifier },
+    WorkOrderQuoteService,
+    {
+      provide: WORK_ORDER_APPROVAL_TTL_HOURS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        Number(config.get('WORK_ORDER_APPROVAL_TTL_HOURS')) ||
+        DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS,
+    },
+    IssueWorkOrderApprovalTokenUseCase,
+    GetWorkOrderApprovalUseCase,
+    DecideWorkOrderApprovalUseCase,
     CurrentUserInterceptor,
   ],
 })

@@ -1,91 +1,104 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   EMAIL_SENDER,
   EmailSender,
 } from '@/application/ports/email-sender.port';
-import {
-  PROFILE_REPOSITORY,
-  ProfileRepository,
-} from '@/application/ports/profile.repository';
 import { WorkOrderNotifier } from '@/application/ports/work-order-notifier.port';
-import { PRODUCT_REPOSITORY } from '@/application/use-cases/products/create-product/create-product.use-case';
-import { REPAIR_REPOSITORY } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
-import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/create-user.use-case';
-import { VEHICLE_REPOSITORY } from '@/application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
-import { WorkOrder } from '@/domain/entities/work-order.entity';
-import { WorkOrderItem } from '@/domain/entities/work-order-item.entity';
-import { ProductRepository } from '@/domain/repositories/product.repository';
-import { RepairRepository } from '@/domain/repositories/repair.repository';
-import { UserRepository } from '@/domain/repositories/user.repository';
-import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
-import { RenderedEmail } from './templates/email-layout';
 import {
-  WorkOrderEmailItem,
-  renderWorkOrderAwaitingApprovalEmail,
-} from './templates/work-order-awaiting-approval.template';
+  WorkOrderQuoteService,
+  WorkOrderRecipient,
+} from '@/application/services/work-order-quote.service';
+import { WorkOrder } from '@/domain/entities/work-order.entity';
+import { RenderedEmail } from './templates/email-layout';
+import { renderWorkOrderAwaitingApprovalEmail } from './templates/work-order-awaiting-approval.template';
 import { renderWorkOrderCompletedEmail } from './templates/work-order-completed.template';
-
-interface WorkOrderRecipient {
-  email: string;
-  customerName: string;
-  vehicle: string;
-}
-
-const UNKNOWN_VEHICLE = 'cadastrado na OS';
 
 @Injectable()
 export class EmailWorkOrderNotifier implements WorkOrderNotifier {
   private readonly logger = new Logger(EmailWorkOrderNotifier.name);
+  private readonly publicUrl: string;
 
   constructor(
     @Inject(EMAIL_SENDER) private readonly emailSender: EmailSender,
-    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
-    @Inject(PROFILE_REPOSITORY) private readonly profiles: ProfileRepository,
-    @Inject(VEHICLE_REPOSITORY) private readonly vehicles: VehicleRepository,
-    @Inject(REPAIR_REPOSITORY) private readonly repairs: RepairRepository,
-    @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
-  ) {}
+    private readonly quotes: WorkOrderQuoteService,
+    configService: ConfigService,
+  ) {
+    const port = configService.get<string>('PORT') || '3000';
+    this.publicUrl = (
+      configService.get<string>('APP_PUBLIC_URL') || `http://localhost:${port}`
+    ).replace(/\/+$/, '');
+  }
 
-  async notifyAwaitingApproval(order: WorkOrder): Promise<void> {
-    await this.notify(order, async (recipient) =>
-      renderWorkOrderAwaitingApprovalEmail({
-        customerName: recipient.customerName,
-        vehicle: recipient.vehicle,
-        orderNumber: order.number,
-        items: await this.describeItems(order),
-        total: order.totalPrice,
-        generatedAt: order.updatedAt,
-      }),
-    );
+  async notifyAwaitingApproval(
+    order: WorkOrder,
+    approvalToken?: string,
+  ): Promise<void> {
+    await this.notify(order, async () => {
+      const quote = await this.quotes.buildQuote(order);
+      if (!quote) return null;
+
+      return {
+        recipient: quote,
+        content: renderWorkOrderAwaitingApprovalEmail({
+          customerName: quote.customerName,
+          vehicle: quote.vehicle,
+          orderNumber: quote.orderNumber,
+          items: quote.items,
+          total: quote.total,
+          generatedAt: quote.generatedAt,
+          ...(approvalToken && this.approvalUrls(approvalToken)),
+        }),
+      };
+    });
   }
 
   async notifyCompleted(order: WorkOrder): Promise<void> {
-    await this.notify(order, async (recipient) =>
-      renderWorkOrderCompletedEmail({
-        customerName: recipient.customerName,
-        vehicle: recipient.vehicle,
-        orderNumber: order.number,
-        completedAt: order.updatedAt,
-      }),
-    );
+    await this.notify(order, async () => {
+      const recipient = await this.quotes.findRecipient(order);
+      if (!recipient) return null;
+
+      return {
+        recipient,
+        content: renderWorkOrderCompletedEmail({
+          customerName: recipient.customerName,
+          vehicle: recipient.vehicle,
+          orderNumber: order.number,
+          completedAt: order.updatedAt,
+        }),
+      };
+    });
+  }
+
+  private approvalUrls(token: string): {
+    approveUrl: string;
+    rejectUrl: string;
+  } {
+    const base = `${this.publicUrl}/work-order-approvals/${encodeURIComponent(token)}`;
+    return { approveUrl: `${base}/approve`, rejectUrl: `${base}/reject` };
   }
 
   // O status já foi gravado quando a notificação roda: qualquer falha aqui só pode ser registrada.
   private async notify(
     order: WorkOrder,
-    render: (recipient: WorkOrderRecipient) => Promise<RenderedEmail>,
+    render: () => Promise<{
+      recipient: WorkOrderRecipient;
+      content: RenderedEmail;
+    } | null>,
   ): Promise<void> {
     try {
-      const recipient = await this.findRecipient(order);
-      if (!recipient) {
+      const email = await render();
+      if (!email) {
         this.logger.warn(
           `Cliente da ${order.number} não encontrado. E-mail não enviado.`,
         );
         return;
       }
 
-      const content = await render(recipient);
-      await this.emailSender.send({ to: recipient.email, ...content });
+      await this.emailSender.send({
+        to: email.recipient.email,
+        ...email.content,
+      });
     } catch (error) {
       const failure = error instanceof Error ? error : new Error(String(error));
       this.logger.error(
@@ -93,48 +106,5 @@ export class EmailWorkOrderNotifier implements WorkOrderNotifier {
         failure.stack,
       );
     }
-  }
-
-  private async findRecipient(
-    order: WorkOrder,
-  ): Promise<WorkOrderRecipient | null> {
-    const client = await this.users.findById(order.clientId);
-    if (!client) return null;
-
-    const [profile, vehicle] = await Promise.all([
-      this.profiles.findById('client', client.entityId),
-      this.vehicles.findById(order.vehicleId),
-    ]);
-
-    return {
-      email: client.email,
-      customerName: profile?.name ?? client.username,
-      vehicle: vehicle
-        ? `${vehicle.brand} ${vehicle.model} - ${vehicle.license_plate}`
-        : UNKNOWN_VEHICLE,
-    };
-  }
-
-  private describeItems(order: WorkOrder): Promise<WorkOrderEmailItem[]> {
-    return Promise.all(
-      order.items.map(async (item) => ({
-        description: await this.describeItem(item),
-        quantity: item.quantity,
-        subtotal: item.subtotal,
-      })),
-    );
-  }
-
-  private async describeItem(item: WorkOrderItem): Promise<string> {
-    if (item.serviceId) {
-      const repair = await this.repairs.findById(item.serviceId);
-      return repair?.description ?? 'Serviço';
-    }
-
-    // Produto pode ter sido inativado depois de entrar na OS
-    const product = await this.products.findByIdIncludingInactive(
-      item.productId,
-    );
-    return product?.name ?? 'Peça';
   }
 }

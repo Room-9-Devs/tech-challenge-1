@@ -14,6 +14,7 @@ import { EventOrmEntity } from './entities/event.orm-entity';
 import { StockMovementOrmEntity } from './entities/stock-movement.orm-entity';
 import { WorkOrderOrmEntity } from './entities/work-order.orm-entity';
 import { WorkOrderItemOrmEntity } from './entities/work-order-item.orm-entity';
+import { WorkOrderApprovalTokenOrmEntity } from './entities/work-order-approval-token.orm-entity';
 
 loadEnvironment();
 
@@ -39,6 +40,7 @@ export const AppDataSource = new DataSource({
     StockMovementOrmEntity,
     WorkOrderOrmEntity,
     WorkOrderItemOrmEntity,
+    WorkOrderApprovalTokenOrmEntity,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,

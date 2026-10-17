@@ -9,6 +9,7 @@ describe('WorkOrderNotificationHandler', () => {
   let emitter: DomainEventEmitter;
   let orders: any;
   let notifier: any;
+  let issueApprovalToken: any;
   let errorSpy: jest.SpyInstance;
   let warnSpy: jest.SpyInstance;
 
@@ -35,10 +36,14 @@ describe('WorkOrderNotificationHandler', () => {
       notifyAwaitingApproval: jest.fn().mockResolvedValue(undefined),
       notifyCompleted: jest.fn().mockResolvedValue(undefined),
     };
+    issueApprovalToken = {
+      execute: jest.fn().mockResolvedValue('approval-token'),
+    };
     new WorkOrderNotificationHandler(
       orders,
       notifier,
       emitter,
+      issueApprovalToken,
     ).onApplicationBootstrap();
     errorSpy = jest
       .spyOn(Logger.prototype, 'error')
@@ -61,8 +66,32 @@ describe('WorkOrderNotificationHandler', () => {
     );
 
     expect(orders.findById).toHaveBeenCalledWith('order-id');
-    expect(notifier.notifyAwaitingApproval).toHaveBeenCalledWith(order);
+    expect(issueApprovalToken.execute).toHaveBeenCalledWith(order);
+    expect(notifier.notifyAwaitingApproval).toHaveBeenCalledWith(
+      order,
+      'approval-token',
+    );
     expect(notifier.notifyCompleted).not.toHaveBeenCalled();
+  });
+
+  it('should still send the quote without links when the approval token cannot be issued', async () => {
+    issueApprovalToken.execute.mockRejectedValue(new Error('Database offline'));
+
+    await emitter.emit(
+      statusChanged(
+        WorkOrderStatus.UNDER_DIAGNOSIS,
+        WorkOrderStatus.AWAITING_APPROVAL,
+      ),
+    );
+
+    expect(notifier.notifyAwaitingApproval).toHaveBeenCalledWith(
+      order,
+      undefined,
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('link de aprovação'),
+      expect.any(String),
+    );
   });
 
   it('should notify the completion when the order is completed', async () => {
@@ -72,6 +101,7 @@ describe('WorkOrderNotificationHandler', () => {
 
     expect(notifier.notifyCompleted).toHaveBeenCalledWith(order);
     expect(notifier.notifyAwaitingApproval).not.toHaveBeenCalled();
+    expect(issueApprovalToken.execute).not.toHaveBeenCalled();
   });
 
   it.each([

@@ -5,6 +5,7 @@ import { RepairRepository } from '@/domain/repositories/repair.repository';
 import { StockRepository } from '@/domain/repositories/stock.repository';
 import { StockMovementRepository } from '@/domain/repositories/stock-movement.repository';
 import { WorkOrderRepository } from '@/domain/repositories/work-order.repository';
+import { WorkOrderApprovalTokenRepository } from './work-order-approval-token.repository';
 
 export const WORK_ORDER_UNIT_OF_WORK = Symbol('WORK_ORDER_UNIT_OF_WORK');
 
@@ -16,6 +17,7 @@ export interface WorkOrderRepositories {
   stockMovements: StockMovementRepository;
   events: EventRepository;
   eventTypes: EventTypeRepository;
+  approvalTokens: WorkOrderApprovalTokenRepository;
 }
 
 export interface WorkOrderUnitOfWork {

@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationBootstrap, Inject } from '@nestjs/common';
 import {
   StockAdjustedEvent,
+  StockConsumedEvent,
   StockReservedEvent,
   StockReleasedEvent,
 } from '@/domain/events/stock.events';
@@ -18,6 +19,7 @@ export class StockEventAuditHandler implements OnApplicationBootstrap {
   onApplicationBootstrap(): void {
     this.domainEventEmitter.on('stock.adjusted', this.handleAdjusted.bind(this));
     this.domainEventEmitter.on('stock.reserved', this.handleReserved.bind(this));
+    this.domainEventEmitter.on('stock.consumed', this.handleConsumed.bind(this));
     this.domainEventEmitter.on('stock.released', this.handleReleased.bind(this));
   }
 
@@ -32,6 +34,16 @@ export class StockEventAuditHandler implements OnApplicationBootstrap {
   }
 
   private async handleReserved(event: StockReservedEvent): Promise<void> {
+    await this.eventRecorder.record({
+      eventTypeCode: event.eventType,
+      entityType: 'stock',
+      entityId: event.entityId,
+      createdBy: event.createdBy,
+      metadata: event.metadata,
+    });
+  }
+
+  private async handleConsumed(event: StockConsumedEvent): Promise<void> {
     await this.eventRecorder.record({
       eventTypeCode: event.eventType,
       entityType: 'stock',

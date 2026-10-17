@@ -43,6 +43,9 @@ import { PRODUCT_CREATION_UNIT_OF_WORK } from '@/application/ports/product-creat
 import { TypeOrmProductCreationUnitOfWork } from './typeorm/typeorm-product-creation-unit-of-work';
 import { WorkOrderOrmEntity } from './typeorm/entities/work-order.orm-entity';
 import { WorkOrderItemOrmEntity } from './typeorm/entities/work-order-item.orm-entity';
+import { WorkOrderApprovalTokenOrmEntity } from './typeorm/entities/work-order-approval-token.orm-entity';
+import { TypeOrmWorkOrderApprovalTokenRepository } from './typeorm/repositories/typeorm-work-order-approval-token.repository';
+import { WORK_ORDER_APPROVAL_TOKEN_REPOSITORY } from '@/application/ports/work-order-approval-token.repository';
 import { TypeOrmWorkOrderRepository } from './typeorm/repositories/typeorm-work-order.repository';
 import { TypeOrmWorkOrderUnitOfWork } from './typeorm/typeorm-work-order-unit-of-work';
 import { TypeOrmWorkOrderNumberGenerator } from './typeorm/services/typeorm-work-order-number-generator';
@@ -67,6 +70,7 @@ const ormEntities = [
   EventOrmEntity,
   WorkOrderOrmEntity,
   WorkOrderItemOrmEntity,
+  WorkOrderApprovalTokenOrmEntity,
 ];
 
 @Module({
@@ -106,6 +110,10 @@ const ormEntities = [
       provide: WORK_ORDER_STATS_REPOSITORY,
       useClass: TypeOrmWorkOrderStatsRepository,
     },
+    {
+      provide: WORK_ORDER_APPROVAL_TOKEN_REPOSITORY,
+      useClass: TypeOrmWorkOrderApprovalTokenRepository,
+    },
     { provide: STOCK_REPOSITORY, useClass: TypeOrmStockRepository },
     {
       provide: STOCK_MOVEMENT_REPOSITORY,
@@ -141,6 +149,7 @@ const ormEntities = [
     WORK_ORDER_UNIT_OF_WORK,
     WORK_ORDER_NUMBER_GENERATOR,
     WORK_ORDER_STATS_REPOSITORY,
+    WORK_ORDER_APPROVAL_TOKEN_REPOSITORY,
     STOCK_REPOSITORY,
     STOCK_MOVEMENT_REPOSITORY,
     ROLE_REPOSITORY,

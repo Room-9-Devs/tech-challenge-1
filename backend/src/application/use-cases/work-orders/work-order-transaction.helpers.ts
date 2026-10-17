@@ -8,6 +8,19 @@ import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import { WorkOrderRepositories } from '@/application/ports/work-order-unit-of-work.port';
 
+// Estado do estoque antes da operação, usado para auditoria nos eventos.
+interface StockSnapshot {
+  reservedBefore: number;
+  availableBefore: number;
+}
+
+function stockSnapshot(stock: { reserved: number; available: number }): StockSnapshot {
+  return {
+    reservedBefore: stock.reserved,
+    availableBefore: stock.available,
+  };
+}
+
 export async function requireWorkOrder(
   repositories: WorkOrderRepositories,
   id: string,
@@ -65,6 +78,7 @@ export async function reserveWorkOrderProducts(
     const stock = await repositories.stocks.findByProductId(productId);
     if (!stock)
       throw new ConflictException('Estoque do produto não encontrado');
+    const snapshot = stockSnapshot(stock);
     stock.reserve(quantity);
     await repositories.stocks.save(stock);
     await recordStockEvent(
@@ -73,7 +87,16 @@ export async function reserveWorkOrderProducts(
       stock.id,
       username,
       `Reserva para OS ${order.number}`,
-      { workOrderId: order.id, productId, quantity },
+      {
+        workOrderId: order.id,
+        workOrderNumber: order.number,
+        productId,
+        quantity,
+        reservedBefore: snapshot.reservedBefore,
+        reservedAfter: stock.reserved,
+        availableBefore: snapshot.availableBefore,
+        availableAfter: stock.available,
+      },
     );
   }
 }
@@ -89,15 +112,23 @@ export async function finishWorkOrderReservation(
     const stock = await repositories.stocks.findByProductId(productId);
     if (!stock)
       throw new ConflictException('Estoque do produto não encontrado');
+    const snapshot = stockSnapshot(stock);
+    const finishEvent = (code: 'stock.consumed' | 'stock.released', note: string) =>
+      recordStockEvent(repositories, code, stock.id, username, note, {
+        workOrderId: order.id,
+        workOrderNumber: order.number,
+        productId,
+        quantity,
+        reservedBefore: snapshot.reservedBefore,
+        reservedAfter: stock.reserved,
+        availableBefore: snapshot.availableBefore,
+        availableAfter: stock.available,
+      });
     if (status === WorkOrderStatus.CANCELLED) {
       stock.releaseReservation(quantity);
-      await recordStockEvent(
-        repositories,
+      await finishEvent(
         'stock.released',
-        stock.id,
-        username,
         `Liberação da reserva da OS ${order.number}`,
-        { workOrderId: order.id, productId, quantity },
       );
     } else {
       const previousQuantity = stock.quantity;
@@ -114,6 +145,7 @@ export async function finishWorkOrderReservation(
           createdBy: actorId,
         }),
       );
+      await finishEvent('stock.consumed', `Consumo da OS ${order.number}`);
     }
     await repositories.stocks.save(stock);
   }

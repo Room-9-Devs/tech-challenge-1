@@ -1,29 +1,26 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   EmailAttachment,
   SendEmailInput,
 } from '@/application/ports/email-sender.port';
-import { escapeHtml } from './email-formatters';
+import {
+  BRAND_COLORS,
+  BRAND_FONT,
+  BRAND_TITLE,
+} from '@/shared/presentation/brand';
+import { escapeHtml } from '@/shared/presentation/formatters';
+import { readBrandLogo } from '@/shared/presentation/logo';
 
 export type RenderedEmail = Omit<SendEmailInput, 'to'>;
 
-export const EMAIL_TITLE = 'Oficina Mecânica - Tech Challenge';
+export const EMAIL_TITLE = BRAND_TITLE;
 
 export const EMAIL_LOGO_CONTENT_ID = 'logo';
 
-// Copiado para o dist pelo "assets" do nest-cli.json
-const LOGO_PATH = join(__dirname, '..', 'assets', 'logo.png');
-
-let logo: Buffer | undefined;
-
 // Anexo inline: o Gmail bloqueia imagens em data URI, mas exibe cid:
 function logoAttachment(): EmailAttachment {
-  logo ??= readFileSync(LOGO_PATH);
-
   return {
     filename: 'logo.png',
-    content: logo,
+    content: readBrandLogo(),
     contentType: 'image/png',
     contentId: EMAIL_LOGO_CONTENT_ID,
   };
@@ -35,20 +32,10 @@ export interface EmailLayoutInput {
   content: string;
 }
 
-// Identidade visual baseada no portal da Pós Tech: tema escuro com destaque magenta.
-export const EMAIL_COLORS = {
-  background: '#1E1E1E',
-  surface: '#2B2B2B',
-  border: '#3D3D3D',
-  primary: '#ED145B',
-  success: '#2ECC71',
-  text: '#FFFFFF',
-  textSecondary: '#CCCCCC',
-  textMuted: '#8C8C8C',
-} as const;
+export const EMAIL_COLORS = BRAND_COLORS;
 
 // Gmail e Outlook ignoram web fonts e caem no Arial.
-export const EMAIL_FONT = "'Montserrat', Arial, Helvetica, sans-serif";
+export const EMAIL_FONT = BRAND_FONT;
 
 export const EMAIL_FOOTER_TEXT =
   'Este é um e-mail automático. Por favor, não responda.';

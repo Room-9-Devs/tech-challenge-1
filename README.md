@@ -628,3 +628,43 @@ As chamadas de preço têm concorrência máxima de quatro, com prazo total de d
 A API local retorna 400 para formato de código inválido, 404 para código ausente,
 503 para cota externa esgotada, 504 para timeout e 502 para falha ou resposta inválida
 do serviço externo.
+
+## Aprovação de orçamento por e-mail
+
+Quando a OS muda para `awaiting_approval`, o e-mail de orçamento enviado ao cliente
+traz dois botões: **Aprovar orçamento** e **Recusar**. Os dois links usam o mesmo
+token e levam a páginas HTML servidas pela própria API, sem frontend:
+
+```http
+GET  /work-order-approvals/:token/approve   # página de confirmação da aprovação
+GET  /work-order-approvals/:token/reject    # página de confirmação da recusa (motivo opcional)
+POST /work-order-approvals/:token/approve   # enviado pelo formulário da página: OS -> approved
+POST /work-order-approvals/:token/reject    # enviado pelo formulário da página: OS -> cancelled
+```
+
+O GET só exibe o orçamento. Filtros de e-mail (Outlook Safe Links, antivírus) abrem
+os links automaticamente, por isso o status só muda no POST, disparado pelo botão de
+confirmação da página. O POST aceita `application/x-www-form-urlencoded` (formulário)
+e `application/json`, com o campo opcional `reason`.
+
+Regras de segurança:
+
+- O token tem 48 bytes aleatórios; a tabela `work_order_approval_tokens` guarda apenas
+  o hash SHA-256, a OS e o cliente a que ele pertence.
+- A decisão é registrada em nome do cliente do token, pelo mesmo caso de uso de
+  `PATCH /work-orders/:id/status` (reserva de estoque e evento de auditoria incluídos).
+- O link expira em `WORK_ORDER_APPROVAL_TTL_HOURS` (padrão: 72 horas) e vale uma vez.
+  Quando a OS sai de `awaiting_approval`, por link, pelo sistema ou pela equipe, os
+  links pendentes são revogados na mesma transação. Reenviar o orçamento revoga os
+  links anteriores.
+- Token inexistente, expirado, usado ou de OS fora de aprovação recebe a mesma
+  página "Link inválido ou expirado" (404).
+- As páginas não usam JavaScript e respondem com `Content-Security-Policy`,
+  `Referrer-Policy: no-referrer` e `Cache-Control: no-store`.
+
+Os links são montados com `http://localhost:<PORT>`. Quando a API rodar em outro
+endereço (ex.: deploy), defina `APP_PUBLIC_URL` no `backend/.env` com o endereço em
+que o cliente acessa a API. O host da requisição não é usado, pois o cabeçalho `Host`
+pode ser forjado e desviaria o token para outro site.
+Com `EMAIL_REDIRECT_TO` configurada, o avaliador recebe o e-mail e pode testar o
+fluxo completo pelo navegador.

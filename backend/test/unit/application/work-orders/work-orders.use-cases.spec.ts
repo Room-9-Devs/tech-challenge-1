@@ -1,5 +1,7 @@
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
+import { Stock } from '@/domain/entities/stock.entity';
+import { StockMovementType } from '@/domain/entities/stock-movement.entity';
 import { EventType } from '@/domain/entities/event-type.entity';
 import { Event } from '@/domain/entities/event.entity';
 import { CreateWorkOrderUseCase } from '@/application/use-cases/work-orders/create-work-order/create-work-order.use-case';
@@ -10,6 +12,7 @@ import { ChangeWorkOrderItemUseCase } from '@/application/use-cases/work-orders/
 import { RemoveWorkOrderItemUseCase } from '@/application/use-cases/work-orders/remove-work-order-item/remove-work-order-item.use-case';
 import { ChangeWorkOrderStatusUseCase } from '@/application/use-cases/work-orders/change-work-order-status/change-work-order-status.use-case';
 import { ConfirmWorkOrderPaymentUseCase } from '@/application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
+import { FakeWorkOrderApprovalTokenRepository } from '../../../fakes/fake-work-order-approval-token.repository';
 
 describe('Work order use cases', () => {
   const staff = {
@@ -24,7 +27,9 @@ describe('Work order use cases', () => {
   };
   let orders: WorkOrder[];
   let events: any[];
+  let stock: Stock;
   let repositories: any;
+  let approvalTokens: FakeWorkOrderApprovalTokenRepository;
   let vehicles: any;
   let users: any;
   let profiles: any;
@@ -42,6 +47,7 @@ describe('Work order use cases', () => {
   beforeEach(() => {
     orders = [];
     events = [];
+    approvalTokens = new FakeWorkOrderApprovalTokenRepository();
     vehicles = {
       findById: jest
         .fn()
@@ -63,14 +69,12 @@ describe('Work order use cases', () => {
         phone: '11999999999',
       }),
     };
-    const stock = {
+    stock = Stock.reconstitute({
       id: 'stock-id',
-      available: 10,
+      productId: 'product-id',
       quantity: 10,
-      reserve: jest.fn(),
-      releaseReservation: jest.fn(),
-      consumeReservation: jest.fn(),
-    };
+      reserved: 0,
+    });
     repositories = {
       workOrders: {
         save: jest.fn(async (order: WorkOrder) => {
@@ -120,6 +124,7 @@ describe('Work order use cases', () => {
           }),
         ),
       },
+      approvalTokens,
     };
     unitOfWork = {
       run: jest.fn((callback: (r: any) => unknown) => callback(repositories)),
@@ -304,6 +309,12 @@ describe('Work order use cases', () => {
       quantity: 1,
       actor: staff,
     });
+    await addItem.execute({
+      id: order.id,
+      productId: 'product-id',
+      quantity: 2,
+      actor: staff,
+    });
     await changeStatus.execute({
       id: order.id,
       status: WorkOrderStatus.UNDER_DIAGNOSIS,
@@ -316,6 +327,7 @@ describe('Work order use cases', () => {
       note: 'Orçamento',
       actor: staff,
     });
+    expect(stock.available).toBe(8);
     await expect(
       changeStatus.execute({
         id: order.id,
@@ -331,6 +343,98 @@ describe('Work order use cases', () => {
       actor: client,
     });
     expect(approved.status).toBe(WorkOrderStatus.APPROVED);
+    expect(stock.quantity).toBe(8);
+    expect(stock.reserved).toBe(0);
+    expect(stock.available).toBe(8);
+    expect(repositories.stockMovements.save).toHaveBeenCalled();
+    const movement = repositories.stockMovements.save.mock.calls[0][0];
+    expect(movement.movementType).toBe(StockMovementType.OUT);
+    expect(movement.quantity).toBe(2);
+    expect(movement.previousQuantity).toBe(10);
+    expect(movement.referenceType).toBe('work_order');
+    expect(movement.referenceId).toBe(order.id);
+    expect(movement.createdBy).toBe(client.id);
+  });
+
+  async function createOrderAwaitingApproval() {
+    const order = await createOrder();
+    await addItem.execute({
+      id: order.id,
+      serviceId: 'repair-id',
+      quantity: 1,
+      actor: staff,
+    });
+    for (const status of [
+      WorkOrderStatus.UNDER_DIAGNOSIS,
+      WorkOrderStatus.AWAITING_APPROVAL,
+    ]) {
+      await changeStatus.execute({
+        id: order.id,
+        status,
+        note: status,
+        actor: staff,
+      });
+    }
+    return order;
+  }
+
+  function issueApprovalToken(workOrderId: string) {
+    return approvalTokens.save({
+      workOrderId,
+      clientId: client.id,
+      tokenHash: `hash-${approvalTokens.records.length}`,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+  }
+
+  it('revokes the email approval links when the quote is decided outside the link', async () => {
+    const order = await createOrderAwaitingApproval();
+    const token = await issueApprovalToken(order.id);
+
+    await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.APPROVED,
+      note: 'Aprovado pelo app',
+      actor: client,
+    });
+
+    expect(token.revokedAt).toBeInstanceOf(Date);
+    expect(token.usedAt).toBeNull();
+  });
+
+  it('consumes the approval token used in the decision and revokes the others', async () => {
+    const order = await createOrderAwaitingApproval();
+    const previous = await issueApprovalToken(order.id);
+    const used = await issueApprovalToken(order.id);
+
+    await changeStatus.execute({
+      id: order.id,
+      status: WorkOrderStatus.CANCELLED,
+      note: 'Recusado pelo link',
+      actor: client,
+      approvalTokenId: used.id,
+    });
+
+    expect(used.usedAt).toBeInstanceOf(Date);
+    expect(used.revokedAt).toBeNull();
+    expect(previous.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it('rejects a decision with an approval token that is no longer valid', async () => {
+    const order = await createOrderAwaitingApproval();
+    const token = await issueApprovalToken(order.id);
+    token.revokedAt = new Date();
+
+    await expect(
+      changeStatus.execute({
+        id: order.id,
+        status: WorkOrderStatus.APPROVED,
+        note: 'Aprovado pelo link',
+        actor: client,
+        approvalTokenId: token.id,
+      }),
+    ).rejects.toThrow('Link de aprovação inválido ou expirado');
+    expect(orders[0].status).toBe(WorkOrderStatus.AWAITING_APPROVAL);
   });
 
   it('requires an approved order for payment and records payment before work starts', async () => {

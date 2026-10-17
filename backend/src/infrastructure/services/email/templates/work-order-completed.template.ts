@@ -7,7 +7,7 @@ import {
   renderEmailHeading,
   renderEmailLayout,
 } from './email-layout';
-import { escapeHtml, formatDate } from './email-formatters';
+import { escapeHtml, formatDate } from '@/shared/presentation/formatters';
 
 export interface WorkOrderCompletedEmailData {
   customerName: string;
