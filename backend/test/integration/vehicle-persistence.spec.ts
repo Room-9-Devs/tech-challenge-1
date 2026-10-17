@@ -16,6 +16,7 @@ import { Vehicle } from '@/domain/entities/vehicle.entity';
 import { UserAlreadyExistsError } from '@/domain/errors/user-already-exists.error';
 import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exists.error';
 import { DocumentAlreadyExistsError } from '@/domain/errors/document-already-exists.error';
+import { FakeDomainEventPublisher } from '../fakes/fake-domain-event-publisher';
 
 const databaseTests =
   process.env.RUN_DATABASE_INTEGRATION_TESTS === 'true'
@@ -133,6 +134,7 @@ databaseTests('PostgreSQL vehicle and user persistence regressions', () => {
         findById: async () => role,
         findBySlug: async () => role,
       },
+      new FakeDomainEventPublisher(),
     );
   }
 

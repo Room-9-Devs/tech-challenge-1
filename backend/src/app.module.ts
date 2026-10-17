@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { ENV_FILE_PATH } from './config/environment';
+import { ENV_FILE_PATH, requireEnvironmentVariable } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { EmailModule } from './infrastructure/services/email/email.module';
 import { UsersController } from './infrastructure/http/controllers/users.controller';
@@ -106,7 +106,7 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ENV_FILE_PATH }),
     DatabaseModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'development-secret-change-me',
+      secret: requireEnvironmentVariable('JWT_SECRET'),
       signOptions: {
         expiresIn: (process.env.JWT_EXPIRES_IN ||
           '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,

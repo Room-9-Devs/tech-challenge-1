@@ -13,6 +13,8 @@ import { AuthLoginSucceededEvent, AuthLoginFailedEvent } from '@/domain/events/a
 export interface LoginInput { login: string; password: string; }
 export interface LoginOutput { accessToken: string; refreshToken: string; expiresIn: number; user: { id: string; username: string; email: string; role: string; entityType: string; }; }
 
+const DUMMY_PASSWORD_HASH = `scrypt$${'0'.repeat(32)}$${'0'.repeat(128)}`;
+
 @Injectable()
 export class LoginUseCase {
   constructor(
@@ -28,13 +30,15 @@ export class LoginUseCase {
   async execute(input: LoginInput): Promise<LoginOutput> {
     const login = input.login.toLowerCase();
     const user = login.includes('@') ? await this.users.findByEmail(login) : await this.users.findByUsername(input.login);
-    if (!user || !(await this.passwords.compare(input.password, user.password))) {
-    await this.eventPublisher.publish(
-      new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', undefined, {
-        username: input.login,
-        reason: 'invalid_credentials',
-      }),
-    );
+
+    const passwordMatches = await this.passwords.compare(input.password, user?.password ?? DUMMY_PASSWORD_HASH);
+    if (!user || !passwordMatches) {
+      await this.eventPublisher.publish(
+        new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', undefined, {
+          username: input.login,
+          reason: 'invalid_credentials',
+        }),
+      );
       throw new AuthenticationError();
     }
     const role = await this.roles.findById(user.roleId);

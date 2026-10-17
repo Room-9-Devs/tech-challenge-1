@@ -15,7 +15,7 @@ describe('PermissionsController', () => {
     const changeRole = { execute: jest.fn().mockResolvedValue(undefined) };
     const controller = new PermissionsController(listRoles as never, changeRole as never);
 
-    await controller.changeRole('user-1', { role: 'admin' });
-    expect(changeRole.execute).toHaveBeenCalledWith('user-1', 'admin');
+    await controller.changeRole('user-1', { role: 'admin' }, { id: 'admin-1', username: 'rita.admin', role: 'admin', entityType: 'employee' });
+    expect(changeRole.execute).toHaveBeenCalledWith('user-1', 'admin', 'rita.admin');
   });
 });

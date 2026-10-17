@@ -1,8 +1,12 @@
 import { UsersController } from '@/infrastructure/http/controllers/users.controller';
 import { CreateUserRequestDto } from '@/infrastructure/http/dtos/create-user-request.dto';
 import { ListUsersQueryDto } from '@/infrastructure/http/dtos/list-users-query.dto';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { FakeUserRepository } from '../../../../fakes/fake-user.repository';
+import { FakeRoleRepository } from '../../../../fakes/fake-role.repository';
+import { makeUser } from '../../../../fakes/user-fixture';
 
 describe('UsersController', () => {
   it('delegates client creation to the use case', async () => {
@@ -127,6 +131,60 @@ describe('UsersController', () => {
     await expect(
       controller.create(input, currentUser),
     ).rejects.toThrow(ForbiddenException);
+
+    expect(create.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects employee creation when the real current user resolves to staff (regression USR-1)', async () => {
+    const users = new FakeUserRepository();
+    await users.save(makeUser({ id: 'staff-1', username: 'staff', roleId: 'role-staff' }));
+
+    const findCurrentUser = new FindCurrentUserUseCase(users, new FakeRoleRepository());
+
+    const create = { execute: jest.fn() };
+    const controller = new UsersController(
+      create as never,
+      {} as never,
+      {} as never,
+    );
+
+    const currentUser = await findCurrentUser.execute('staff-1');
+    const input = {
+      entityType: 'employee',
+    } as CreateUserRequestDto;
+
+    expect(currentUser?.role).toBe('staff');
+
+    await expect(
+      controller.create(input, currentUser as CurrentUser),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(create.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when there is no current user', async () => {
+    const create = { execute: jest.fn() };
+
+    const controller = new UsersController(
+      create as never,
+      {} as never,
+      {} as never,
+    );
+
+    const input = {
+      username: 'cliente',
+      email: 'cliente@example.com',
+      password: 'password123',
+      entityType: 'client',
+      name: 'Cliente',
+      documentType: 'CPF',
+      document: '11111111111',
+      phone: '11999999999',
+    } as CreateUserRequestDto;
+
+    await expect(
+      controller.create(input, undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
 
     expect(create.execute).not.toHaveBeenCalled();
   });

@@ -18,11 +18,19 @@ export class RefreshTokenUseCase {
   ) { }
 
   async execute(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
-    const record = await this.refreshTokens.findValidByHash(this.refreshTokenService.hash(refreshToken));
-    if (!record) throw new RefreshTokenInvalidError();
+    const tokenHash = this.refreshTokenService.hash(refreshToken);
+    const record = await this.refreshTokens.findValidByHash(tokenHash);
+    if (!record) {
+      const reused = await this.refreshTokens.findByHash(tokenHash);
+      if (reused?.revokedAt && reused.expiresAt > new Date()) {
+        await this.refreshTokens.revokeAllByUserId(reused.userId);
+      }
+      throw new RefreshTokenInvalidError();
+    }
     const user = await this.users.findById(record.userId);
     if (!user) throw new RefreshTokenInvalidError();
-    await this.refreshTokens.revoke(record.id);
+    const revoked = await this.refreshTokens.revokeIfActive(record.id);
+    if (!revoked) throw new RefreshTokenInvalidError();
     const role = await this.roles.findById(user.roleId);
     const nextRefreshToken = this.refreshTokenService.generate();
     await this.refreshTokens.save({ userId: user.id, tokenHash: this.refreshTokenService.hash(nextRefreshToken), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), revokedAt: null });

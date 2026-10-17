@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   Req,
   HttpCode,
@@ -11,6 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -106,9 +108,11 @@ export class UsersController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
 
-    if (dto.entityType === 'employee' && currentUser?.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+    if (!currentUser) throw new UnauthorizedException();
 
-    return this.createUserUseCase.execute({ ...dto, createdBy: currentUser?.username });
+    if (dto.entityType === 'employee' && currentUser.role === 'staff') throw new ForbiddenException('Funcionário não tem permissão para registrar outro funcionário.');
+
+    return this.createUserUseCase.execute({ ...dto, createdBy: currentUser.username });
   }
 
   @Get('me')
@@ -141,6 +145,10 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'ID não é um UUID válido',
+  })
+  @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Usuário não encontrado',
   })
@@ -152,8 +160,11 @@ export class UsersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Usuário não autorizado a ver dados de outro usuário'
   })
+
   @HateoasItem(userLinks)
-  async findById(@Param('id') id: string): Promise<UserResponseDto> {
+  async findById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id });
   }
 

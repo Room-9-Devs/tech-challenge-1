@@ -15,7 +15,7 @@ export class ChangeRoleUseCase {
     @Inject(DOMAIN_EVENT_PUBLISHER) private readonly eventPublisher: DomainEventPublisher,
   ) { }
 
-  async execute(userId: string, roleSlug: string): Promise<void> {
+  async execute(userId: string, roleSlug: string, createdBy?: string): Promise<void> {
     const normalizedRoleSlug = roleSlug.trim().toLowerCase();
     const user = await this.userRepository.findById(userId);
     if (!user) throw new UserNotFoundError(userId);
@@ -29,7 +29,7 @@ export class ChangeRoleUseCase {
     await this.userRepository.save(user);
 
     await this.eventPublisher.publish(
-      new UserRoleChangedEvent(user.id, user.username, {
+      new UserRoleChangedEvent(user.id, createdBy, {
         oldRole: oldRole?.slug ?? user.roleId,
         newRole: role.slug,
       }),
