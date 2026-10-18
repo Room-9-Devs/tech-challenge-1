@@ -385,6 +385,31 @@ Exemplo:
 TS_NODE_PROJECT=tsconfig.test.json npm run migration:run
 ```
 
+## Análise de código (SonarQube)
+
+O SonarQube roda localmente via Docker, em um profile separado para não pesar no
+`docker compose up` do dia a dia:
+
+```bash
+docker compose --profile sonar up -d sonarqube
+```
+
+1. Acesse `http://localhost:9000` (login inicial `admin` / `admin`, será pedido para trocar a senha).
+2. Em **My Account → Security**, gere um token do tipo *Global Analysis Token*.
+3. Rode a cobertura e a análise a partir de `backend/`:
+
+```bash
+cd backend
+npm run test:cov:unit          # gera coverage/lcov.info
+SONAR_TOKEN=<seu-token> npm run sonar
+```
+
+No PowerShell: `$env:SONAR_TOKEN="<seu-token>"; npm run sonar`.
+
+A configuração fica em `backend/sonar-project.properties`. As migrations ficam fora da
+análise, e bootstrap, módulos, seeds e scripts de banco ficam fora da cobertura. O token
+nunca deve ser versionado.
+
 ## Swagger / OpenAPI
 
 A documentação da API está disponível em:
