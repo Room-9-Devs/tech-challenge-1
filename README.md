@@ -461,8 +461,8 @@ Lista todos os usuários.
 
 ## HATEOAS
 
-As respostas de `products`, `repairs`, `vehicles`, `users`, `stock`, `events` e
-`event-types` incluem o campo `_links`
+As respostas de `products`, `repairs`, `vehicles`, `users`, `stock`, `events`,
+`event-types` e `work-orders` incluem o campo `_links`
 com as ações disponíveis para o recurso. Cada link tem `href` e `method`:
 
 ```json
@@ -486,7 +486,13 @@ com as ações disponíveis para o recurso. Cada link tem `href` e `method`:
   para seus veículos (`vehicles`) e para o cadastro de veículo (`add-vehicle`);
   produto aponta para seu estoque (`stock`) e movimentações (`movements`);
   movimentação aponta para produto, estoque e quem a registrou (`creator`).
-- **Histórico**: produtos, reparos, veículos, usuários e estoques têm o link `events`
+- **Ordens de serviço seguem o fluxo de status**: só aparecem as próximas ações válidas
+  (`start-diagnosis`, `send-quote`, `approve`/`reject`, `confirm-payment`, `start`,
+  `complete`, `deliver`), todas apontando para `PATCH /work-orders/:id/status`, exceto
+  `confirm-payment`. `add-item` só existe antes do envio do orçamento, e `send-quote`
+  só aparece quando a OS tem itens. O cliente dono da OS recebe `approve`/`reject`
+  enquanto ela aguarda aprovação; a equipe recebe também `vehicle` e `client`.
+- **Histórico**: produtos, reparos, veículos, usuários, estoques e ordens de serviço têm o link `events`
   (`/events/:entityType/:entityId`); cada evento aponta para o tipo de evento e para a
   entidade de origem.
 - **Listas sem paginação** (`GET /event-types` e `GET /events/...`) continuam sendo

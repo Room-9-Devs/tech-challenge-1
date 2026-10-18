@@ -14,6 +14,7 @@ const ENTITY_PATHS: Record<string, string> = {
   vehicle: '/vehicles',
   product: '/products',
   repair: '/repairs',
+  work_order: '/work-orders',
 };
 
 export const eventTypeLinks: ResourceLinksBuilder<{ id: string }> = {

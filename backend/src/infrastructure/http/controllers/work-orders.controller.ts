@@ -55,6 +55,11 @@ import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { WorkOrderItem } from '@/domain/entities/work-order-item.entity';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
+import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
+import {
+  workOrderLinks,
+  workOrderPaymentLinks,
+} from '../hateoas/resources/work-order.links';
 
 const itemView = (i: WorkOrderItem) => ({
   id: i.id,
@@ -130,6 +135,7 @@ export class WorkOrdersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Apenas equipe pode abrir uma OS',
   })
+  @HateoasItem(workOrderLinks)
   async create(
     @Body() body: CreateWorkOrderRequestDto,
     @CurrentUser() actor: CurrentUserType,
@@ -209,6 +215,7 @@ export class WorkOrdersController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Parâmetros de consulta inválidos',
   })
+  @HateoasCollection(workOrderLinks)
   async list(
     @Query() query: ListWorkOrdersQueryDto,
     @CurrentUser() actor: CurrentUserType,
@@ -282,6 +289,7 @@ export class WorkOrdersController {
     status: HttpStatus.FORBIDDEN,
     description: 'Cliente só pode consultar as próprias OS',
   })
+  @HateoasItem(workOrderLinks)
   async find(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: CurrentUserType,
@@ -365,6 +373,7 @@ export class WorkOrdersController {
     status: HttpStatus.CONFLICT,
     description: 'Saldo de estoque insuficiente',
   })
+  @HateoasItem(workOrderLinks)
   async addItem(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: AddWorkOrderItemRequestDto,
@@ -412,6 +421,7 @@ export class WorkOrdersController {
     status: HttpStatus.CONFLICT,
     description: 'Saldo de estoque insuficiente',
   })
+  @HateoasItem(workOrderLinks)
   async changeItem(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
@@ -455,6 +465,7 @@ export class WorkOrdersController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Itens só podem ser removidos antes do envio do orçamento',
   })
+  @HateoasItem(workOrderLinks)
   async removeItem(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
@@ -544,6 +555,7 @@ export class WorkOrdersController {
     status: HttpStatus.CONFLICT,
     description: 'Estoque insuficiente ou pagamento ainda não confirmado',
   })
+  @HateoasItem(workOrderLinks)
   async changeStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ChangeWorkOrderStatusRequestDto,
@@ -585,6 +597,7 @@ export class WorkOrdersController {
     status: HttpStatus.NOT_FOUND,
     description: 'Ordem de serviço não encontrada',
   })
+  @HateoasItem(workOrderPaymentLinks)
   async confirmPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ConfirmWorkOrderPaymentRequestDto,
