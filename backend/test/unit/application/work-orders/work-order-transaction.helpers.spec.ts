@@ -57,6 +57,7 @@ describe('Work order stock reservation helpers', () => {
           }),
         ),
       } as any,
+      approvalTokens: {} as any,
     };
   }
 

@@ -35,7 +35,6 @@ describe('CreateProductUseCase', () => {
     useCase = new CreateProductUseCase(
       fakeRepository,
       fakeEventPublisher,
-      new FakeDomainEventPublisher(),
       new FakeProductCreationUnitOfWork(fakeRepository, fakeStockRepository),
     );
   });
