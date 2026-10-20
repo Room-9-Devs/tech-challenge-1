@@ -3,6 +3,7 @@ import { InvalidVehicleError } from '@/domain/errors/invalid-vehicle.error';
 import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exists.error';
 import { FakeVehicleRepository } from '../../../../../fakes/fake-vehicle.repository';
 import { FakeUserRepository } from '../../../../../fakes/fake-user.repository';
+import { FakeDomainEventPublisher } from '../../../../../fakes/fake-domain-event-publisher';
 import { UserNotFoundError } from '@/domain/errors/user-not-found.error';
 import { makeUser } from '../../../../../fakes/user-fixture';
 
@@ -33,7 +34,7 @@ describe('CreateVehicleUseCase', () => {
         entityId: 'client-1',
       }),
     );
-    useCase = new CreateVehicleUseCase(fakeRepository, fakeUserRepository);
+    useCase = new CreateVehicleUseCase(fakeRepository, fakeUserRepository, new FakeDomainEventPublisher());
   });
 
   it('should create and persist a vehicle', async () => {

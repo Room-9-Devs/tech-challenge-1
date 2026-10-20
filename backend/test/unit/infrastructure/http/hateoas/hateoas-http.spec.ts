@@ -16,7 +16,7 @@ describe('HATEOAS over HTTP (RepairsController)', () => {
   let role = 'admin';
 
   const repair = {
-    id: 'r1',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     description: 'Troca de óleo',
     unitValue: 120,
     createdAt: new Date('2026-01-01'),
@@ -67,20 +67,24 @@ describe('HATEOAS over HTTP (RepairsController)', () => {
 
   it('returns item links according to the user role', async () => {
     role = 'admin';
-    const admin = await request(app.getHttpServer()).get('/repairs/r1');
+    const admin = await request(app.getHttpServer()).get(
+      '/repairs/550e8400-e29b-41d4-a716-446655440001',
+    );
     expect(admin.status).toBe(200);
     expect(admin.body._links).toEqual({
-      self: { href: '/repairs/r1', method: 'GET' },
-      update: { href: '/repairs/r1', method: 'PUT' },
-      delete: { href: '/repairs/r1', method: 'DELETE' },
-      events: { href: '/events/repair/r1', method: 'GET' },
+      self: { href: '/repairs/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+      update: { href: '/repairs/550e8400-e29b-41d4-a716-446655440001', method: 'PUT' },
+      delete: { href: '/repairs/550e8400-e29b-41d4-a716-446655440001', method: 'DELETE' },
+      events: { href: '/events/repair/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
     });
 
     role = 'client';
-    const client = await request(app.getHttpServer()).get('/repairs/r1');
+    const client = await request(app.getHttpServer()).get(
+      '/repairs/550e8400-e29b-41d4-a716-446655440001',
+    );
     expect(client.body._links).toEqual({
-      self: { href: '/repairs/r1', method: 'GET' },
-      events: { href: '/events/repair/r1', method: 'GET' },
+      self: { href: '/repairs/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
+      events: { href: '/events/repair/550e8400-e29b-41d4-a716-446655440001', method: 'GET' },
     });
   });
 
@@ -91,7 +95,9 @@ describe('HATEOAS over HTTP (RepairsController)', () => {
       .query({ page: 1, limit: 1, search: 'óleo' });
 
     expect(response.status).toBe(200);
-    expect(response.body.data[0]._links.self.href).toBe('/repairs/r1');
+    expect(response.body.data[0]._links.self.href).toBe(
+      '/repairs/550e8400-e29b-41d4-a716-446655440001',
+    );
     expect(response.body._links.next.href).toBe(
       '/repairs?search=%C3%B3leo&page=2&limit=1',
     );

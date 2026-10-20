@@ -30,7 +30,7 @@ describe('Vehicle update/delete and FIPE', () => {
 
   it('deletes an existing vehicle and rejects an absent one', async () => {
     const vehicle = await repo.save(Vehicle.create(base));
-    const remove = new DeleteVehicleUseCase(repo);
+    const remove = new DeleteVehicleUseCase(repo, new FakeDomainEventPublisher());
     await remove.execute(vehicle.id);
     expect(await repo.findById(vehicle.id)).toBeNull();
     await expect(remove.execute(vehicle.id)).rejects.toThrow(VehicleNotFoundError);
