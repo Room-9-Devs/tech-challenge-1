@@ -385,6 +385,31 @@ Exemplo:
 TS_NODE_PROJECT=tsconfig.test.json npm run migration:run
 ```
 
+## Segurança (Trivy)
+
+O [Trivy](https://trivy.dev) roda no GitHub Actions ([.github/workflows/trivy.yml](.github/workflows/trivy.yml)) em todo PR, em push para `main`/`develop`, semanalmente e sob demanda. São dois jobs:
+
+- **Repositório**: vulnerabilidades no `package-lock.json`, secrets commitados e misconfig de `Dockerfile`/`docker-compose.yml`
+- **Imagem**: build da imagem do backend e scan de vulnerabilidades do SO base e dos pacotes Node
+
+O pipeline falha quando há achados `HIGH` ou `CRITICAL` com correção disponível. As regras ficam em [trivy.yaml](trivy.yaml) e exceções aceitas em [.trivyignore](.trivyignore) (sempre com justificativa).
+
+> As actions estão fixadas por SHA de commit, e não por tag, por causa do comprometimento do `trivy-action` em março/2026 (CVE-2026-33634). Ao atualizar, resolva o SHA com `git ls-remote --tags https://github.com/aquasecurity/trivy-action`.
+
+### Rodando localmente
+
+Só precisa do Docker rodando (o Trivy é executado em container). Dentro de `backend/`:
+
+```bash
+npm run security:scan        # repositório + imagem
+npm run security:scan:fs     # só repositório (deps, secrets, Dockerfile/compose)
+npm run security:scan:image  # build e scan da imagem do backend
+```
+
+O comando sai com código 1 se houver achados `HIGH`/`CRITICAL`. A primeira execução baixa a base de vulnerabilidades (~130 MB), que fica em cache no volume `trivy-cache`.
+
+> O script ([backend/scripts/trivy-scan.js](backend/scripts/trivy-scan.js)) envia ao container só os arquivos versionados pelo git, em vez de montar a pasta, porque o bind mount do Docker Desktop no Windows é lento demais para percorrer o `node_modules`. Ao atualizar o Trivy, mude a versão no script e no workflow.
+
 ## Swagger / OpenAPI
 
 A documentação da API está disponível em:
