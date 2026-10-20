@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Oficina Mecânica API",
-    "description": "Collection para testar a API da oficina mecânica.\n\n1. Rode `Autenticação > Login (admin)`: o token é salvo automaticamente na variável `accessToken`. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão (403).\n2. As rotas protegidas usam o token do admin pela autenticação Bearer da collection.\n3. Os requests de criação geram dados únicos a cada execução e salvam o ID criado em variáveis (`productId`, `stockProductId`, `stockMovementId`, `repairId`, `vehicleId`, `userId`, `clientUserId`, `employeeUserId`, `eventTypeId`).\n4. Cada pasta cobre o fluxo feliz e os erros esperados (400, 401, 403, 404, 409).\n5. A pasta `Bugs conhecidos (falham até corrigir)` valida o comportamento correto em casos que hoje estão errados. Ela fica vermelha até os bugs serem corrigidos.\n6. A pasta `Encerramento` altera a senha (e restaura) e faz logout.\n7. A pasta `Crash de auditoria` derruba o servidor de propósito. Fica desligada; para rodar, defina `runCrashTest` = `true`.\n\nTodos os requests validam o status HTTP esperado, então dá para usar o Collection Runner.\nOs usuários de desenvolvimento são criados com `npm run seed` (senha `password123`).",
+    "description": "Collection para testar a API da oficina mecânica.\n\n1. Rode `Autenticação > Login (admin)`: o token é salvo automaticamente na variável `accessToken`. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão (403).\n2. As rotas protegidas usam o token do admin pela autenticação Bearer da collection.\n3. Os requests de criação geram dados únicos a cada execução e salvam o ID criado em variáveis (`productId`, `stockProductId`, `stockMovementId`, `repairId`, `vehicleId`, `userId`, `clientUserId`, `employeeUserId`, `eventTypeId`, `workOrderId`, `workOrderItemId`).\n4. Cada pasta cobre o fluxo feliz e os erros esperados (400, 401, 403, 404, 409).\n5. A pasta `Bugs conhecidos (falham até corrigir)` valida o comportamento correto em casos que hoje estão errados. Ela fica vermelha até os bugs serem corrigidos.\n6. A pasta `Encerramento` altera a senha (e restaura) e faz logout.\n7. A pasta `Crash de auditoria` derruba o servidor de propósito. Fica desligada; para rodar, defina `runCrashTest` = `true`.\n8. A pasta `Ordens de Serviço` encadeia o ciclo completo de uma OS (abertura, itens, orçamento, aprovação, pagamento, execução e entrega). Ela usa o veículo criado em `Veículos` (`vehicleId`) e o serviço criado em `Tipos de Reparo/Serviço` (`repairId`), então rode essas pastas antes. A subpasta `Aprovação em HTML` usa a variável `approvalToken`, preenchida manualmente com o token do link do e-mail (vazia, os requests esperam 404).\n\nTodos os requests validam o status HTTP esperado, então dá para usar o Collection Runner.\nOs usuários de desenvolvimento são criados com `npm run seed` (senha `password123`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -101,6 +101,18 @@
     },
     {
       "key": "eventTypeCode",
+      "value": ""
+    },
+    {
+      "key": "workOrderId",
+      "value": ""
+    },
+    {
+      "key": "workOrderItemId",
+      "value": ""
+    },
+    {
+      "key": "approvalToken",
       "value": ""
     },
     {
@@ -4443,6 +4455,1534 @@
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "Ordens de Serviço",
+      "description": "Requer login com role admin ou staff (leitura também aceita client). O fluxo encadeia o ciclo completo da OS usando o veículo criado em `Veículos` (`vehicleId`, dono `clientUserId`) e o serviço criado em `Tipos de Reparo/Serviço` (`repairId`), então rode essas pastas antes. Os IDs criados são salvos em `workOrderId` e `workOrderItemId`.\nA subpasta `Aprovação em HTML` cobre as rotas públicas do link do e-mail de orçamento: devolvem HTML e não usam token de login (o token do link é a credencial).",
+      "item": [
+        {
+          "name": "Abrir OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (OS aberta)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"workOrderId\", body.id);",
+                  "  pm.test(\"Status inicial received\", () => pm.expect(body.status).to.equal(\"received\"));",
+                  "  pm.test(\"Retorna itens e total\", () => {",
+                  "    pm.expect(body.items).to.be.an(\"array\").that.is.empty;",
+                  "    pm.expect(body).to.have.property(\"totalPrice\");",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"observations\": \"Cliente relata ruído ao frear em baixa velocidade.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            },
+            "description": "O cliente da OS é o dono do veículo. Rode `Veículos` antes para ter `vehicleId`."
+          }
+        },
+        {
+          "name": "Abrir OS para veículo inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (veículo inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"00000000-0000-4000-8000-000000000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir OS sem vehicleId (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (vehicleId obrigatório)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir OS como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não abre OS)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar ordens de serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Retorna lista paginada\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property(\"data\");",
+                  "  pm.expect(body).to.have.property(\"meta\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar com busca, filtros e paginação",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem com parâmetros)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders?page=1&limit=10&search={{licensePlate}}&sort=[{\"field\":\"createdAt\",\"order\":\"desc\"}]&filters={\"status\":\"received\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "{{licensePlate}}"
+                },
+                {
+                  "key": "sort",
+                  "value": "[{\"field\":\"createdAt\",\"order\":\"desc\"}]"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"status\":\"received\"}"
+                }
+              ]
+            },
+            "description": "search: número da OS ou placa do veículo. sort: JSON com field (number, status, totalPrice, createdAt, updatedAt) e order (asc|desc). filters: JSON com status e/ou vehicleId (UUID). Aceita também o parâmetro ?status= isolado."
+          }
+        },
+        {
+          "name": "Listar com filtro de status inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (status inexistente)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders?filters={\"status\":\"nao_existe\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"status\":\"nao_existe\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar OS por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (OS encontrada)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Retorna veículo e cliente\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property(\"vehicle\");",
+                  "  pm.expect(body).to.have.property(\"client\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar OS inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (OS inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estatísticas da OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estatísticas)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "stats"
+              ]
+            },
+            "description": "Duração de cada etapa do ciclo de vida da OS, tempo total e tempo no status atual, com a média global correspondente."
+          }
+        },
+        {
+          "name": "Adicionar serviço ao orçamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (serviço adicionado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"workOrderItemId\", body.items[body.items.length - 1].id);",
+                  "  pm.test(\"Item com preço unitário e subtotal\", () => {",
+                  "    const item = body.items[body.items.length - 1];",
+                  "    pm.expect(item).to.have.property(\"unitPrice\");",
+                  "    pm.expect(item).to.have.property(\"subtotal\");",
+                  "    pm.expect(item.serviceId).to.equal(pm.collectionVariables.get(\"repairId\"));",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            },
+            "description": "Informe exatamente um de `serviceId` (quantidade fracionária permitida) ou `productId` (quantidade inteira). O preço unitário é congelado do catálogo. O ID do item vai para `workOrderItemId`."
+          }
+        },
+        {
+          "name": "Adicionar item sem serviço ou produto (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (nenhum item informado)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Adicionar produto com quantidade fracionária (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (produto exige quantidade inteira)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Adicionar produto com estoque insuficiente (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (saldo insuficiente)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            },
+            "description": "O produto de `Produtos` nasce com estoque 0, então a quantidade 999999 sempre estoura o saldo."
+          }
+        },
+        {
+          "name": "Adicionar item como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não altera orçamento)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar quantidade do item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (quantidade alterada)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Subtotal recalculado\", () => {",
+                  "  const item = pm.response.json().items.find((i) => i.id === pm.collectionVariables.get(\"workOrderItemId\"));",
+                  "  pm.expect(item.quantity).to.equal(1.5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items/{{workOrderItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items",
+                "{{workOrderItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar item inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (item inexistente)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (item removido)\", () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().items.some((i) => i.id === pm.collectionVariables.get(\"workOrderItemId\"))).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items/{{workOrderItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items",
+                "{{workOrderItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enviar orçamento sem itens (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (OS sem itens)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"awaiting_approval\",\n  \"reason\": \"Tentativa de enviar orçamento sem itens.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "Após \"Remover item\", a OS fica sem itens; aguardar aprovação exige pelo menos um."
+          }
+        },
+        {
+          "name": "Adicionar serviço novamente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (item re-adicionado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"workOrderItemId\", pm.response.json().items[pm.response.json().items.length - 1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            },
+            "description": "Recria o item removido para o fluxo continuar com orçamento válido; `workOrderItemId` recebe o novo ID."
+          }
+        },
+        {
+          "name": "Iniciar diagnóstico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (em diagnóstico)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status under_diagnosis\", () => pm.expect(pm.response.json().status).to.equal(\"under_diagnosis\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"under_diagnosis\",\n  \"reason\": \"Veículo recebido e encaminhado para diagnóstico.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transição inválida para concluir (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (transição não permitida)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"reason\": \"Tentativa de pular etapas do fluxo.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "De under_diagnosis só é possível ir para awaiting_approval."
+          }
+        },
+        {
+          "name": "Enviar orçamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (orçamento enviado)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status awaiting_approval\", () => pm.expect(pm.response.json().status).to.equal(\"awaiting_approval\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"awaiting_approval\",\n  \"reason\": \"Diagnóstico concluído e orçamento enviado.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "O e-mail de aprovação é disparado neste momento (o token fica no e-mail; veja a subpasta `Aprovação em HTML`)."
+          }
+        },
+        {
+          "name": "Cliente decide sobre OS alheia (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (OS de outro cliente)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reason\": \"Tentativa de aprovar OS de outro cliente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "O cliente do seed (`agnaldo.guimaraes`) não é o dono da OS (dono é `clientUserId`)."
+          }
+        },
+        {
+          "name": "Cliente tenta iniciar execução (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (só aprova ou recusa)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"reason\": \"Tentativa de começar o serviço pelo cliente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aprovar orçamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (orçamento aprovado)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status approved\", () => pm.expect(pm.response.json().status).to.equal(\"approved\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reason\": \"Orçamento aprovado em nome do cliente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "Decisão registrada pela equipe aqui; o próprio dono aprovaria pelo e-mail (subpasta `Aprovação em HTML`)."
+          }
+        },
+        {
+          "name": "Iniciar serviço antes do pagamento (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (pagamento não confirmado)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"reason\": \"Tentativa de iniciar sem confirmar pagamento.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Confirmar pagamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (pagamento confirmado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Pagamento confirmado no caixa.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/payment-confirmation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "payment-confirmation"
+              ]
+            },
+            "description": "Só vale para OS aprovada; registra a confirmação manual no histórico da OS."
+          }
+        },
+        {
+          "name": "Confirmar pagamento duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (pagamento já confirmado)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Tentativa de confirmar duas vezes.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/payment-confirmation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "payment-confirmation"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Iniciar execução do serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (em execução)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status in_progress\", () => pm.expect(pm.response.json().status).to.equal(\"in_progress\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"reason\": \"Pagamento confirmado; serviço iniciado.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar item após envio do orçamento (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (itens travados)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items/{{workOrderItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items",
+                "{{workOrderItemId}}"
+              ]
+            },
+            "description": "Itens só podem ser alterados em received ou under_diagnosis."
+          }
+        },
+        {
+          "name": "Concluir serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (serviço concluído)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status completed\", () => pm.expect(pm.response.json().status).to.equal(\"completed\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"reason\": \"Serviço concluído conforme o orçamento aprovado.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Entregar veículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (entregue)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test(\"Status delivered\", () => pm.expect(pm.response.json().status).to.equal(\"delivered\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivered\",\n  \"reason\": \"Veículo entregue ao cliente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aprovação em HTML (rota pública)",
+          "description": "Rotas do link do e-mail de orçamento: sem autenticação JWT (o token do link é a credencial) e respondem em HTML. Cole em `approvalToken` o token do e-mail recebido quando a OS entra em `awaiting_approval`. Sem token (ou token inválido), a resposta é 404 em HTML, já coberto pelos testes.",
+          "item": [
+            {
+              "name": "Abrir página de confirmação (GET)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (token real) ou 404 (token vazio/inválido)\", () => pm.expect([200, 404]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-order-approvals/{{approvalToken}}/approve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-order-approvals",
+                    "{{approvalToken}}",
+                    "approve"
+                  ]
+                },
+                "description": "Página de confirmação (HTML). Também aceita `reject` como decisão. Não altera a OS."
+              }
+            },
+            {
+              "name": "Registrar decisão do orçamento (POST)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (token real) ou 404 (token vazio/inválido)\", () => pm.expect([200, 404]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-order-approvals/{{approvalToken}}/approve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-order-approvals",
+                    "{{approvalToken}}",
+                    "approve"
+                  ]
+                },
+                "description": "Registra a decisão: `approve` move a OS para approved; `reject` cancela. O link vale uma única vez e expira após a OS sair de awaiting_approval."
+              }
+            }
+          ]
         }
       ]
     },
