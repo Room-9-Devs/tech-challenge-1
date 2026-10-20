@@ -107,6 +107,45 @@ describe('UsersController', () => {
     });
   });
 
+  it('allows profile.document, cpf and cnpj in filters', async () => {
+    const list = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
+    };
+
+    const controller = new UsersController(
+      {} as never,
+      {} as never,
+      list as never,
+    );
+
+    await controller.findAll({
+      filters: JSON.stringify({ 'profile.document': '11111111111' }),
+    } as ListUsersQueryDto);
+
+    await controller.findAll({
+      filters: JSON.stringify({ cpf: '11111111111' }),
+    } as ListUsersQueryDto);
+
+    await controller.findAll({
+      filters: JSON.stringify({ cnpj: '12345678000199' }),
+    } as ListUsersQueryDto);
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { 'profile.document': '11111111111' },
+    });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { cpf: '11111111111' },
+    });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { cnpj: '12345678000199' },
+    });
+  });
+
   it('rejects employee creation by staff', async () => {
     
     const create = {execute: jest.fn(),};

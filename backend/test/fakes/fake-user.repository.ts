@@ -1,4 +1,4 @@
-import { ProfileRepository } from '@/application/ports/profile.repository';
+import { ProfileRepository, ProfileRecord } from '@/application/ports/profile.repository';
 import { User } from '@/domain/entities/user.entity';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
@@ -9,19 +9,29 @@ export class FakeUserRepository implements UserRepository {
 
   constructor(private readonly profiles?: Pick<ProfileRepository, 'findById'>) { }
 
-  private async resolveProfileNames(): Promise<Map<string, string>> {
-    const names = new Map<string, string>();
+  private async resolveProfileRecords(): Promise<Map<string, ProfileRecord | null>> {
+    const records = new Map<string, ProfileRecord | null>();
     await Promise.all(
       this.users.map(async (user) => {
         const profile = await this.profiles?.findById(user.entityType, user.entityId);
-        names.set(user.id, profile?.name ?? '');
+        records.set(user.id, profile ?? null);
       }),
     );
-    return names;
+    return records;
   }
 
-  private readField(user: User, field: string, names: Map<string, string>): unknown {
-    if (field === 'profile.name') return names.get(user.id) ?? '';
+  private readField(user: User, field: string, profiles: Map<string, ProfileRecord | null>): unknown {
+    const profile = profiles.get(user.id) ?? null;
+    const normalizeDocument = (value: string): string =>
+      value.replace(/[.\-/ \s]/g, '');
+    if (field === 'profile.name') return profile?.name ?? '';
+    if (field === 'profile.document') return profile?.document ? normalizeDocument(profile.document) : '';
+    if (field === 'cpf') {
+      return profile?.documentType === 'CPF' ? normalizeDocument(profile.document) : null;
+    }
+    if (field === 'cnpj') {
+      return profile?.documentType === 'CNPJ' ? normalizeDocument(profile.document) : null;
+    }
     return (user as unknown as Record<string, unknown>)[field];
   }
 
@@ -44,29 +54,36 @@ export class FakeUserRepository implements UserRepository {
     const search = query?.search?.trim().toLowerCase();
     const filters = query?.filters ?? {};
 
-    const allowedFilters = ['username', 'email', 'entityType', 'profile.name'];
+    const allowedFilters = ['username', 'email', 'entityType', 'profile.name', 'profile.document', 'cpf', 'cnpj'];
 
-    const usesProfileName =
+    const usesProfiles =
       !!search ||
-      Object.keys(filters).some((key) => key === 'profile.name') ||
+      Object.keys(filters).some((key) =>
+        ['profile.name', 'profile.document', 'cpf', 'cnpj'].includes(key),
+      ) ||
       (query?.sort ?? []).some(({ field }) => field === 'profile.name');
-    const names = usesProfileName
-      ? await this.resolveProfileNames()
-      : new Map<string, string>();
+    const profiles = usesProfiles
+      ? await this.resolveProfileRecords()
+      : new Map<string, ProfileRecord | null>();
 
     let data = this.users;
 
-    for (const [key, value] of Object.entries(filters)) {
+    const documentFilterKeys = ['profile.document', 'cpf', 'cnpj'];
+
+    for (const [key, rawValue] of Object.entries(filters)) {
       if (!allowedFilters.includes(key)) continue;
 
-      data = data.filter((user) => this.readField(user, key, names) === value);
+      const value = documentFilterKeys.includes(key) && typeof rawValue === 'string'
+        ? rawValue.replace(/[.\-/ \s]/g, '')
+        : rawValue;
+      data = data.filter((user) => this.readField(user, key, profiles) === value);
     }
 
     if (search) {
       const terms = search.split(/\s+/);
       data = data.filter((user) =>
         terms.some((term: string) =>
-          [user.username, user.email, this.readField(user, 'profile.name', names)].some((value) =>
+          [user.username, user.email, this.readField(user, 'profile.name', profiles)].some((value) =>
             String(value).toLowerCase().includes(term),
           ),
         ),
@@ -80,8 +97,8 @@ export class FakeUserRepository implements UserRepository {
         for (const { field, order } of query.sort!) {
           if (!allowedSortColumns.includes(field)) continue;
 
-          const valueA = this.readField(a, field, names);
-          const valueB = this.readField(b, field, names);
+          const valueA = this.readField(a, field, profiles);
+          const valueB = this.readField(b, field, profiles);
 
           if (valueA == null || valueB == null) continue;
 

@@ -179,6 +179,93 @@ describe('TypeOrmUserRepository', () => {
     expect(wheres[0].params).toEqual({ filter_profile_name: 'José Silveira' });
   });
 
+  it('filters by profile document through the profiles', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { 'profile.document': '11111111111' },
+    });
+
+    expect(wheres[0].condition).toBe(
+      'COALESCE(client.document, employee.document) = :filter_profile_document',
+    );
+    expect(wheres[0].params).toEqual({ filter_profile_document: '11111111111' });
+  });
+
+  it('filters by cpf matching the document type', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { cpf: '11111111111' },
+    });
+
+    expect(wheres[0].condition).toBe(
+      'COALESCE(client.document, employee.document) = :filter_cpf_document AND COALESCE(client.document_type, employee.document_type) = :filter_cpf_type',
+    );
+    expect(wheres[0].params).toEqual({
+      filter_cpf_document: '11111111111',
+      filter_cpf_type: 'CPF',
+    });
+  });
+
+  it('strips the mask from document filters', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { cpf: '111.222.333-44', 'profile.document': '11.111.111/0001-11' },
+    });
+
+    expect(wheres[0].params).toEqual({ filter_cpf_document: '11122233344', filter_cpf_type: 'CPF' });
+    expect(wheres[1].params).toEqual({ filter_profile_document: '11111111000111' });
+  });
+
+  it('filters by cnpj matching the document type', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { cnpj: '11222333000181' },
+    });
+
+    expect(wheres[0].condition).toBe(
+      'COALESCE(client.document, employee.document) = :filter_cnpj_document AND COALESCE(client.document_type, employee.document_type) = :filter_cnpj_type',
+    );
+    expect(wheres[0].params).toEqual({
+      filter_cnpj_document: '11222333000181',
+      filter_cnpj_type: 'CNPJ',
+    });
+  });
+
+  it('ignores document filters that are not allowed', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { documentType: 'CPF' },
+    });
+
+    expect(queryBuilder.andWhere).not.toHaveBeenCalled();
+    expect(wheres).toEqual([]);
+  });
+
   it('sorts by profile name through a calculated select alias', async () => {
     const { queryBuilder, selects, orderBys } = createQueryBuilder();
     const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };

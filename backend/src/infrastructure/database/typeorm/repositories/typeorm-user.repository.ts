@@ -16,6 +16,17 @@ const PROFILE_NAME_EXPRESSION = 'COALESCE(client.name, employee.name)';
 const PROFILE_NAME_ALIAS = 'profile_name';
 const PROFILE_NAME_FIELD = 'profile.name';
 
+// O CPF/CNPJ do usuário também mora no perfil, em uma única coluna `document`.
+const PROFILE_DOCUMENT_EXPRESSION = 'COALESCE(client.document, employee.document)';
+const PROFILE_DOCUMENT_TYPE_EXPRESSION =
+  'COALESCE(client.document_type, employee.document_type)';
+const PROFILE_DOCUMENT_FIELD = 'profile.document';
+
+// O documento é gravado apenas com dígitos, mas o CPF/CNPJ é costumeiramente
+// informado com máscara; precisamos dele limpo para casar com a coluna.
+const normalizeDocument = (value: unknown): string =>
+  typeof value === 'string' ? value.replace(/[.\-/ \s]/g, '') : String(value ?? '');
+
 @Injectable()
 export class TypeOrmUserRepository implements UserRepository {
   constructor(
@@ -66,7 +77,15 @@ export class TypeOrmUserRepository implements UserRepository {
         'employee."id" = "user"."entity_id" AND "user"."entity_type" = \'employee\'',
       );
 
-    const allowedFilters = ['username', 'email', 'entityType', PROFILE_NAME_FIELD];
+    const allowedFilters = [
+      'username',
+      'email',
+      'entityType',
+      PROFILE_NAME_FIELD,
+      PROFILE_DOCUMENT_FIELD,
+      'cpf',
+      'cnpj',
+    ];
 
     if (filters) {
       for (const [key, value] of Object.entries(filters)) {
@@ -76,6 +95,26 @@ export class TypeOrmUserRepository implements UserRepository {
           queryBuilder.andWhere(
             `${PROFILE_NAME_EXPRESSION} = :filter_profile_name`,
             { filter_profile_name: value },
+          );
+          continue;
+        }
+
+        if (key === PROFILE_DOCUMENT_FIELD) {
+          queryBuilder.andWhere(
+            `${PROFILE_DOCUMENT_EXPRESSION} = :filter_profile_document`,
+            { filter_profile_document: normalizeDocument(value) },
+          );
+          continue;
+        }
+
+        if (key === 'cpf' || key === 'cnpj') {
+          const documentType = key.toUpperCase();
+          queryBuilder.andWhere(
+            `${PROFILE_DOCUMENT_EXPRESSION} = :filter_${key}_document AND ${PROFILE_DOCUMENT_TYPE_EXPRESSION} = :filter_${key}_type`,
+            {
+              [`filter_${key}_document`]: normalizeDocument(value),
+              [`filter_${key}_type`]: documentType,
+            },
           );
           continue;
         }

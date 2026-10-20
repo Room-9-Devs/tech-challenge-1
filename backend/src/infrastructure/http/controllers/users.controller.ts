@@ -62,6 +62,9 @@ const ALLOWED_USERS_FILTERS = [
   'role',
   'profile',
   'profile.name',
+  'profile.document',
+  'cpf',
+  'cnpj',
 ];
 
 @ApiTags('Usuários')

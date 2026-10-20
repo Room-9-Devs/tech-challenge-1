@@ -1049,7 +1049,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "for (const user of body.data || []) {",
+                  "  const profile = user.profile || {};",
+                  "  const raw = String(profile.document || \"\").replace(/[^0-9]/g, \"\");",
+                  "  if (raw && profile.documentType === \"CPF\") {",
+                  "    pm.collectionVariables.set(\"userDocumentCpfRaw\", raw);",
+                  "  }",
+                  "  if (raw && profile.documentType === \"CNPJ\") {",
+                  "    pm.collectionVariables.set(\"userDocumentCnpjRaw\", raw);",
+                  "  }",
+                  "}"
                 ]
               }
             }
@@ -1100,6 +1111,78 @@
               ]
             },
             "description": "Filtro por `entityType` (client ou employee). O antigo `?type=` hoje retorna 400."
+          }
+        },
+        {
+          "name": "Listar usuários por CPF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem por CPF)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?filters={\"cpf\":\"{{userDocumentCpfRaw}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"cpf\":\"{{userDocumentCpfRaw}}\"}"
+                }
+              ]
+            },
+            "description": "Filtro por CPF do perfil (client ou employee). Usa `userDocumentCpfRaw`, preenchido pelo request `Listar usuários` com o CPF do primeiro CPF encontrado na listagem (rode-o antes). Também aceita `profile.document` (CPF ou CNPJ, sem checagem de tipo) e `cnpj`."
+          }
+        },
+        {
+          "name": "Listar usuários por CNPJ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem por CNPJ)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?filters={\"cnpj\":\"{{userDocumentCnpjRaw}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"cnpj\":\"{{userDocumentCnpjRaw}}\"}"
+                }
+              ]
+            },
+            "description": "Filtro por CNPJ do perfil. Usa `userDocumentCnpjRaw`, preenchido pelo request `Listar usuários` (rode-o antes). O seed padrão não cria CNPJ, então o totalItems pode ser 0 se ninguém CNPJ existir. Também reconhece `profile.document` e `cpf`."
           }
         },
         {
