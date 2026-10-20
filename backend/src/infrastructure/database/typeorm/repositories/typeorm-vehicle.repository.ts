@@ -71,7 +71,12 @@ export class TypeOrmVehicleRepository implements VehicleRepository {
       }
     }
 
-    applyPagination(queryBuilder, paginationQuery, {
+    // A placa é salva normalizada (ABC-1234 → ABC1234); o termo de busca precisa do mesmo tratamento.
+    const search = paginationQuery.search
+      ? paginationQuery.search.replace(/-/g, '').toUpperCase()
+      : undefined;
+
+    applyPagination(queryBuilder, { ...paginationQuery, search }, {
       searchColumns: [
         'vehicle.licensePlate',
         'vehicle.model',
