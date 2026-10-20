@@ -1,12 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaginationMetaDto } from './pagination-meta.dto';
-import { WorkOrderResponseDto } from './work-order-response.dto';
+import { WorkOrderSummaryResponseDto } from './work-order-response.dto';
 import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
 import { Links } from '../hateoas/link.types';
 
 export class ListWorkOrdersResponseDto {
-  @ApiProperty({ type: [WorkOrderResponseDto] })
-  data: WorkOrderResponseDto[];
+  @ApiProperty({
+    type: [WorkOrderSummaryResponseDto],
+    description: 'Resumo de cada OS; os itens ficam apenas no GET /:id',
+  })
+  data: WorkOrderSummaryResponseDto[];
 
   @ApiProperty({ type: PaginationMetaDto })
   meta: PaginationMetaDto;

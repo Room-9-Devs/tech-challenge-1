@@ -87,6 +87,12 @@ const orderView = (o: WorkOrder) => ({
   updatedAt: o.updatedAt,
 });
 
+// A listagem não expõe os itens: eles ficam apenas no GET /:id. O total usa os itens carregados.
+const orderSummaryView = (o: WorkOrder) => {
+  const { items: _items, ...summary } = orderView(o);
+  return summary;
+};
+
 const WORK_ORDER_ID_EXAMPLE = '550e8400-e29b-41d4-a716-446655440020';
 const WORK_ORDER_ITEM_ID_EXAMPLE = '550e8400-e29b-41d4-a716-446655440010';
 const toWorkOrderActor = (user: CurrentUserType) => ({
@@ -268,7 +274,7 @@ export class WorkOrdersController {
       },
       actor: toWorkOrderActor(actor),
     });
-    return { ...result, data: result.data.map(orderView) };
+    return { ...result, data: result.data.map(orderSummaryView) };
   }
 
   @Get(':id')
