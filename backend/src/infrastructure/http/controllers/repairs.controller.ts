@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -154,7 +155,9 @@ export class RepairsController {
     description: 'Tipo de reparo/serviço não encontrado',
   })
   @HateoasItem(repairLinks)
-  async findById(@Param('id') id: string): Promise<RepairResponseDto> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<RepairResponseDto> {
     return this.findRepairUseCase.execute({ id });
   }
 
@@ -186,7 +189,7 @@ export class RepairsController {
   })
   @HateoasItem(repairLinks)
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateRepairRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<RepairResponseDto> {
@@ -211,7 +214,7 @@ export class RepairsController {
     description: 'Tipo de reparo/serviço não encontrado',
   })
   async delete(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     return this.deleteRepairUseCase.execute({ id, createdBy: currentUser?.username });
