@@ -36,6 +36,8 @@ import { UpdateVehicleUseCase } from '@/application/use-cases/vehicles/update-ve
 import { DeleteVehicleUseCase } from '@/application/use-cases/vehicles/delete-vehicle.use-case';
 import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-data.use-case';
 import { FipePrice } from '@/application/ports/fipe.gateway';
+import { BadRequestException } from '@nestjs/common';
+import { isUUID } from 'class-validator';
 
 import { CreateVehicleRequestDto } from '../dtos/create-vehicle-request.dto';
 import { VehicleResponseDto } from '../dtos/vehicle-response.dto';
@@ -202,11 +204,23 @@ export class VehiclesController {
       page: query.page,
       limit: query.limit,
       search: query.search,
-      sort: parseSortQuery(query.sort, ALLOWED_VEHICLE_SORT_COLUMNS),
-      filters: parseFiltersQuery(
-        query.filters,
-        ALLOWED_VEHICLE_FILTERS,
-      ) as ListVehiclesFiltersInputDto,
+    sort: parseSortQuery(query.sort, ALLOWED_VEHICLE_SORT_COLUMNS),
+      filters: this.validateVehicleFilters(
+        parseFiltersQuery(query.filters, ALLOWED_VEHICLE_FILTERS),
+      ),
     });
+  }
+
+  private validateVehicleFilters(
+    filters: Record<string, unknown> | undefined,
+  ): ListVehiclesFiltersInputDto | undefined {
+    if (!filters) return undefined;
+    if (filters.userId !== undefined && !isUUID(filters.userId)) {
+      throw new BadRequestException('filter userId must be a valid UUID');
+    }
+    if (filters.year !== undefined && !Number.isInteger(Number(filters.year))) {
+      throw new BadRequestException('filter year must be an integer');
+    }
+    return filters as ListVehiclesFiltersInputDto;
   }
 }
