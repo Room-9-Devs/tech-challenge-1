@@ -81,6 +81,7 @@ export class VehiclesController {
   ) {}
 
   @Post(':user_id')
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new vehicle' })
   @ApiParam({
@@ -110,8 +111,13 @@ export class VehiclesController {
   async create(
     @Param('user_id', new ParseUUIDPipe()) user_id: string,
     @Body() dto: CreateVehicleRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<VehicleResponseDto> {
-    return this.createVehicleUseCase.execute({ user_id, ...dto });
+    return this.createVehicleUseCase.execute({
+      user_id,
+      ...dto,
+      createdBy: currentUser?.username,
+    });
   }
 
   @Get('fipe/:code')
@@ -137,11 +143,15 @@ export class VehiclesController {
   }
 
   @Delete(':id')
+  @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete vehicle' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
-  async delete(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
-    await this.deleteVehicleUseCase.execute(id);
+  async delete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<void> {
+    await this.deleteVehicleUseCase.execute(id, currentUser?.username);
   }
 
   @Get(':id')

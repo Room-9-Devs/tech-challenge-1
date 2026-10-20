@@ -67,6 +67,11 @@ export const DEFAULT_EVENT_TYPES = [
     allowedEntityTypes: ['vehicle' as const],
   },
   {
+    code: 'vehicle.deleted',
+    name: 'Veículo excluído',
+    allowedEntityTypes: ['vehicle' as const],
+  },
+  {
     code: 'product.created',
     name: 'Produto criado',
     allowedEntityTypes: ['product' as const],

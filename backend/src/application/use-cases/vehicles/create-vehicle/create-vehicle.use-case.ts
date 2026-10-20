@@ -4,6 +4,8 @@ import { VehicleAlreadyExistsError } from '@/domain/errors/vehicle-already-exist
 import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { UserNotFoundError } from '@/domain/errors/user-not-found.error';
+import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
+import { VehicleCreatedEvent } from '@/domain/events/vehicle.events';
 import { USER_REPOSITORY } from '@/application/use-cases/users/create-user/create-user.use-case';
 import { CreateVehicleInputDto } from './create-vehicle-input.dto';
 import { CreateVehicleOutputDto } from './create-vehicle-output.dto';
@@ -17,6 +19,8 @@ export class CreateVehicleUseCase {
     private readonly vehicleRepository: VehicleRepository,
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
+    @Inject(DOMAIN_EVENT_PUBLISHER)
+    private readonly eventPublisher: DomainEventPublisher,
   ) {}
 
   async execute(input: CreateVehicleInputDto): Promise<CreateVehicleOutputDto> {
@@ -36,6 +40,16 @@ export class CreateVehicleUseCase {
     }
 
     const savedVehicle = await this.vehicleRepository.save(vehicle);
+
+    await this.eventPublisher.publish(
+      new VehicleCreatedEvent(savedVehicle.id, input.createdBy, {
+        licensePlate: savedVehicle.license_plate,
+        model: savedVehicle.model,
+        brand: savedVehicle.brand,
+        year: savedVehicle.year,
+        color: savedVehicle.color,
+      }),
+    );
 
     return {
       id: savedVehicle.id,
