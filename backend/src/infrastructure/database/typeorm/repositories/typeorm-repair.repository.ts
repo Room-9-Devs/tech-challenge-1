@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, QueryFailedError, Repository } from 'typeorm';
 import { Repair } from '@/domain/entities/repair.entity';
 import { RepairRepository } from '@/domain/repositories/repair.repository';
+import { RepairAlreadyExistsError } from '@/domain/errors/repair-already-exists.error';
 import { applyPagination } from '@/shared/pagination/typeorm-pagination.helper';
 import { PaginatedOutput, PaginationQuery } from '@/shared/pagination/pagination.types';
 import { RepairOrmEntity } from '../entities/repair.orm-entity';
@@ -17,8 +18,18 @@ export class TypeOrmRepairRepository implements RepairRepository {
 
   async save(repair: Repair): Promise<Repair> {
     const ormEntity = RepairMapper.toPersistence(repair);
-    const saved = await this.repository.save(ormEntity);
-    return RepairMapper.toDomain(saved);
+    try {
+      const saved = await this.repository.save(ormEntity);
+      return RepairMapper.toDomain(saved);
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        (error as QueryFailedError & { driverError?: { code?: string } }).driverError?.code === '23505'
+      ) {
+        throw new RepairAlreadyExistsError(repair.description);
+      }
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<Repair | null> {

@@ -1,5 +1,6 @@
 import {
   Entity,
+  Index,
   PrimaryColumn,
   Column,
   CreateDateColumn,
@@ -8,11 +9,15 @@ import {
 } from 'typeorm';
 
 @Entity('repairs')
+@Index('UQ_repairs_description_active', ['description'], {
+  unique: true,
+  where: 'deleted_at IS NULL',
+})
 export class RepairOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255 })
   description: string;
 
   @Column('decimal', {
