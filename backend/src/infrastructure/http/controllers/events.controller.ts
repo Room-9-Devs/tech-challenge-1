@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -6,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -30,7 +32,7 @@ import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventLinks } from '../hateoas/resources/event.links';
-import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
+import { EVENT_ENTITY_TYPES, EventEntityType, isEventEntityType } from '@/domain/types/entity-reference.type';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
 
 @ApiTags('Eventos')
@@ -89,9 +91,12 @@ export class EventsController {
   @HateoasCollection(eventLinks)
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
-    @Param('entityId') entityId: string,
+    @Param('entityId', ParseUUIDPipe) entityId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<EventResponseDto[]> {
+    if (!isEventEntityType(entityType)) {
+      throw new BadRequestException('entityType inválido');
+    }
     if (entityType === 'work_order') {
       await this.findWorkOrder.execute({
         id: entityId,
