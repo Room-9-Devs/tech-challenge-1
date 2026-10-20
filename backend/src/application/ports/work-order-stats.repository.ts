@@ -23,4 +23,11 @@ export interface WorkOrderStatsRepository {
    * reconstruir o estado de cada OS no último instante do período.
    */
   findRecordsCreatedUntil(until: Date): Promise<WorkOrderStatsRecord[]>;
+
+  /**
+   * Carrega uma única ordem de serviço por id com todas as suas transições
+   * de status em ordem cronológica, para o cálculo das estatísticas
+   * individuais da OS.
+   */
+  findRecordById(id: string): Promise<WorkOrderStatsRecord | null>;
 }
