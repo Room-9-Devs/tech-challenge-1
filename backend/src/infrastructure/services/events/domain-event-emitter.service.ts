@@ -26,7 +26,9 @@ export class DomainEventEmitter {
       eventType,
       async (event: DomainEvent) => {
         try {
-          await listener(event);
+          await (listener as (event: DomainEvent) => void | Promise<void>)(
+            event,
+          );
         } catch (error) {
           this.logger.error(
             `Falha ao processar o evento ${eventType}`,

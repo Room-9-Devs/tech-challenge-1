@@ -23,6 +23,8 @@ import { ListEventsByEntityIdUseCase } from '@/application/use-cases/events/list
 import { RecordEventRequestDto } from '../dtos/record-event-request.dto';
 import { EventResponseDto } from '../dtos/event-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
@@ -33,6 +35,8 @@ import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-w
 
 @ApiTags('Eventos')
 @Controller('events')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'staff')
 export class EventsController {
   constructor(
     private readonly recordEventUseCase: RecordEventUseCase,
@@ -41,7 +45,6 @@ export class EventsController {
   ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.CREATED)
@@ -64,12 +67,11 @@ export class EventsController {
     }
     return this.recordEventUseCase.execute({
       ...dto,
-      createdBy: dto.createdBy ?? currentUser?.username,
+      createdBy: currentUser.username, // nunca aceitar do body
     });
   }
 
   @Get(':entityType/:entityId')
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Listar eventos por entidade' })
