@@ -1,4 +1,5 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { WorkOrderConflictError } from '@/domain/errors/work-order-conflict.error';
+import { WorkOrderNotFoundError } from '@/domain/errors/work-order-not-found.error';
 import { Event } from '@/domain/entities/event.entity';
 import {
   StockMovement,
@@ -26,7 +27,7 @@ export async function requireWorkOrder(
   id: string,
 ): Promise<WorkOrder> {
   const order = await repositories.workOrders.findById(id);
-  if (!order) throw new NotFoundException('Ordem de serviço não encontrada');
+  if (!order) throw new WorkOrderNotFoundError(id);
   return order;
 }
 
@@ -56,7 +57,7 @@ async function recordStockEvent(
 ): Promise<void> {
   const type = await repositories.eventTypes.findByCode(code);
   if (!type)
-    throw new ConflictException(`Tipo de evento ${code} não cadastrado`);
+    throw new WorkOrderConflictError(`Tipo de evento ${code} não cadastrado`);
   await repositories.events.save(
     Event.create({
       eventTypeId: type.id,
@@ -77,7 +78,7 @@ export async function reserveWorkOrderProducts(
   for (const [productId, quantity] of productQuantities(order)) {
     const stock = await repositories.stocks.findByProductId(productId);
     if (!stock)
-      throw new ConflictException('Estoque do produto não encontrado');
+      throw new WorkOrderConflictError('Estoque do produto não encontrado');
     const snapshot = stockSnapshot(stock);
     stock.reserve(quantity);
     await repositories.stocks.save(stock);
@@ -111,7 +112,7 @@ export async function finishWorkOrderReservation(
   for (const [productId, quantity] of productQuantities(order)) {
     const stock = await repositories.stocks.findByProductId(productId);
     if (!stock)
-      throw new ConflictException('Estoque do produto não encontrado');
+      throw new WorkOrderConflictError('Estoque do produto não encontrado');
     const snapshot = stockSnapshot(stock);
     const finishEvent = (code: 'stock.consumed' | 'stock.released', note: string) =>
       recordStockEvent(repositories, code, stock.id, username, note, {

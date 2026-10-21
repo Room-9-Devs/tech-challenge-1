@@ -1,9 +1,6 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WorkOrderAccessDeniedError } from '@/domain/errors/work-order-access-denied.error';
+import { WorkOrderNotFoundError } from '@/domain/errors/work-order-not-found.error';
 import {
   WORK_ORDER_REPOSITORY,
   WorkOrderRepository,
@@ -42,20 +39,18 @@ export class GetWorkOrderStatsDetailUseCase {
   ): Promise<GetWorkOrderStatsDetailOutputDto> {
     const order = await this.workOrders.findById(input.id);
     if (!order) {
-      throw new NotFoundException('Ordem de serviço não encontrada');
+      throw new WorkOrderNotFoundError(input.id);
     }
     if (
       input.actor.entityType === 'client' &&
       order.clientId !== input.actor.id
     ) {
-      throw new ForbiddenException(
-        'Você não tem acesso a esta ordem de serviço',
-      );
+      throw new WorkOrderAccessDeniedError();
     }
 
     const record = await this.statsRepository.findRecordById(input.id);
     if (!record) {
-      throw new NotFoundException('Ordem de serviço não encontrada');
+      throw new WorkOrderNotFoundError(input.id);
     }
 
     const globalResult = await this.globalStats.execute({ period: 'all' }, now);

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { InvalidWorkOrderStatsFilterError } from '@/domain/errors/invalid-work-order-stats-filter.error';
 import { GetWorkOrderStatsUseCase } from '@/application/use-cases/work-order-stats/get-work-order-stats/get-work-order-stats.use-case';
 import {
   WORK_ORDER_STATS_REPOSITORY,
@@ -133,7 +133,7 @@ describe('GetWorkOrderStatsUseCase', () => {
   it('should reject an unsupported period', async () => {
     await expect(
       useCase.execute({ period: 'bogus' as never }, NOW),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(InvalidWorkOrderStatsFilterError);
   });
 
   it('should reject an invalid start date', async () => {

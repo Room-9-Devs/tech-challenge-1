@@ -1,9 +1,6 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WorkOrderAccessDeniedError } from '@/domain/errors/work-order-access-denied.error';
+import { WorkOrderNotFoundError } from '@/domain/errors/work-order-not-found.error';
 import { VEHICLE_REPOSITORY } from '../../vehicles/create-vehicle/create-vehicle.use-case';
 import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
 import { USER_REPOSITORY } from '../../users/create-user/create-user.use-case';
@@ -29,14 +26,12 @@ export class FindWorkOrderUseCase {
   ) {}
   async execute(input: FindWorkOrderInputDto): Promise<FindWorkOrderOutputDto> {
     const order = await this.orders.findById(input.id);
-    if (!order) throw new NotFoundException('Ordem de serviço não encontrada');
+    if (!order) throw new WorkOrderNotFoundError(input.id);
     if (
       input.actor.entityType === 'client' &&
       order.clientId !== input.actor.id
     ) {
-      throw new ForbiddenException(
-        'Você não tem acesso a esta ordem de serviço',
-      );
+      throw new WorkOrderAccessDeniedError();
     }
     const [vehicle, client] = await Promise.all([
       this.vehicles.findById(order.vehicleId),

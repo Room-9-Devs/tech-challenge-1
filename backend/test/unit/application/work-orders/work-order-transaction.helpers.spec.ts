@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { WorkOrderConflictError } from '@/domain/errors/work-order-conflict.error';
 import { Stock } from '@/domain/entities/stock.entity';
 import { StockMovementType } from '@/domain/entities/stock-movement.entity';
 import { WorkOrder } from '@/domain/entities/work-order.entity';
@@ -135,7 +135,7 @@ describe('Work order stock reservation helpers', () => {
 
       await expect(
         reserveWorkOrderProducts(repositories, order, username),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WorkOrderConflictError);
       expect(events).toHaveLength(0);
     });
   });
@@ -242,7 +242,7 @@ describe('Work order stock reservation helpers', () => {
           actorId,
           username,
         ),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WorkOrderConflictError);
       expect(events).toHaveLength(0);
     });
   });

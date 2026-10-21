@@ -1,4 +1,5 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WorkOrderItemNotFoundError } from '@/domain/errors/work-order-item-not-found.error';
 import {
   DOMAIN_EVENT_PUBLISHER,
   DomainEventPublisher,
@@ -25,9 +26,9 @@ export class RemoveWorkOrderItemUseCase {
     const result = await this.uow.run(async (r) => {
       const order = await requireWorkOrder(r, input.id);
       const item = order.items.find((existing) => existing.id === input.itemId);
-      if (!item) throw new NotFoundException('Item não encontrado');
+      if (!item) throw new WorkOrderItemNotFoundError(input.itemId);
       if (!order.removeItem(input.itemId))
-        throw new NotFoundException('Item não encontrado');
+        throw new WorkOrderItemNotFoundError(input.itemId);
       await r.workOrders.deleteItem(input.id, input.itemId);
       return { order: await r.workOrders.save(order), item };
     });

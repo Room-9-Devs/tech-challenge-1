@@ -4,6 +4,7 @@ import { Stock } from '@/domain/entities/stock.entity';
 import { StockMovementType } from '@/domain/entities/stock-movement.entity';
 import { EventType } from '@/domain/entities/event-type.entity';
 import { Event } from '@/domain/entities/event.entity';
+import { InsufficientStockError } from '@/domain/errors/insufficient-stock.error';
 import { CreateWorkOrderUseCase } from '@/application/use-cases/work-orders/create-work-order/create-work-order.use-case';
 import { ListWorkOrdersUseCase } from '@/application/use-cases/work-orders/list-work-orders/list-work-orders.use-case';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
@@ -264,7 +265,7 @@ describe('Work order use cases', () => {
         quantity: 1,
         actor: staff,
       }),
-    ).rejects.toThrow('Saldo insuficiente');
+    ).rejects.toThrow(InsufficientStockError);
   });
 
   it('reserves stock and publishes the status change after persisting the approval request', async () => {

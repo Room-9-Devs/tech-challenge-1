@@ -1,7 +1,5 @@
-import {
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { WorkOrderAccessDeniedError } from '@/domain/errors/work-order-access-denied.error';
+import { WorkOrderNotFoundError } from '@/domain/errors/work-order-not-found.error';
 import {
   PaginatedOutput,
 } from '@/shared/pagination/pagination.types';
@@ -191,7 +189,7 @@ describe('GetWorkOrderStatsDetailUseCase', () => {
         { id: 'wo-missing', actor: { id: 'jose', entityType: 'employee' } },
         NOW,
       ),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(WorkOrderNotFoundError);
   });
 
   it('should block a client from another owner\'s work order', async () => {
@@ -203,7 +201,7 @@ describe('GetWorkOrderStatsDetailUseCase', () => {
         { id: 'wo-1', actor: { id: 'client-2', entityType: 'client' } },
         NOW,
       ),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(WorkOrderAccessDeniedError);
   });
 
   it('should allow the owning client to consult the work order', async () => {
