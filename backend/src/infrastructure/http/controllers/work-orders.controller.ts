@@ -125,7 +125,15 @@ export class WorkOrdersController {
 
   @Post()
   @Roles('admin', 'staff')
-  @ApiOperation({ summary: 'Abre uma ordem de serviço para um veículo' })
+  @ApiOperation({
+    summary: 'Abre uma ordem de serviço para um veículo',
+    description:
+      'A OS nasce com status received e o cliente é o dono do veículo. Para chegar ao veículo a partir do documento do cliente: ' +
+      '(1) GET /users com filters={"cpf":"..."} ou {"cnpj":"..."} para obter o id do cliente; ' +
+      '(2) GET /vehicles com filters={"userId":"<id do cliente>"} para obter o id do veículo, ' +
+      'ou POST /vehicles/{user_id} se ele ainda não estiver cadastrado; ' +
+      '(3) esta rota, com o vehicleId.',
+  })
   @ApiBody({ type: CreateWorkOrderRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -532,6 +540,20 @@ export class WorkOrdersController {
   @Roles('admin', 'staff', 'client')
   @ApiOperation({
     summary: 'Altera status da OS ou registra a decisão do cliente',
+    description: [
+      'Transições permitidas (as demais retornam 400):',
+      '- received (Recebida) → under_diagnosis (Em diagnóstico)',
+      '- under_diagnosis → awaiting_approval (Aguardando aprovação): exige ao menos um item; reserva no estoque os produtos do orçamento e envia ao cliente o e-mail com os links para aprovar ou recusar',
+      '- awaiting_approval → approved: dá baixa no estoque dos produtos reservados',
+      '- awaiting_approval → cancelled: libera a reserva de estoque',
+      '- approved → in_progress (Em execução): exige o pagamento confirmado em POST /work-orders/{id}/payment-confirmation (senão 409)',
+      '- in_progress → completed (Finalizada): envia e-mail de serviço concluído ao cliente',
+      '- completed → delivered (Entregue)',
+      '',
+      'Quem pode: a equipe (admin e staff) faz qualquer transição permitida; o cliente dono da OS só aprova (approved) ou recusa (cancelled) enquanto ela aguarda aprovação. ' +
+        'A decisão também pode vir pelo link do e-mail (Aprovação de Orçamento); decidida por qualquer caminho, os links deixam de valer. ' +
+        'Toda alteração exige motivo (reason), registrado no histórico da OS.',
+    ].join('\n'),
   })
   @ApiParam({
     name: 'id',

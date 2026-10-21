@@ -12,8 +12,10 @@ import {
 
 export class CreateVehicleRequestDto {
   @ApiProperty({
-    description: 'Vehicle license plate',
-    example: 'ABC-1234',
+    description:
+      'Placa do veículo no formato antigo (ABC-1234 ou ABC1234) ou Mercosul (ABC1D23), em maiúsculas ou minúsculas. É gravada sem hífen e em maiúsculas.',
+    example: 'ABC1D23',
+    pattern: '^(?:[A-Za-z]{3}-?\\d{4}|[A-Za-z]{3}\\d[A-Za-z]\\d{2})$',
   })
   @IsString()
   @IsNotEmpty()

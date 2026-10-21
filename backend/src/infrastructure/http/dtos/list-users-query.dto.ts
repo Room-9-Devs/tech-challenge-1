@@ -13,7 +13,7 @@ export class ListUsersQueryDto extends PaginationQueryDto {
   sort?: string;
 
   @ApiPropertyOptional({
-    description: 'Termo de busca textual',
+    description: 'Busca por nome de usuário, e-mail ou nome do perfil',
     example: 'Quitéria',
   })
   @IsOptional()
@@ -21,8 +21,12 @@ export class ListUsersQueryDto extends PaginationQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'JSON de filtros. Ex: {"username":"quiteria.dantas"}',
-    example: '{"username":"quiteria.dantas"}',
+    description:
+      'JSON de filtros por username, email, entityType (client ou employee), profile.name, ' +
+      'cpf, cnpj ou profile.document (CPF ou CNPJ, sem distinguir o tipo). Documentos são aceitos ' +
+      'com ou sem máscara. Para identificar o cliente pelo documento: {"cpf":"529.982.247-25"} ou ' +
+      '{"cnpj":"11.222.333/0001-81"}',
+    example: '{"cpf":"529.982.247-25"}',
     type: String,
   })
   @IsOptional()

@@ -185,6 +185,7 @@ export class VehiclesController {
     name: 'search',
     required: false,
     type: String,
+    description: 'Busca por placa (com ou sem hífen), modelo, marca ou cor',
     example: 'Corolla',
   })
   @ApiQuery({
@@ -198,7 +199,8 @@ export class VehiclesController {
     name: 'filters',
     required: false,
     type: String,
-    description: 'JSON de filtros. Ex: {"brand":"Toyota"}',
+    description:
+      'JSON de filtros por brand, model, year, color e/ou userId (UUID do dono, para listar os veículos de um cliente). Ex: {"userId":"550e8400-e29b-41d4-a716-446655440000"}',
     example: '{"brand":"Toyota"}',
   })
   @ApiResponse({
