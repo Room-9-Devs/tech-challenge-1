@@ -150,34 +150,34 @@ export class Vehicle {
 
   private static validateUserId(userId: string): void {
     if (!userId || userId.trim().length === 0) {
-      throw new InvalidVehicleError('User id is required');
+      throw new InvalidVehicleError('O dono do veículo é obrigatório');
     }
   }
 
   private static validateLicensePlate(licensePlate: string): void {
     if (!licensePlate || licensePlate.trim().length === 0) {
-      throw new InvalidVehicleError('License plate is required');
+      throw new InvalidVehicleError('A placa é obrigatória');
     }
 
     const licensePlateRegex = /^(?:[A-Z]{3}-?\d{4}|[A-Z]{3}\d[A-Z]\d{2})$/i;
 
     if (!licensePlateRegex.test(licensePlate.trim())) {
       throw new InvalidVehicleError(
-        'License plate must follow the old format ABC-1234 or Mercosur format ABC1D23',
+        'A placa deve seguir o formato antigo ABC-1234 ou o Mercosul ABC1D23',
       );
     }
   }
 
   private static validateModel(model: string): void {
-    Vehicle.validateText(model, 'Model', 100);
+    Vehicle.validateText(model, 'modelo', 100);
   }
 
   private static validateBrand(brand: string): void {
-    Vehicle.validateText(brand, 'Brand', 100);
+    Vehicle.validateText(brand, 'marca', 100);
   }
 
   private static validateColor(color: string): void {
-    Vehicle.validateText(color, 'Color', 50);
+    Vehicle.validateText(color, 'cor', 50);
   }
 
   private static validateText(
@@ -186,16 +186,16 @@ export class Vehicle {
     maxLength: number,
   ): void {
     if (!value || value.trim().length === 0) {
-      throw new InvalidVehicleError(`${fieldName} is required`);
+      throw new InvalidVehicleError(`O campo ${fieldName} é obrigatório`);
     }
     if (value.trim().length < 2) {
       throw new InvalidVehicleError(
-        `${fieldName} must be at least 2 characters long`,
+        `O campo ${fieldName} deve ter pelo menos 2 caracteres`,
       );
     }
     if (value.trim().length > maxLength) {
       throw new InvalidVehicleError(
-        `${fieldName} must be at most ${maxLength} characters long`,
+        `O campo ${fieldName} deve ter no máximo ${maxLength} caracteres`,
       );
     }
   }
@@ -204,11 +204,11 @@ export class Vehicle {
     const maximumYear = new Date().getFullYear() + 1;
 
     if (!Number.isInteger(year)) {
-      throw new InvalidVehicleError('Year must be an integer');
+      throw new InvalidVehicleError('O ano deve ser um número inteiro');
     }
     if (year < 1886 || year > maximumYear) {
       throw new InvalidVehicleError(
-        `Year must be between 1886 and ${maximumYear}`,
+        `O ano deve estar entre 1886 e ${maximumYear}`,
       );
     }
   }

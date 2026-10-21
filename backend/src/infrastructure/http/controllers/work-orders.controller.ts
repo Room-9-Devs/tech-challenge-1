@@ -248,19 +248,19 @@ export class WorkOrdersController {
       )
     ) {
       throw new BadRequestException(
-        `filter status must be one of: ${Object.values(WorkOrderStatus).join(', ')}`,
+        `O filtro status deve ser um destes valores: ${Object.values(WorkOrderStatus).join(', ')}`,
       );
     }
     if (
       filters?.vehicleId &&
       (typeof filters.vehicleId !== 'string' || !isUUID(filters.vehicleId))
     ) {
-      throw new BadRequestException('filter vehicleId must be a valid UUID');
+      throw new BadRequestException('O filtro vehicleId deve ser um UUID válido');
     }
     if (query.status) {
       if (filters?.status && filters.status !== query.status) {
         throw new BadRequestException(
-          'status query parameter conflicts with filters.status',
+          'O parâmetro status conflita com filters.status',
         );
       }
       if (filters) filters.status = query.status;

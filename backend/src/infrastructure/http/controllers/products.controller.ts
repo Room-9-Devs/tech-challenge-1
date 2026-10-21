@@ -73,13 +73,13 @@ const PRODUCT_FILTER_ENUMS: Record<string, string[]> = {
 function validateProductFilters(filters: ListProductsFiltersInputDto | undefined): void {
   for (const [key, value] of Object.entries(filters ?? {})) {
     if (typeof value !== 'string') {
-      throw new BadRequestException(`filter ${key} must be a string`);
+      throw new BadRequestException(`O filtro ${key} deve ser um texto`);
     }
 
     const allowedValues = PRODUCT_FILTER_ENUMS[key];
     if (allowedValues && !allowedValues.includes(value)) {
       throw new BadRequestException(
-        `filter ${key} must be one of: ${allowedValues.join(', ')}`,
+        `O filtro ${key} deve ser um destes valores: ${allowedValues.join(', ')}`,
       );
     }
   }

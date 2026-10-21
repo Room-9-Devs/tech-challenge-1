@@ -10,7 +10,7 @@ export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request & { user?: unknown }>();
     const header = request.headers.authorization;
-    if (!header?.startsWith('Bearer ')) throw new UnauthorizedException('Authentication required');
+    if (!header?.startsWith('Bearer ')) throw new UnauthorizedException('Autenticação obrigatória');
     request.user = this.tokens.verify(header.slice(7));
     return true;
   }

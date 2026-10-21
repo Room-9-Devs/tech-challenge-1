@@ -11,7 +11,7 @@ export class AddUserToVehiclesTable1790987850000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('vehicles');
     if (!table)
-      throw new Error('Vehicles table must exist before adding owners');
+      throw new Error('A tabela vehicles precisa existir antes de adicionar os donos');
     if (!table.findColumnByName('user_id'))
       await queryRunner.addColumn(
         'vehicles',

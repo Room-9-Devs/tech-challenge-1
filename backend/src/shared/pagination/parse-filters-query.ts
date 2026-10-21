@@ -10,17 +10,17 @@ export function parseFiltersQuery(
   try {
     parsed = JSON.parse(value);
   } catch {
-    throw new BadRequestException('filters must be a valid JSON object');
+    throw new BadRequestException('filters deve ser um objeto JSON válido');
   }
 
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new BadRequestException('filters must be a valid JSON object');
+    throw new BadRequestException('filters deve ser um objeto JSON válido');
   }
 
   const filters = parsed as Record<string, unknown>;
   for (const key of Object.keys(filters)) {
     if (!allowedFilters.includes(key)) {
-      throw new BadRequestException(`filter '${key}' is not allowed`);
+      throw new BadRequestException(`O filtro '${key}' não é permitido`);
     }
   }
 

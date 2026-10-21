@@ -4,6 +4,6 @@ export class InvalidRoleAssignmentError extends DomainError {
   readonly statusCode = 400;
 
   constructor(entityType: 'client' | 'employee', roleSlug: string) {
-    super(`Role ${roleSlug} cannot be assigned to ${entityType} users`);
+    super(`A role ${roleSlug} não pode ser atribuída a usuários do tipo ${entityType}`);
   }
 }

@@ -14,7 +14,7 @@ export class RecordEventUseCase {
 
   async execute(input: RecordEventInputDto): Promise<RecordEventOutputDto> {
     if (!isEventEntityType(input.entityType)) {
-      throw new InvalidEventError(`Invalid entity type: ${input.entityType}`);
+      throw new InvalidEventError(`Tipo de entidade inválido: ${input.entityType}`);
     }
 
     const event = await this.eventRecorder.record({

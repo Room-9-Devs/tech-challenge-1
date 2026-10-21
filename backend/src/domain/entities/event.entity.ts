@@ -54,13 +54,13 @@ export class Event {
 
   private static validate(props: EventProps): void {
     if (!props.eventTypeId) {
-      throw new InvalidEventError('Event type is required');
+      throw new InvalidEventError('O tipo de evento é obrigatório');
     }
     if (!props.entityId) {
-      throw new InvalidEventError('Entity ID is required');
+      throw new InvalidEventError('O ID da entidade é obrigatório');
     }
     if (!EVENT_ENTITY_TYPES.includes(props.entityType)) {
-      throw new InvalidEventError(`Invalid entity type: ${props.entityType}`);
+      throw new InvalidEventError(`Tipo de entidade inválido: ${props.entityType}`);
     }
   }
 }

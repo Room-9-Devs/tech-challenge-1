@@ -125,7 +125,7 @@ export class StockController {
     ) as ListStockFiltersInputDto;
 
     if (filters?.productId !== undefined && !isUUID(filters.productId)) {
-      throw new BadRequestException('filter productId must be a valid UUID');
+      throw new BadRequestException('O filtro productId deve ser um UUID válido');
     }
 
     return this.listStockUseCase.execute({
@@ -192,7 +192,7 @@ export class StockController {
 
     for (const key of ['productId', 'createdBy']) {
       if (filters?.[key] !== undefined && !isUUID(filters[key])) {
-        throw new BadRequestException(`filter ${key} must be a valid UUID`);
+        throw new BadRequestException(`O filtro ${key} deve ser um UUID válido`);
       }
     }
 
@@ -201,7 +201,7 @@ export class StockController {
       !Object.values(StockMovementType).includes(filters.movementType)
     ) {
       throw new BadRequestException(
-        `filter movementType must be one of: ${Object.values(StockMovementType).join(', ')}`,
+        `O filtro movementType deve ser um destes valores: ${Object.values(StockMovementType).join(', ')}`,
       );
     }
 
@@ -209,7 +209,7 @@ export class StockController {
     const endDate = query.endDate ? new Date(query.endDate) : undefined;
 
     if (startDate && endDate && startDate > endDate) {
-      throw new BadRequestException('startDate must be before endDate');
+      throw new BadRequestException('startDate deve ser anterior a endDate');
     }
 
     return this.listStockMovementsUseCase.execute({

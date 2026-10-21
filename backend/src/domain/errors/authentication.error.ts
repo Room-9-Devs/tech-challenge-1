@@ -4,6 +4,6 @@ export class AuthenticationError extends DomainError {
   readonly statusCode = 401;
 
   constructor() {
-    super('Invalid credentials');
+    super('Credenciais inválidas');
   }
 }

@@ -25,7 +25,7 @@ export class UpdateEventTypeUseCase {
       allowedEntityTypes = [];
       for (const type of input.allowedEntityTypes) {
         if (!isEventEntityType(type)) {
-          throw new InvalidEventTypeError(`Invalid entity type: ${type}`);
+          throw new InvalidEventTypeError(`Tipo de entidade inválido: ${type}`);
         }
         allowedEntityTypes.push(type);
       }

@@ -64,7 +64,7 @@ export class User {
 
   public changeUsername(username: string): void {
     if (!username || username.trim().length < 3) {
-      throw new InvalidUserError('Username must be at least 3 characters long');
+      throw new InvalidUserError('O nome de usuário deve ter pelo menos 3 caracteres');
     }
     this._username = username;
     this._updatedAt = new Date();
@@ -72,20 +72,20 @@ export class User {
 
   public changeEmail(email: string): void {
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      throw new InvalidUserError('Invalid email');
+      throw new InvalidUserError('E-mail inválido');
     }
     this._email = email.toLowerCase();
     this._updatedAt = new Date();
   }
 
   public changePassword(password: string): void {
-    if (!password) throw new InvalidUserError('Password is required');
+    if (!password) throw new InvalidUserError('A senha é obrigatória');
     this._password = password;
     this._updatedAt = new Date();
   }
 
   public changeRole(roleId: string, roleSlug: string): void {
-    if (!roleId) throw new InvalidUserError('Role is required');
+    if (!roleId) throw new InvalidUserError('A role é obrigatória');
     if (!User.isRoleAllowed(this._entityType, roleSlug)) {
       throw new InvalidRoleAssignmentError(this._entityType, roleSlug);
     }
@@ -95,7 +95,7 @@ export class User {
 
   public deactivate(): void {
     if (this._deletedAt) {
-      throw new InvalidUserError('User is already deactivated');
+      throw new InvalidUserError('O usuário já está desativado');
     }
     this._deletedAt = new Date();
     this._updatedAt = this._deletedAt;
@@ -108,17 +108,17 @@ export class User {
 
   private static validate(props: UserProps): void {
     if (!props.username || props.username.trim().length < 3) {
-      throw new InvalidUserError('Username must be at least 3 characters long');
+      throw new InvalidUserError('O nome de usuário deve ter pelo menos 3 caracteres');
     }
     if (!props.email || !/^\S+@\S+\.\S+$/.test(props.email)) {
-      throw new InvalidUserError('Invalid email');
+      throw new InvalidUserError('E-mail inválido');
     }
-    if (!props.password) throw new InvalidUserError('Password is required');
+    if (!props.password) throw new InvalidUserError('A senha é obrigatória');
     if (!['client', 'employee'].includes(props.entityType)) {
-      throw new InvalidUserError('Invalid entity type');
+      throw new InvalidUserError('Tipo de entidade inválido');
     }
     if (!props.entityId || !props.roleId) {
-      throw new InvalidUserError('Entity and role are required');
+      throw new InvalidUserError('A entidade e a role são obrigatórias');
     }
   }
 

@@ -265,10 +265,10 @@ export class VehiclesController {
   ): ListVehiclesFiltersInputDto | undefined {
     if (!filters) return undefined;
     if (filters.userId !== undefined && !isUUID(filters.userId)) {
-      throw new BadRequestException('filter userId must be a valid UUID');
+      throw new BadRequestException('O filtro userId deve ser um UUID válido');
     }
     if (filters.year !== undefined && !Number.isInteger(Number(filters.year))) {
-      throw new BadRequestException('filter year must be an integer');
+      throw new BadRequestException('O filtro year deve ser um número inteiro');
     }
     return filters as ListVehiclesFiltersInputDto;
   }
