@@ -1,8 +1,14 @@
 {
-  "name": "nestjs-clean-architecture-template",
+  "name": "tech-challenge",
   "version": "1.0.0",
-  "description": "Template base com NestJS + TypeScript + Clean Architecture + PostgreSQL + Docker",
-  "author": "",
+  "description": "API REST para gestão de oficina mecânica (clientes, veículos, serviços, peças, estoque e ordens de serviço), construída com NestJS, TypeScript, PostgreSQL, DDD e Clean Architecture — Tech Challenge da Fase 1 da pós-graduação SOAT da FIAP",
+  "contributors": [
+    "Felipe Santana",
+    "Julio Cavalcanti",
+    "Kevin Villanova",
+    "Matheus Andrell",
+    "Michel Lisboa"
+  ],
   "private": true,
   "license": "MIT",
   "scripts": {
