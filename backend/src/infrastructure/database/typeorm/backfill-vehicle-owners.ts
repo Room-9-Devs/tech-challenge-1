@@ -8,7 +8,7 @@ export interface VehicleOwnerMapping {
 
 export function validateOwnerMappings(value: unknown): VehicleOwnerMapping[] {
   if (!Array.isArray(value))
-    throw new Error('Owner mapping must be a JSON array');
+    throw new Error('O mapeamento de donos deve ser um array JSON');
   const seen = new Set<string>();
   return value.map((item: unknown) => {
     if (
@@ -22,12 +22,12 @@ export function validateOwnerMappings(value: unknown): VehicleOwnerMapping[] {
       !isUUID(item.userId)
     ) {
       throw new Error(
-        'Each owner mapping must contain valid vehicleId and userId UUIDs',
+        'Cada item do mapeamento de donos deve ter vehicleId e userId com UUIDs válidos',
       );
     }
     const vehicleId = item.vehicleId.toLowerCase();
     if (seen.has(vehicleId))
-      throw new Error(`Duplicate vehicle in owner mapping: ${vehicleId}`);
+      throw new Error(`Veículo duplicado no mapeamento de donos: ${vehicleId}`);
     seen.add(vehicleId);
     return { vehicleId, userId: item.userId.toLowerCase() };
   });
@@ -47,20 +47,20 @@ export async function backfillVehicleOwners(
         [mapping.vehicleId],
       );
       if (!vehicles.length)
-        throw new Error(`Vehicle not found: ${mapping.vehicleId}`);
+        throw new Error(`Veículo não encontrado: ${mapping.vehicleId}`);
       if (
         vehicles[0].user_id !== null &&
         vehicles[0].user_id !== mapping.userId
       ) {
         throw new Error(
-          `Vehicle already has a different owner: ${mapping.vehicleId}`,
+          `O veículo já tem outro dono: ${mapping.vehicleId}`,
         );
       }
       const users: Array<{ id: string }> = await manager.query(
         'SELECT id FROM users WHERE id = $1 FOR KEY SHARE',
         [mapping.userId],
       );
-      if (!users.length) throw new Error(`User not found: ${mapping.userId}`);
+      if (!users.length) throw new Error(`Usuário não encontrado: ${mapping.userId}`);
       if (vehicles[0].user_id === null) {
         await manager.query(
           'UPDATE vehicles SET user_id = $1, updated_at = now() WHERE id = $2',

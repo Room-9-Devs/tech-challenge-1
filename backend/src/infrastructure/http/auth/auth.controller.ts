@@ -6,7 +6,7 @@ import { LogoutUseCase } from '@/application/use-cases/auth/logout.use-case';
 import { RefreshTokenUseCase } from '@/application/use-cases/auth/refresh-token.use-case';
 import { ChangePasswordUseCase } from '@/application/use-cases/auth/change-password.use-case';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { LoginRequestDto, RefreshTokenRequestDto, ChangePasswordRequestDto } from './auth.dto';
+import { LoginRequestDto, LoginResponseDto, RefreshTokenRequestDto, RefreshTokenResponseDto, ChangePasswordRequestDto } from './auth.dto';
 import { AccessTokenPayload } from '@/application/ports/token-service.port';
 
 @ApiTags('Autenticação')
@@ -18,17 +18,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna os tokens de acesso e de atualização.' })
   @ApiBody({ type: LoginRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Tokens de autenticação retornados.' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Tokens de autenticação retornados.', type: LoginResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Credenciais inválidas.' })
-  loginUser(@Body() dto: LoginRequestDto) { return this.login.execute(dto); }
+  loginUser(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> { return this.login.execute(dto); }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Atualizar token', description: 'Rotaciona o refresh token e retorna um novo token de acesso.' })
   @ApiBody({ type: RefreshTokenRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Tokens atualizados.' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Tokens atualizados.', type: RefreshTokenResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Refresh token inválido ou expirado.' })
-  refreshToken(@Body() dto: RefreshTokenRequestDto) { return this.refresh.execute(dto.refreshToken); }
+  refreshToken(@Body() dto: RefreshTokenRequestDto): Promise<RefreshTokenResponseDto> { return this.refresh.execute(dto.refreshToken); }
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)

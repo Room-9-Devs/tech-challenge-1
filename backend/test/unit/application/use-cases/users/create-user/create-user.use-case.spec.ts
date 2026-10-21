@@ -118,7 +118,7 @@ describe('CreateUserUseCase', () => {
         missingRole as never,
         new FakeDomainEventPublisher(),
       ).execute(input),
-    ).rejects.toThrow('Role with slug client not found');
+    ).rejects.toThrow('Role client não encontrada');
     const incompatibleRole = {
       findBySlug: jest
         .fn()
@@ -136,7 +136,7 @@ describe('CreateUserUseCase', () => {
         incompatibleRole as never,
         new FakeDomainEventPublisher(),
       ).execute(input),
-    ).rejects.toThrow('cannot be assigned');
+    ).rejects.toThrow('não pode ser atribuída');
   });
 
   it('rejects invalid CPF before creating a profile', async () => {

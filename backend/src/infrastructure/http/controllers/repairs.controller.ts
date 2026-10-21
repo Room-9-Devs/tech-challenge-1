@@ -9,7 +9,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -46,6 +45,7 @@ import {
   HateoasItem,
 } from '../hateoas/hateoas.decorator';
 import { repairLinks } from '../hateoas/resources/repair.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const ALLOWED_REPAIR_SORT_COLUMNS = [
   'description',
@@ -156,7 +156,7 @@ export class RepairsController {
   })
   @HateoasItem(repairLinks)
   async findById(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<RepairResponseDto> {
     return this.findRepairUseCase.execute({ id });
   }
@@ -189,7 +189,7 @@ export class RepairsController {
   })
   @HateoasItem(repairLinks)
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateRepairRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<RepairResponseDto> {
@@ -214,7 +214,7 @@ export class RepairsController {
     description: 'Tipo de reparo/serviço não encontrado',
   })
   async delete(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     return this.deleteRepairUseCase.execute({ id, createdBy: currentUser?.username });

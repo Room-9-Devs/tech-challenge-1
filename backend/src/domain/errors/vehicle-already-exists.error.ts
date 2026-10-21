@@ -4,6 +4,6 @@ export class VehicleAlreadyExistsError extends DomainError {
   readonly statusCode = 409;
 
   constructor(licensePlate: string) {
-    super(`Vehicle with license plate ${licensePlate} already exists`);
+    super(`Já existe um veículo com a placa ${licensePlate}`);
   }
 }

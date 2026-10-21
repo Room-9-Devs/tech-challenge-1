@@ -51,10 +51,10 @@ export class EventType {
 
   private static validate(props: EventTypeProps): void {
     if (!props.code || !/^[a-z][a-z0-9_.]*$/.test(props.code)) {
-      throw new InvalidEventTypeError('Code must be a lowercase slug (e.g., user.created)');
+      throw new InvalidEventTypeError('O código deve ser um slug em minúsculas (ex: user.created)');
     }
     if (!props.name || props.name.trim().length === 0) {
-      throw new InvalidEventTypeError('Name is required');
+      throw new InvalidEventTypeError('O nome é obrigatório');
     }
   }
 }

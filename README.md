@@ -446,69 +446,64 @@ http://localhost:3000/docs
 
 ## Endpoints
 
-### POST /users
+A referência completa das rotas é o Swagger (`/docs`), gerado a partir do código: ele
+traz os campos de cada requisição, os schemas de resposta, os códigos de erro e o botão
+*Authorize* para testar com o token. A coleção Postman em
+[docs/oficina-mecanica.postman_collection.json](docs/oficina-mecanica.postman_collection.json)
+tem requisições prontas, incluindo casos de erro.
 
-Cria um novo usuário.
+### Autenticação
 
-**Request:**
+Usuários de demonstração, criados pelo seed, todos com a senha `password123`:
+
+| Usuário | Role |
+| --- | --- |
+| `jose.silveira` | `admin` |
+| `quiteria.dantas` | `staff` |
+| `jeremias.lopes` | `staff` |
+| `agnaldo.guimaraes` | `client` |
+
+**Request:** `POST /auth/login` (o campo `login` aceita o nome de usuário ou o e-mail)
 ```json
-{
-  "name": "John Doe",
-  "email": "john@example.com"
-}
+{ "login": "jose.silveira", "password": "password123" }
 ```
-
-**Response (201 Created):**
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
-
-**Errors:**
-- `400` - Dados inválidos
-- `409` - Email já existe
-
-### GET /users/:id
-
-Busca um usuário pelo ID.
 
 **Response (200 OK):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
+  "accessToken": "eyJhbGciOi...",
+  "refreshToken": "Zk3n0q8YtV1x...",
+  "expiresIn": 900,
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "jose.silveira",
+    "email": "jose.silveira@example.com",
+    "role": "admin",
+    "entityType": "employee"
+  }
 }
 ```
 
-**Errors:**
-- `404` - Usuário não encontrado
+Envie o `accessToken` no header `Authorization: Bearer <accessToken>`; no Swagger, cole-o
+em *Authorize*. Ele vale 15 minutos (`expiresIn`, em segundos). Para obter um novo, envie o
+`refreshToken` em `POST /auth/refresh`; a cada renovação o refresh token anterior deixa de
+valer. `POST /auth/logout` revoga o refresh token informado.
 
-### GET /users
+### Mapa da API
 
-Lista todos os usuários.
-
-**Response (200 OK):**
-```json
-{
-  "users": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
-}
-```
+| Rotas | O que fazem | Quem acessa |
+| --- | --- | --- |
+| `/auth` | Login, renovação de token, logout e troca de senha | Público; `PATCH /auth/password` exige estar autenticado |
+| `/users` | Cadastro e consulta de clientes e funcionários | `admin` e `staff` (só `admin` exclui, e `staff` não cadastra funcionários); `GET /users/me` para qualquer usuário autenticado |
+| `/permissions` | Roles disponíveis e troca de role de um usuário | `admin` |
+| `/vehicles` | Veículos dos clientes e consulta de preços na tabela FIPE | `admin` e `staff` |
+| `/repairs` | Catálogo de serviços (tipos de reparo) | `admin` e `staff`; `client` só consulta |
+| `/products` | Catálogo de peças e insumos | `admin` e `staff` |
+| `/stock` | Saldo por produto e movimentações de estoque | `admin` e `staff` |
+| `/work-orders` | Ordens de serviço: abertura, itens do orçamento, status, pagamento e estatísticas da OS | `admin` e `staff`; `client` consulta as próprias OS e aprova ou recusa o orçamento |
+| `/work-order-approvals` | Páginas de aprovação do orçamento abertas pelo link do e-mail | Público; o token do link é a credencial (ver [Aprovação de orçamento por e-mail](#aprovação-de-orçamento-por-e-mail)) |
+| `/stats` | Indicadores das ordens de serviço por período, incluindo tempos médios de execução | `admin` |
+| `/events` e `/event-types` | Histórico de auditoria por entidade e catálogo dos tipos de evento | `admin` e `staff` |
 
 ## HATEOAS
 

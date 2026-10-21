@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  ParseUUIDPipe,
   Query,
   Req,
   HttpCode,
@@ -48,6 +47,7 @@ import {
   HateoasItem,
 } from '../hateoas/hateoas.decorator';
 import { userLinks } from '../hateoas/resources/user.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const ALLOWED_USERS_SORT_COLUMNS = [
   'username',
@@ -146,7 +146,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Consultar usuário por ID' })
   @ApiParam({
     name: 'id',
-    description: 'User UUID',
+    description: 'UUID do usuário',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
@@ -173,7 +173,7 @@ export class UsersController {
 
   @HateoasItem(userLinks)
   async findById(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id });
   }
@@ -188,7 +188,7 @@ export class UsersController {
   @ApiBody({ type: UpdateUserRequestDto })
   @ApiParam({
     name: 'id',
-    description: 'User UUID',
+    description: 'UUID do usuário',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
@@ -210,7 +210,7 @@ export class UsersController {
   })
   @HateoasItem(userLinks)
   async update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateUserRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
@@ -231,7 +231,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Excluir usuário (soft delete)' })
   @ApiParam({
     name: 'id',
-    description: 'User UUID',
+    description: 'UUID do usuário',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
@@ -244,7 +244,7 @@ export class UsersController {
   })
   @HateoasItem(userLinks)
   async remove(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     if (!currentUser) throw new UnauthorizedException();

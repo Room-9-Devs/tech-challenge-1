@@ -7,7 +7,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -34,6 +33,7 @@ import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventLinks } from '../hateoas/resources/event.links';
 import { EVENT_ENTITY_TYPES, EventEntityType, isEventEntityType } from '@/domain/types/entity-reference.type';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 @ApiTags('Eventos')
 @Controller('events')
@@ -91,7 +91,7 @@ export class EventsController {
   @HateoasCollection(eventLinks)
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
-    @Param('entityId', ParseUUIDPipe) entityId: string,
+    @Param('entityId', ParseUuidPipe) entityId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<EventResponseDto[]> {
     if (!isEventEntityType(entityType)) {

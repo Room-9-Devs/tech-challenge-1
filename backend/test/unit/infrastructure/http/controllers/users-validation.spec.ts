@@ -1,4 +1,5 @@
-import { ExecutionContext, INestApplication, ValidationPipe } from '@nestjs/common';
+import { ExecutionContext, INestApplication } from '@nestjs/common';
+import { AppValidationPipe } from '@/infrastructure/http/pipes/app-validation.pipe';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { UsersController } from '@/infrastructure/http/controllers/users.controller';
@@ -60,11 +61,7 @@ describe('Users HTTP validation', () => {
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
+      new AppValidationPipe(),
     );
     await app.init();
   });
@@ -85,5 +82,58 @@ describe('Users HTTP validation', () => {
     await request(app.getHttpServer()).get(`/users/${userId}`).expect(200);
 
     expect(find.execute).toHaveBeenCalledWith({ id: userId });
+  });
+
+  it.each([
+    ['a profile name longer than 150 characters', { name: 'A'.repeat(151) }, 'O campo profile.name deve ter no máximo 150 caracteres'],
+    ['a non-string profile name', { name: 123 }, 'O campo profile.name deve ser um texto'],
+    ['an empty profile name', { name: '' }, 'O campo profile.name não pode ser vazio'],
+    ['a whitespace-only profile name', { name: '   ' }, 'O campo profile.name não pode ser vazio'],
+    ['a null profile name', { name: null }, 'O campo profile.name deve ser um texto'],
+    ['a null profile phone', { phone: null }, 'O campo profile.phone deve ser um texto'],
+    ['an unknown profile field', { document: '529.982.247-25' }, 'O campo profile.document não é permitido'],
+  ])('PATCH /users/:id rejects %s with 400 before invoking the use case', async (_case, profile, message) => {
+    const response = await request(app.getHttpServer())
+      .patch(`/users/${userId}`)
+      .send({ profile })
+      .expect(400);
+
+    expect(response.body.message).toContain(message);
+    expect(update.execute).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /users/:id forwards a valid profile to the use case', async () => {
+    update.execute.mockResolvedValue({ id: userId });
+    const profile = { name: 'Agnaldo Guimarães', phone: '(11) 99999-9999' };
+
+    await request(app.getHttpServer()).patch(`/users/${userId}`).send({ profile }).expect(200);
+
+    expect(update.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ id: userId, profile: expect.objectContaining(profile) }),
+    );
+  });
+
+  it('PATCH /users/:id trims the profile name before forwarding it', async () => {
+    update.execute.mockResolvedValue({ id: userId });
+
+    await request(app.getHttpServer())
+      .patch(`/users/${userId}`)
+      .send({ profile: { name: '  Agnaldo Guimarães  ' } })
+      .expect(200);
+
+    expect(update.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ profile: expect.objectContaining({ name: 'Agnaldo Guimarães' }) }),
+    );
+  });
+
+  it('PATCH /users/:id still accepts a profile without a name', async () => {
+    update.execute.mockResolvedValue({ id: userId });
+
+    await request(app.getHttpServer())
+      .patch(`/users/${userId}`)
+      .send({ profile: { phone: '(11) 99999-9999' } })
+      .expect(200);
+
+    expect(update.execute).toHaveBeenCalled();
   });
 });

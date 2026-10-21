@@ -4,7 +4,7 @@ import { DomainError } from '@/domain/errors/domain.error';
 
 export class InvalidFipeCodeError extends DomainError {
   readonly statusCode = 400;
-  constructor() { super('FIPE code must follow the format 000000-0'); }
+  constructor() { super('O código FIPE deve seguir o formato 000000-0'); }
 }
 
 @Injectable()

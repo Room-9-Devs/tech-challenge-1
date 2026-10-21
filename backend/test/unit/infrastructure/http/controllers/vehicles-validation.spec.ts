@@ -1,4 +1,5 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
+import { AppValidationPipe } from '@/infrastructure/http/pipes/app-validation.pipe';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { VehiclesController } from '@/infrastructure/http/controllers/vehicles.controller';
@@ -55,11 +56,7 @@ describe('Vehicle HTTP validation', () => {
     }).compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
+      new AppValidationPipe(),
     );
     await app.init();
   });

@@ -12,19 +12,21 @@ import {
 
 export class CreateVehicleRequestDto {
   @ApiProperty({
-    description: 'Vehicle license plate',
-    example: 'ABC-1234',
+    description:
+      'Placa do veículo no formato antigo (ABC-1234 ou ABC1234) ou Mercosul (ABC1D23), em maiúsculas ou minúsculas. É gravada sem hífen e em maiúsculas.',
+    example: 'ABC1D23',
+    pattern: '^(?:[A-Za-z]{3}-?\\d{4}|[A-Za-z]{3}\\d[A-Za-z]\\d{2})$',
   })
   @IsString()
   @IsNotEmpty()
   @Matches(/^(?:[A-Z]{3}-?\d{4}|[A-Z]{3}\d[A-Z]\d{2})$/i, {
     message:
-      'license_plate must follow the old format ABC-1234 or Mercosur format ABC1D23',
+      'license_plate deve seguir o formato antigo ABC-1234 ou o Mercosul ABC1D23',
   })
   license_plate: string;
 
   @ApiProperty({
-    description: 'Vehicle model',
+    description: 'Modelo do veículo',
     example: 'Corolla',
     minLength: 2,
     maxLength: 100,
@@ -36,7 +38,7 @@ export class CreateVehicleRequestDto {
   model: string;
 
   @ApiProperty({
-    description: 'Vehicle brand',
+    description: 'Marca do veículo',
     example: 'Toyota',
     minLength: 2,
     maxLength: 100,
@@ -48,7 +50,7 @@ export class CreateVehicleRequestDto {
   brand: string;
 
   @ApiProperty({
-    description: 'Vehicle manufacturing year',
+    description: 'Ano de fabricação do veículo',
     example: 2022,
     minimum: 1886,
     maximum: new Date().getFullYear() + 1,
@@ -59,8 +61,8 @@ export class CreateVehicleRequestDto {
   year: number;
 
   @ApiProperty({
-    description: 'Vehicle color',
-    example: 'Black',
+    description: 'Cor do veículo',
+    example: 'Preto',
     minLength: 2,
     maxLength: 50,
   })

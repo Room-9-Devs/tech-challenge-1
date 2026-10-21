@@ -4,6 +4,6 @@ export class RefreshTokenInvalidError extends DomainError {
   readonly statusCode = 401;
 
   constructor() {
-    super('Invalid refresh token');
+    super('Refresh token inválido');
   }
 }

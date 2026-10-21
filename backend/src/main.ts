@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
+import { AppValidationPipe } from './infrastructure/http/pipes/app-validation.pipe';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 import { EventTypeSeedService } from './infrastructure/database/seeds/event-type.seed';
@@ -16,7 +17,7 @@ process.on('unhandledRejection', (reason) => {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(new AppValidationPipe());
   app.getHttpAdapter().getInstance().set('query parser', 'extended');
 
   app.useGlobalFilters(new DomainExceptionFilter());
@@ -24,19 +25,23 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('API da Oficina Mecânica')
     .setDescription(
-      'API da oficina mecânica com autenticação, usuários, permissões, tipos de reparo/serviço, produtos e veículos.',
+      'API da oficina mecânica: autenticação JWT, usuários (clientes e funcionários), permissões, ' +
+        'veículos, tipos de reparo/serviço, produtos e estoque, ordens de serviço com orçamento e ' +
+        'aprovação por e-mail, estatísticas de tempo de execução e histórico de eventos.',
     )
     .setVersion('1.0.0')
-    .addTag('Autenticação')
-    .addTag('Usuários')
-    .addTag('Permissões')
-    .addTag('Tipos de Reparo/Serviço')
-    .addTag('Produtos')
-    .addTag('Estoque')
-    .addTag('Veículos')
-    .addTag('Ordens de Serviço')
-    .addTag('Estatísticas')
-    .addTag('Aprovação de Orçamento')
+    .addTag('Autenticação', 'Login, renovação de token, logout e troca de senha')
+    .addTag('Usuários', 'Cadastro e consulta de clientes e funcionários')
+    .addTag('Permissões', 'Roles disponíveis e troca de role de um usuário')
+    .addTag('Tipos de Reparo/Serviço', 'Catálogo de serviços oferecidos pela oficina')
+    .addTag('Produtos', 'Catálogo de peças e insumos')
+    .addTag('Estoque', 'Saldo por produto e movimentações de entrada, saída e ajuste')
+    .addTag('Veículos', 'Veículos dos clientes e consulta de preços na tabela FIPE')
+    .addTag('Ordens de Serviço', 'Abertura, itens do orçamento, status e confirmação de pagamento')
+    .addTag('Estatísticas', 'Indicadores das ordens de serviço por período, incluindo tempos médios de execução')
+    .addTag('Aprovação de Orçamento', 'Páginas abertas pelo link enviado ao cliente por e-mail')
+    .addTag('Eventos', 'Histórico de auditoria por entidade')
+    .addTag('Tipos de Evento', 'Catálogo dos tipos de evento registrados no histórico')
     .addBearerAuth(
       {
         type: 'http',

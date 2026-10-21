@@ -8,7 +8,6 @@ import {
   Delete,
   Body,
   Param,
-  ParseUUIDPipe,
   Query,
   HttpCode,
   HttpStatus,
@@ -50,6 +49,7 @@ import {
   HateoasItem,
 } from '../hateoas/hateoas.decorator';
 import { productLinks } from '../hateoas/resources/product.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const ALLOWED_PRODUCT_SORT_COLUMNS = [
   'name',
@@ -73,13 +73,13 @@ const PRODUCT_FILTER_ENUMS: Record<string, string[]> = {
 function validateProductFilters(filters: ListProductsFiltersInputDto | undefined): void {
   for (const [key, value] of Object.entries(filters ?? {})) {
     if (typeof value !== 'string') {
-      throw new BadRequestException(`filter ${key} must be a string`);
+      throw new BadRequestException(`O filtro ${key} deve ser um texto`);
     }
 
     const allowedValues = PRODUCT_FILTER_ENUMS[key];
     if (allowedValues && !allowedValues.includes(value)) {
       throw new BadRequestException(
-        `filter ${key} must be one of: ${allowedValues.join(', ')}`,
+        `O filtro ${key} deve ser um destes valores: ${allowedValues.join(', ')}`,
       );
     }
   }
@@ -204,7 +204,7 @@ export class ProductsController {
   })
   @HateoasItem(productLinks)
   async findById(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<ProductResponseDto> {
     return this.findProductUseCase.execute({ id });
   }
@@ -238,7 +238,7 @@ export class ProductsController {
   })
   @HateoasItem(productLinks)
   async update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateProductRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ProductResponseDto> {
@@ -265,7 +265,7 @@ export class ProductsController {
     status: HttpStatus.CONFLICT,
     description: 'Produto possui estoque e não pode ser desativado',
   })
-  async delete(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
+  async delete(@Param('id', ParseUuidPipe) id: string): Promise<void> {
     return this.deleteProductUseCase.execute({ id });
   }
 
@@ -294,7 +294,7 @@ export class ProductsController {
     description: 'Produto já está ativo',
   })
   async activate(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<ProductResponseDto> {
     return this.activateProductUseCase.execute({ id });
   }

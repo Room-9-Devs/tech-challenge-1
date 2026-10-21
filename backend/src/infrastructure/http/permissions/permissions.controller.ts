@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ListRolesUseCase } from '@/application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from '@/application/use-cases/permissions/change-role.use-case';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -9,6 +9,7 @@ import { ChangeRoleRequestDto } from './permissions.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 @ApiTags('Permissões')
 @ApiBearerAuth('access-token')
@@ -32,12 +33,13 @@ export class PermissionsController {
   @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Alterar role de um usuário' })
+  @ApiParam({ name: 'userId', description: 'UUID do usuário', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiBody({ type: ChangeRoleRequestDto })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Role alterado com sucesso.' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'userId não é um UUID válido.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Usuário ou role não encontrado.' })
   async changeRole(
-    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('userId', ParseUuidPipe) userId: string,
     @Body() dto: ChangeRoleRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ) {

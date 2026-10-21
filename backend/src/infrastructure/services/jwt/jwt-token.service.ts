@@ -14,7 +14,7 @@ export class JwtTokenService implements TokenService {
     try {
       return this.jwtService.verify<AccessTokenPayload>(token);
     } catch {
-      throw new UnauthorizedException('Invalid access token');
+      throw new UnauthorizedException('Token de acesso inválido ou expirado');
     }
   }
 }

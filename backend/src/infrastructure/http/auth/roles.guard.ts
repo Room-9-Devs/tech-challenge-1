@@ -12,7 +12,7 @@ export class RolesGuard implements CanActivate {
     const roles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [context.getHandler(), context.getClass()]);
     if (!roles?.length) return true;
     const request = context.switchToHttp().getRequest<Request & { user: AccessTokenPayload }>();
-    if (!roles.includes(request.user.role)) throw new ForbiddenException('Insufficient role');
+    if (!roles.includes(request.user.role)) throw new ForbiddenException('Sua role não tem permissão para esta ação');
     return true;
   }
 }

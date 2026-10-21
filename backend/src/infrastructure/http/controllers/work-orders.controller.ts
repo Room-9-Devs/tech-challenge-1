@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -62,6 +61,7 @@ import {
   workOrderLinks,
   workOrderPaymentLinks,
 } from '../hateoas/resources/work-order.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const itemView = (i: WorkOrderItem) => ({
   id: i.id,
@@ -125,7 +125,15 @@ export class WorkOrdersController {
 
   @Post()
   @Roles('admin', 'staff')
-  @ApiOperation({ summary: 'Abre uma ordem de serviço para um veículo' })
+  @ApiOperation({
+    summary: 'Abre uma ordem de serviço para um veículo',
+    description:
+      'A OS nasce com status received e o cliente é o dono do veículo. Para chegar ao veículo a partir do documento do cliente: ' +
+      '(1) GET /users com filters={"cpf":"..."} ou {"cnpj":"..."} para obter o id do cliente; ' +
+      '(2) GET /vehicles com filters={"userId":"<id do cliente>"} para obter o id do veículo, ' +
+      'ou POST /vehicles/{user_id} se ele ainda não estiver cadastrado; ' +
+      '(3) esta rota, com o vehicleId.',
+  })
   @ApiBody({ type: CreateWorkOrderRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -240,19 +248,19 @@ export class WorkOrdersController {
       )
     ) {
       throw new BadRequestException(
-        `filter status must be one of: ${Object.values(WorkOrderStatus).join(', ')}`,
+        `O filtro status deve ser um destes valores: ${Object.values(WorkOrderStatus).join(', ')}`,
       );
     }
     if (
       filters?.vehicleId &&
       (typeof filters.vehicleId !== 'string' || !isUUID(filters.vehicleId))
     ) {
-      throw new BadRequestException('filter vehicleId must be a valid UUID');
+      throw new BadRequestException('O filtro vehicleId deve ser um UUID válido');
     }
     if (query.status) {
       if (filters?.status && filters.status !== query.status) {
         throw new BadRequestException(
-          'status query parameter conflicts with filters.status',
+          'O parâmetro status conflita com filters.status',
         );
       }
       if (filters) filters.status = query.status;
@@ -300,7 +308,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async find(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() actor: CurrentUserType,
   ) {
     const result = await this.findWorkOrder.execute({
@@ -367,7 +375,7 @@ export class WorkOrdersController {
     description: 'Autenticação obrigatória',
   })
   async stats(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() actor: CurrentUserType,
   ): Promise<WorkOrderStatsDetailResponseDto> {
     return this.getWorkOrderStatsDetail.execute({
@@ -423,7 +431,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async addItem(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: AddWorkOrderItemRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -471,8 +479,8 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async changeItem(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Param('id', ParseUuidPipe) id: string,
+    @Param('itemId', ParseUuidPipe) itemId: string,
     @Body() body: ChangeWorkOrderItemRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -515,8 +523,8 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async removeItem(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Param('id', ParseUuidPipe) id: string,
+    @Param('itemId', ParseUuidPipe) itemId: string,
     @CurrentUser() actor: CurrentUserType,
   ) {
     return orderView(
@@ -532,6 +540,20 @@ export class WorkOrdersController {
   @Roles('admin', 'staff', 'client')
   @ApiOperation({
     summary: 'Altera status da OS ou registra a decisão do cliente',
+    description: [
+      'Transições permitidas (as demais retornam 400):',
+      '- received (Recebida) → under_diagnosis (Em diagnóstico)',
+      '- under_diagnosis → awaiting_approval (Aguardando aprovação): exige ao menos um item; reserva no estoque os produtos do orçamento e envia ao cliente o e-mail com os links para aprovar ou recusar',
+      '- awaiting_approval → approved: dá baixa no estoque dos produtos reservados',
+      '- awaiting_approval → cancelled: libera a reserva de estoque',
+      '- approved → in_progress (Em execução): exige o pagamento confirmado em POST /work-orders/{id}/payment-confirmation (senão 409)',
+      '- in_progress → completed (Finalizada): envia e-mail de serviço concluído ao cliente',
+      '- completed → delivered (Entregue)',
+      '',
+      'Quem pode: a equipe (admin e staff) faz qualquer transição permitida; o cliente dono da OS só aprova (approved) ou recusa (cancelled) enquanto ela aguarda aprovação. ' +
+        'A decisão também pode vir pelo link do e-mail (Aprovação de Orçamento); decidida por qualquer caminho, os links deixam de valer. ' +
+        'Toda alteração exige motivo (reason), registrado no histórico da OS.',
+    ].join('\n'),
   })
   @ApiParam({
     name: 'id',
@@ -605,7 +627,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async changeStatus(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: ChangeWorkOrderStatusRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -647,7 +669,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderPaymentLinks)
   async confirmPayment(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: ConfirmWorkOrderPaymentRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
