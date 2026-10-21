@@ -1,4 +1,4 @@
-# ADR-010 — Aprovação do Orçamento da OS por Link no E-mail
+# ADR-011 — Aprovação do Orçamento da OS por Link no E-mail
 
 - **Status:** Aprovado
 - **Data:** 15/10/2026
@@ -19,7 +19,7 @@ Enviar no e-mail de orçamento os botões **Aprovar** e **Recusar**, cada um com
 
 ### Emissão do link
 
-- O envio é feito pelo `WorkOrderNotificationHandler`, que reage ao evento de domínio `work_order.status_changed` quando a OS entra em `awaiting_approval`. O caso de uso de mudança de status não conhece o envio de e-mails (ADR-005).
+- O envio é feito pelo `WorkOrderNotificationHandler`, que reage ao evento de domínio `work_order.status_changed` quando a OS entra em `awaiting_approval`. O caso de uso de mudança de status não conhece o envio de e-mails (ADR-006).
 - O token é gerado com bytes aleatórios. Somente o seu hash SHA-256 é gravado na tabela `work_order_approval_tokens`, junto com a OS, o cliente e a data de expiração. O valor original existe apenas no link enviado.
 - A validade é configurada por `WORK_ORDER_APPROVAL_TTL_HOURS` (padrão de 72 horas).
 - Um novo envio do orçamento revoga os links anteriores da mesma OS.
@@ -34,7 +34,7 @@ Enviar no e-mail de orçamento os botões **Aprovar** e **Recusar**, cada um com
 
 ### Registro da decisão
 
-- A decisão é aplicada pelo mesmo `ChangeWorkOrderStatusUseCase` usado pela API, em nome do cliente identificado pelo token, e nunca por dados vindos da requisição. Assim, as regras de reserva de estoque (ADR-009) e de auditoria (ADR-007) continuam as mesmas para qualquer caminho de aprovação.
+- A decisão é aplicada pelo mesmo `ChangeWorkOrderStatusUseCase` usado pela API, em nome do cliente identificado pelo token, e nunca por dados vindos da requisição. Assim, as regras de reserva de estoque (ADR-010) e de auditoria (ADR-008) continuam as mesmas para qualquer caminho de aprovação.
 - O token é marcado como usado dentro da mesma transação da mudança de status, por meio de um `UPDATE` condicional com a OS travada, o que impede que dois cliques simultâneos gerem duas decisões.
 - Quando a OS sai de `awaiting_approval` por qualquer caminho (link, API ou equipe da oficina), os links pendentes são revogados na mesma transação.
 - Link inválido, expirado, já usado, revogado ou de OS fora de aprovação resulta sempre na mesma página de erro, sem indicar o motivo, para não fornecer informações a quem tentar adivinhar links.

@@ -1,4 +1,4 @@
-# ADR-009 — Reserva de Estoque no Envio do Orçamento
+# ADR-010 — Reserva de Estoque no Envio do Orçamento
 
 - **Status:** Aprovado
 - **Data:** 10/10/2026
@@ -70,7 +70,7 @@ A verificação seria válida apenas no momento do envio e não impediria que ou
 
 - Um orçamento enviado tem as peças garantidas até a decisão do cliente
 - O estoque disponível reflete o que de fato pode ser oferecido em novos orçamentos
-- O histórico de movimentações registra apenas as saídas efetivas, e as reservas e liberações ficam no histórico de eventos (ADR-007)
+- O histórico de movimentações registra apenas as saídas efetivas, e as reservas e liberações ficam no histórico de eventos (ADR-008)
 - A transação única impede que a OS e o estoque fiquem inconsistentes entre si
 
 ### Negativas

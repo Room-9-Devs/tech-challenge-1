@@ -1,4 +1,4 @@
-# ADR-007 — Eventos de Domínio e Registro de Auditoria
+# ADR-008 — Eventos de Domínio e Registro de Auditoria
 
 - **Status:** Aprovado
 - **Data:** 08/10/2026
@@ -56,7 +56,7 @@ Permitiria colunas específicas para cada entidade, mas multiplicaria tabelas, r
 
 Cada caso de uso chamaria o registro de auditoria ao final da operação.
 
-Seria mais simples e explícito, mas acoplaria a auditoria à regra de negócio e não permitiria que outras reações, como o envio de e-mails (ADR-005), aproveitassem os mesmos acontecimentos.
+Seria mais simples e explícito, mas acoplaria a auditoria à regra de negócio e não permitiria que outras reações, como o envio de e-mails (ADR-006), aproveitassem os mesmos acontecimentos.
 
 **Decisão:** Não adotado.
 

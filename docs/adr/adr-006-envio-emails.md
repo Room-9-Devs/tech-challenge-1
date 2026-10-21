@@ -1,4 +1,4 @@
-# ADR-005 — Envio de E-mails Transacionais
+# ADR-006 — Envio de E-mails Transacionais
 
 - **Status:** Aprovado
 - **Data:** 02/10/2026

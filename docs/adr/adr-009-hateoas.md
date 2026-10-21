@@ -1,4 +1,4 @@
-# ADR-008 — Adoção de HATEOAS nas Respostas da API
+# ADR-009 — Adoção de HATEOAS nas Respostas da API
 
 - **Status:** Aprovado
 - **Data:** 09/10/2026
@@ -32,8 +32,8 @@ Adotar **HATEOAS** (*Hypermedia as the Engine of Application State*): as respost
 
 - **Variam com o perfil:** um cliente recebe apenas os links das ações que pode executar.
 - **Variam com o estado:** um produto inativo não expõe `delete`. Na OS, aparecem apenas as próximas ações válidas do fluxo de status, como `send-quote` (somente quando a OS possui itens) e `approve`/`reject` (somente enquanto aguarda aprovação e para a equipe ou para o cliente dono da OS).
-- **Relacionamentos:** os recursos apontam para os recursos relacionados, como o dono do veículo, o estoque do produto e o histórico de eventos da entidade (ADR-007).
-- **Coleções paginadas** recebem `self`, `first`, `prev`, `next` e `last`, preservando a busca, a ordenação e os filtros da requisição (ADR-006).
+- **Relacionamentos:** os recursos apontam para os recursos relacionados, como o dono do veículo, o estoque do produto e o histórico de eventos da entidade (ADR-008).
+- **Coleções paginadas** recebem `self`, `first`, `prev`, `next` e `last`, preservando a busca, a ordenação e os filtros da requisição (ADR-007).
 - **Listas sem paginação** continuam sendo arrays, e apenas os itens recebem `_links`, para não alterar o formato da resposta.
 
 ### Implementação

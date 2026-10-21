@@ -1,4 +1,4 @@
-# ADR-006 — Padrão de Listagem: Paginação, Busca, Ordenação e Filtros
+# ADR-007 — Padrão de Listagem: Paginação, Busca, Ordenação e Filtros
 
 - **Status:** Aprovado
 - **Data:** 05/10/2026
@@ -70,7 +70,7 @@ A paginação usaria um cursor que aponta para o último registro retornado, em 
 - Todas as listagens têm o mesmo comportamento e o mesmo formato de resposta
 - O limite máximo de 100 itens por página evita respostas excessivamente grandes
 - A lista de campos permitidos na ordenação impede ordenar por colunas não previstas
-- Os metadados da paginação permitem montar links de navegação entre páginas (ver ADR-008)
+- Os metadados da paginação permitem montar links de navegação entre páginas (ver ADR-009)
 
 ### Negativas
 
