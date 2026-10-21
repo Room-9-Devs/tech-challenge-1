@@ -34,4 +34,9 @@ export interface ProfileRepository {
   createClient(input: ClientProfileInput): Promise<ProfileRecord>;
   createEmployee(input: EmployeeProfileInput): Promise<ProfileRecord>;
   findById(type: UserEntityType, id: string): Promise<ProfileRecord | null>;
+  update(
+    type: UserEntityType,
+    id: string,
+    data: Partial<Pick<ProfileRecord, 'name' | 'phone' | 'jobTitle'>>,
+  ): Promise<ProfileRecord | null>;
 }

@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { EVENT_ENTITY_TYPES } from '@/domain/types/entity-reference.type';
@@ -17,6 +18,9 @@ export class CreateEventTypeRequestDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
+  @Matches(/^[a-z][a-z0-9_.]*$/, {
+    message: 'O código deve ser um slug em minúsculas (ex: user.created)',
+  })
   code: string;
 
   @ApiProperty({

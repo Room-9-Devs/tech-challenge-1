@@ -77,12 +77,19 @@ export class ParallelumFipeGateway implements FipeGateway {
         const prices: FipePrice[] = [];
         // Limit concurrency instead of sending every model-year request at once.
         for (let index = 0; index < yearCodes.length; index += 4) {
+          // Um 404 em um ano individual não pode derrubar a resposta inteira.
           const batch = await Promise.all(
             yearCodes.slice(index, index + 4).map(async (year) => {
-              const data = await this.request(
-                `${path}/${encodeURIComponent(year)}`,
-                signal,
-              );
+              let data: unknown;
+              try {
+                data = await this.request(
+                  `${path}/${encodeURIComponent(year)}`,
+                  signal,
+                );
+              } catch (error) {
+                if (error instanceof FipeNotFoundError) return null;
+                throw error;
+              }
               if (!isPrice(data) || data.codeFipe !== code)
                 throw new FipeUnavailableError();
               return {
@@ -96,11 +103,16 @@ export class ParallelumFipeGateway implements FipeGateway {
                 tipoVeiculo: data.vehicleType,
                 siglaCombustivel: data.fuelAcronym,
                 dataConsulta: new Date().toISOString(),
-              };
+              } as FipePrice;
             }),
           );
-          prices.push(...batch);
+          prices.push(
+            ...batch.filter(
+              (price): price is FipePrice => price !== null,
+            ),
+          );
         }
+        if (prices.length === 0) continue;
         return prices;
       }
       throw new FipeNotFoundError();

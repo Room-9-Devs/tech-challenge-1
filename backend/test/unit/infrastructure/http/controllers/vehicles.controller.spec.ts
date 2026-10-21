@@ -11,7 +11,7 @@ import { CreateVehicleRequestDto } from '@/infrastructure/http/dtos/create-vehic
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
 import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 describe('VehiclesController', () => {
   let controller: VehiclesController;
@@ -106,11 +106,12 @@ describe('VehiclesController', () => {
 
       createVehicleUseCase.execute.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(user_id, dto);
+      const result = await controller.create(user_id, dto, currentUser);
 
       expect(createVehicleUseCase.execute).toHaveBeenCalledWith({
         user_id,
         ...dto,
+        createdBy: currentUser.username,
       });
       expect(result).toEqual(expectedResult);
     });
@@ -178,10 +179,10 @@ describe('VehiclesController', () => {
     updateVehicleUseCase.execute.mockResolvedValue({ id: 'vehicle-1', user_id: 'user-1', ...details, createdAt: new Date(), updatedAt: new Date() });
     getFipeDataUseCase.execute.mockResolvedValue([]);
     await controller.update('vehicle-1', details, currentUser);
-    await controller.delete('vehicle-1');
+    await controller.delete('vehicle-1', currentUser);
     await controller.getFipeData('001004-9');
     expect(updateVehicleUseCase.execute).toHaveBeenCalledWith({ id: 'vehicle-1', ...details, createdBy: currentUser.username });
-    expect(deleteVehicleUseCase.execute).toHaveBeenCalledWith('vehicle-1');
+    expect(deleteVehicleUseCase.execute).toHaveBeenCalledWith('vehicle-1', currentUser.username);
     expect(getFipeDataUseCase.execute).toHaveBeenCalledWith('001004-9');
   });
 });

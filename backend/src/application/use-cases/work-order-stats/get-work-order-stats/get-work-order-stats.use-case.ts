@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidWorkOrderStatsFilterError } from '@/domain/errors/invalid-work-order-stats-filter.error';
 import {
   WORK_ORDER_STATS_REPOSITORY,
   WorkOrderStatsRepository,
@@ -27,22 +28,22 @@ export class GetWorkOrderStatsUseCase {
     const { period, startDate, endDate } = input;
 
     if (period && !(STATS_PERIODS as readonly string[]).includes(period)) {
-      throw new BadRequestException(
+      throw new InvalidWorkOrderStatsFilterError(
         `period deve ser um dos valores: ${STATS_PERIODS.join(', ')}`,
       );
     }
     if (startDate && !isValidIsoDate(startDate)) {
-      throw new BadRequestException(
+      throw new InvalidWorkOrderStatsFilterError(
         'start_date deve ser uma data YYYY-MM-DD válida',
       );
     }
     if (endDate && !isValidIsoDate(endDate)) {
-      throw new BadRequestException(
+      throw new InvalidWorkOrderStatsFilterError(
         'end_date deve ser uma data YYYY-MM-DD válida',
       );
     }
     if (startDate && endDate && startDate > endDate) {
-      throw new BadRequestException(
+      throw new InvalidWorkOrderStatsFilterError(
         'start_date deve ser anterior ou igual a end_date',
       );
     }

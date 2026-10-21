@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,7 +27,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from '@/application/use-cases/repairs/list-repairs/list-repairs.use-case';
@@ -154,7 +155,9 @@ export class RepairsController {
     description: 'Tipo de reparo/serviço não encontrado',
   })
   @HateoasItem(repairLinks)
-  async findById(@Param('id') id: string): Promise<RepairResponseDto> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<RepairResponseDto> {
     return this.findRepairUseCase.execute({ id });
   }
 
@@ -186,7 +189,7 @@ export class RepairsController {
   })
   @HateoasItem(repairLinks)
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateRepairRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<RepairResponseDto> {
@@ -211,7 +214,7 @@ export class RepairsController {
     description: 'Tipo de reparo/serviço não encontrado',
   })
   async delete(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     return this.deleteRepairUseCase.execute({ id, createdBy: currentUser?.username });

@@ -1,18 +1,15 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import {
   DOMAIN_EVENT_PUBLISHER,
   DomainEventPublisher,
 } from '@/application/ports/domain-event-publisher.port';
 import { WorkOrderStatusChangedEvent } from '@/domain/events/work-order.events';
+import { InvalidWorkOrderError } from '@/domain/errors/invalid-work-order.error';
+import { WorkOrderAccessDeniedError } from '@/domain/errors/work-order-access-denied.error';
 import { WorkOrderApprovalLinkInvalidError } from '@/domain/errors/work-order-approval-link-invalid.error';
+import { WorkOrderConflictError } from '@/domain/errors/work-order-conflict.error';
+import { WorkOrderNotFoundError } from '@/domain/errors/work-order-not-found.error';
 import {
   WORK_ORDER_REPOSITORY,
   WorkOrderRepository,
@@ -40,9 +37,9 @@ export class ChangeWorkOrderStatusUseCase {
     input: ChangeWorkOrderStatusInputDto,
   ): Promise<ChangeWorkOrderStatusOutputDto> {
     if (!input.note?.trim())
-      throw new BadRequestException('O motivo da alteração é obrigatório');
+      throw new InvalidWorkOrderError('O motivo da alteração é obrigatório');
     const order = await this.orders.findById(input.id);
-    if (!order) throw new NotFoundException('Ordem de serviço não encontrada');
+    if (!order) throw new WorkOrderNotFoundError(input.id);
     const isClientDecision =
       input.actor.entityType === 'client' &&
       order.clientId === input.actor.id &&
@@ -51,15 +48,14 @@ export class ChangeWorkOrderStatusUseCase {
         input.status,
       );
     if (input.actor.entityType === 'client' && !isClientDecision) {
-      throw new ForbiddenException(
+      throw new WorkOrderAccessDeniedError(
         'Cliente só pode aprovar ou recusar o orçamento da própria OS',
       );
     }
     let previousStatus: WorkOrderStatus | undefined;
     const saved = await this.uow.run(async (r) => {
       const current = await r.workOrders.findById(input.id);
-      if (!current)
-        throw new NotFoundException('Ordem de serviço não encontrada');
+      if (!current) throw new WorkOrderNotFoundError(input.id);
       const previous = current.status;
       previousStatus = previous;
       // A OS está travada (pessimistic_write): um segundo clique concorrente encontra o token já usado.
@@ -72,7 +68,7 @@ export class ChangeWorkOrderStatusUseCase {
       if (input.status === WorkOrderStatus.IN_PROGRESS) {
         const events = await r.events.findByEntity('work_order', input.id);
         if (!events.some((e) => e.metadata?.kind === 'payment_confirmation')) {
-          throw new ConflictException(
+          throw new WorkOrderConflictError(
             'Confirme o pagamento antes de iniciar o serviço',
           );
         }

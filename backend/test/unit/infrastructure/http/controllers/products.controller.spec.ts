@@ -19,7 +19,7 @@ import { RolesGuard } from '@/infrastructure/http/auth/roles.guard';
 import { ROLES_KEY } from '@/infrastructure/http/auth/roles.decorator';
 import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 describe('ProductsController', () => {
   let controller: ProductsController;

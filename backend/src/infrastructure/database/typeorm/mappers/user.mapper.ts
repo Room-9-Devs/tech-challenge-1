@@ -11,6 +11,7 @@ export class UserMapper {
       entityType: ormEntity.entityType,
       entityId: ormEntity.entityId,
       roleId: ormEntity.roleId,
+      deletedAt: ormEntity.deletedAt ?? null,
       createdAt: ormEntity.createdAt,
       updatedAt: ormEntity.updatedAt,
     });
@@ -25,6 +26,7 @@ export class UserMapper {
     ormEntity.entityType = domainEntity.entityType;
     ormEntity.entityId = domainEntity.entityId;
     ormEntity.roleId = domainEntity.roleId;
+    ormEntity.deletedAt = domainEntity.deletedAt ?? null;
     ormEntity.createdAt = domainEntity.createdAt;
     ormEntity.updatedAt = domainEntity.updatedAt;
     return ormEntity;

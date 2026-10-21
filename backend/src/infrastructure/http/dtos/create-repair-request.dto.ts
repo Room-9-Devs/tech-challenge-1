@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsString,
+  Max,
   Min,
   MinLength,
   MaxLength,
@@ -26,7 +27,8 @@ export class CreateRepairRequestDto {
     example: 120.5,
     minimum: 0,
   })
-  @IsNumber({}, { message: 'O valor unitário deve ser um número' })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'O valor unitário aceita no máximo 2 casas decimais' })
   @Min(0, { message: 'O valor unitário deve ser maior ou igual a 0' })
+  @Max(99999999.99, { message: 'O valor unitário deve ser no máximo 99999999.99' })
   unitValue: number;
 }

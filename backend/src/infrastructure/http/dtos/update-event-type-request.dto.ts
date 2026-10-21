@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -15,6 +16,7 @@ export class UpdateEventTypeRequestDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(100)
   name?: string;
 

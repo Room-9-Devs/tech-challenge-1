@@ -1,4 +1,5 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WorkOrderConflictError } from '@/domain/errors/work-order-conflict.error';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import {
   DOMAIN_EVENT_PUBLISHER,
@@ -26,12 +27,12 @@ export class ConfirmWorkOrderPaymentUseCase {
     const result = await this.uow.run(async (r) => {
       const order = await requireWorkOrder(r, input.id);
       if (order.status !== WorkOrderStatus.APPROVED)
-        throw new ConflictException(
+        throw new WorkOrderConflictError(
           'Pagamento só pode ser confirmado após a aprovação do orçamento',
         );
       const existing = await r.events.findByEntity('work_order', input.id);
       if (existing.some((e) => e.metadata?.kind === 'payment_confirmation'))
-        throw new ConflictException('Pagamento já confirmado');
+        throw new WorkOrderConflictError('Pagamento já confirmado');
       return { workOrderId: input.id, confirmed: true as const };
     });
     await this.eventPublisher.publish(

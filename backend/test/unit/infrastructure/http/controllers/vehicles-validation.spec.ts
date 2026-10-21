@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request = require('supertest');
+import * as request from 'supertest';
 import { VehiclesController } from '@/infrastructure/http/controllers/vehicles.controller';
 import { CreateVehicleUseCase } from '@/application/use-cases/vehicles/create-vehicle/create-vehicle.use-case';
 import { FindVehicleUseCase } from '@/application/use-cases/vehicles/find-vehicle/find-vehicle.use-case';
@@ -11,7 +11,7 @@ import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-da
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
 import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 describe('Vehicle HTTP validation', () => {
   let app: INestApplication;

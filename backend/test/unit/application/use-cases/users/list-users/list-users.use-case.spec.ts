@@ -168,6 +168,70 @@ describe('ListUsersUseCase', () => {
     expect(result.meta.totalItems).toBe(1);
   });
 
+  it('filters users by profile document', async () => {
+    const useCase = await setupNamedUsers();
+
+    const result = await useCase.execute({
+      filters: { 'profile.document': '55566677788' },
+    });
+
+    expect(result.data.map((user) => user.id)).toEqual(['user-zeca']);
+    expect(result.meta.totalItems).toBe(1);
+  });
+
+  const setupDocumentedUsers = async () => {
+    const profiles = new FakeProfileRepository();
+    const carla = await profiles.createClient({
+      id: 'client-carla',
+      name: 'Carla Souza',
+      documentType: 'CPF',
+      document: '11122233344',
+      phone: '11933334444',
+    });
+    const emp = await profiles.createEmployee({
+      id: 'employee-empresa',
+      name: 'Empresa X',
+      documentType: 'CNPJ',
+      document: '11222333000181',
+      phone: '1133334444',
+    });
+    const users = new FakeUserRepository(profiles);
+    await users.save(
+      makeUser({
+        id: 'user-carla',
+        username: 'carla.souza',
+        email: 'carla@example.com',
+        entityType: 'client',
+        entityId: carla.id,
+      }),
+    );
+    await users.save(
+      makeUser({
+        id: 'user-empresa',
+        username: 'empresa.x',
+        email: 'empresa@example.com',
+        entityType: 'employee',
+        entityId: emp.id,
+      }),
+    );
+    return new ListUsersUseCase(users, profiles, new FakeRoleRepository());
+  };
+
+  it('filters users by cpf and cnpj', async () => {
+    const useCase = await setupDocumentedUsers();
+
+    const byCpf = await useCase.execute({ filters: { cpf: '11122233344' } });
+    const byCpfWithMask = await useCase.execute({ filters: { cpf: '111.222.333-44' } });
+    const byCnpj = await useCase.execute({ filters: { cnpj: '11222333000181' } });
+    const noMatchCpf = await useCase.execute({ filters: { cpf: '11222333000181' } });
+
+    expect(byCpf.data.map((user) => user.id)).toEqual(['user-carla']);
+    expect(byCpfWithMask.data.map((user) => user.id)).toEqual(['user-carla']);
+    expect(byCnpj.data.map((user) => user.id)).toEqual(['user-empresa']);
+    expect(noMatchCpf.data).toEqual([]);
+    expect(noMatchCpf.meta.totalItems).toBe(0);
+  });
+
   it('sorts users by profile name', async () => {
     const useCase = await setupNamedUsers();
 

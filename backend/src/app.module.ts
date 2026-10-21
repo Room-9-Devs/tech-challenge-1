@@ -17,6 +17,8 @@ import { StatsController } from './infrastructure/http/controllers/stats.control
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
+import { UpdateUserUseCase } from './application/use-cases/users/update-user/update-user.use-case';
+import { DeleteUserUseCase } from './application/use-cases/users/delete-user/delete-user.use-case';
 import { CreateRepairUseCase } from './application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from './application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from './application/use-cases/repairs/list-repairs/list-repairs.use-case';
@@ -55,6 +57,7 @@ import { TOKEN_SERVICE } from './application/ports/token-service.port';
 import { REFRESH_TOKEN_SERVICE } from './application/ports/refresh-token-service.port';
 import { EVENT_RECORDER } from './application/ports/event-recorder.port';
 import { DOMAIN_EVENT_PUBLISHER } from './application/ports/domain-event-publisher.port';
+import { DOMAIN_EVENT_SUBSCRIBER } from './application/ports/domain-event-subscriber.port';
 import { LoginUseCase } from './application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from './application/use-cases/auth/logout.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/auth/refresh-token.use-case';
@@ -133,6 +136,8 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     CreateUserUseCase,
     FindUserUseCase,
     ListUsersUseCase,
+    UpdateUserUseCase,
+    DeleteUserUseCase,
     CreateVehicleUseCase,
     FindVehicleUseCase,
     ListVehiclesUseCase,
@@ -148,6 +153,8 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     DomainEventEmitter,
     { provide: EVENT_RECORDER, useClass: EventRecorderService },
     { provide: DOMAIN_EVENT_PUBLISHER, useClass: NestDomainEventPublisher },
+    // useExisting: os handlers precisam assinar a mesma instância em que o publisher emite.
+    { provide: DOMAIN_EVENT_SUBSCRIBER, useExisting: DomainEventEmitter },
     UserEventAuditHandler,
     VehicleEventAuditHandler,
     ProductEventAuditHandler,

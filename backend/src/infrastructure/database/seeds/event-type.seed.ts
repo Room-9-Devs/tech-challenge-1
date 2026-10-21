@@ -47,6 +47,11 @@ export const DEFAULT_EVENT_TYPES = [
     allowedEntityTypes: ['user' as const],
   },
   {
+    code: 'user.deleted',
+    name: 'Usuário excluído',
+    allowedEntityTypes: ['user' as const],
+  },
+  {
     code: 'vehicle.created',
     name: 'Veículo criado',
     allowedEntityTypes: ['vehicle' as const],
@@ -64,6 +69,11 @@ export const DEFAULT_EVENT_TYPES = [
   {
     code: 'vehicle.dissociated_from_user',
     name: 'Veículo desvinculado de usuário',
+    allowedEntityTypes: ['vehicle' as const],
+  },
+  {
+    code: 'vehicle.deleted',
+    name: 'Veículo excluído',
     allowedEntityTypes: ['vehicle' as const],
   },
   {

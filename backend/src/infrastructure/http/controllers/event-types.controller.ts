@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   UseGuards,
@@ -85,7 +86,9 @@ export class EventTypesController {
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Tipo de evento não encontrado' })
   @HateoasItem(eventTypeLinks)
-  async findById(@Param('id') id: string): Promise<EventTypeResponseDto> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<EventTypeResponseDto> {
     return this.findEventTypeUseCase.execute(id);
   }
 
@@ -103,7 +106,7 @@ export class EventTypesController {
   })
   @HateoasItem(eventTypeLinks)
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateEventTypeRequestDto,
   ): Promise<EventTypeResponseDto> {
     return this.updateEventTypeUseCase.execute({ id, ...dto });

@@ -43,7 +43,7 @@ import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { stockLinks, stockMovementLinks } from '../hateoas/resources/stock.links';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 
 const ALLOWED_STOCK_SORT_COLUMNS = [
   'quantity',

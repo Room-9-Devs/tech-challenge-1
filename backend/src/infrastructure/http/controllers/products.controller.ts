@@ -44,7 +44,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import {
   HateoasCollection,
   HateoasItem,

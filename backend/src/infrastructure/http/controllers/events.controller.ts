@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -6,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   UseGuards,
   UseInterceptors,
@@ -23,16 +25,20 @@ import { ListEventsByEntityIdUseCase } from '@/application/use-cases/events/list
 import { RecordEventRequestDto } from '../dtos/record-event-request.dto';
 import { EventResponseDto } from '../dtos/event-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventLinks } from '../hateoas/resources/event.links';
-import { EVENT_ENTITY_TYPES, EventEntityType } from '@/domain/types/entity-reference.type';
+import { EVENT_ENTITY_TYPES, EventEntityType, isEventEntityType } from '@/domain/types/entity-reference.type';
 import { FindWorkOrderUseCase } from '@/application/use-cases/work-orders/find-work-order/find-work-order.use-case';
 
 @ApiTags('Eventos')
 @Controller('events')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'staff')
 export class EventsController {
   constructor(
     private readonly recordEventUseCase: RecordEventUseCase,
@@ -41,7 +47,6 @@ export class EventsController {
   ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.CREATED)
@@ -64,12 +69,11 @@ export class EventsController {
     }
     return this.recordEventUseCase.execute({
       ...dto,
-      createdBy: dto.createdBy ?? currentUser?.username,
+      createdBy: currentUser.username, // nunca aceitar do body
     });
   }
 
   @Get(':entityType/:entityId')
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(CurrentUserInterceptor)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Listar eventos por entidade' })
@@ -87,9 +91,12 @@ export class EventsController {
   @HateoasCollection(eventLinks)
   async findByEntity(
     @Param('entityType') entityType: EventEntityType,
-    @Param('entityId') entityId: string,
+    @Param('entityId', ParseUUIDPipe) entityId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<EventResponseDto[]> {
+    if (!isEventEntityType(entityType)) {
+      throw new BadRequestException('entityType inválido');
+    }
     if (entityType === 'work_order') {
       await this.findWorkOrder.execute({
         id: entityId,

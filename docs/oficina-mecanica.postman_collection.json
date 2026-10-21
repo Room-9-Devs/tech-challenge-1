@@ -1049,7 +1049,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status 200 (listagem)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "for (const user of body.data || []) {",
+                  "  const profile = user.profile || {};",
+                  "  const raw = String(profile.document || \"\").replace(/[^0-9]/g, \"\");",
+                  "  if (raw && profile.documentType === \"CPF\") {",
+                  "    pm.collectionVariables.set(\"userDocumentCpfRaw\", raw);",
+                  "  }",
+                  "  if (raw && profile.documentType === \"CNPJ\") {",
+                  "    pm.collectionVariables.set(\"userDocumentCnpjRaw\", raw);",
+                  "  }",
+                  "}"
                 ]
               }
             }
@@ -1100,6 +1111,78 @@
               ]
             },
             "description": "Filtro por `entityType` (client ou employee). O antigo `?type=` hoje retorna 400."
+          }
+        },
+        {
+          "name": "Listar usuários por CPF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem por CPF)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?filters={\"cpf\":\"{{userDocumentCpfRaw}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"cpf\":\"{{userDocumentCpfRaw}}\"}"
+                }
+              ]
+            },
+            "description": "Filtro por CPF do perfil (client ou employee). Usa `userDocumentCpfRaw`, preenchido pelo request `Listar usuários` com o CPF do primeiro CPF encontrado na listagem (rode-o antes). Também aceita `profile.document` (CPF ou CNPJ, sem checagem de tipo) e `cnpj`."
+          }
+        },
+        {
+          "name": "Listar usuários por CNPJ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (listagem por CNPJ)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?filters={\"cnpj\":\"{{userDocumentCnpjRaw}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"cnpj\":\"{{userDocumentCnpjRaw}}\"}"
+                }
+              ]
+            },
+            "description": "Filtro por CNPJ do perfil. Usa `userDocumentCnpjRaw`, preenchido pelo request `Listar usuários` (rode-o antes). O seed padrão não cria CNPJ, então o totalItems pode ser 0 se ninguém CNPJ existir. Também reconhece `profile.document` e `cpf`."
           }
         },
         {
@@ -1292,6 +1375,302 @@
                 "00000000-0000-4000-8000-000000000000"
               ]
             }
+          }
+        },
+        {
+          "name": "Atualizar usuário (PATCH)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (usuário atualizado)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test(\"Nome do perfil atualizado\", () => pm.expect(pm.response.json().profile.name).to.equal(\"Funcionário Atualizado\"));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"name\": \"Funcionário Atualizado\",\n    \"phone\": \"(11) 96666-5555\",\n    \"jobTitle\": \"Mecânico\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{employeeUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{employeeUserId}}"
+              ]
+            },
+            "description": "PATCH parcial: aceita `username`, `email` e `profile` (name, phone, jobTitle — o cargo só vale para employee). Role e senha têm rotas próprias."
+          }
+        },
+        {
+          "name": "Atualizar usuário com e-mail duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (e-mail já existe)\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jose.silveira@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{employeeUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{employeeUserId}}"
+              ]
+            },
+            "description": "O admin já usa esse e-mail, então o PATCH deve falhar com 409."
+          }
+        },
+        {
+          "name": "Atualizar usuário inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (usuário não encontrado)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nao.importa.{{uniq}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cadastrar usuário para exclusão",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (usuário criado para exclusão)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"userToDeleteId\", pm.response.json().id);",
+                  "  pm.collectionVariables.set(\"userToDeleteEmail\", pm.response.json().email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"para.excluir.{{uniq}}\",\n  \"email\": \"para.excluir.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Usuário a Excluir\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-6666\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Excluir usuário (DELETE, 204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (usuário excluído)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userToDeleteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userToDeleteId}}"
+              ]
+            },
+            "description": "Soft delete: `deleted_at` é marcado, sessões do usuário são revogadas e um evento `user.deleted` é registrado. Somente admin."
+          }
+        },
+        {
+          "name": "Consultar usuário excluído (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (usuário deletado não aparece)\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userToDeleteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userToDeleteId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login após exclusão (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401 (login bloqueado)\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{userToDeleteEmail}}\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "O e-mail real do usuário criado depende do `{{uniq}}`; alternativa manual: copie o e-mail do response de cadastro."
+          }
+        },
+        {
+          "name": "Excluir usuário como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (client não pode deletar)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userToDeleteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userToDeleteId}}"
+              ]
+            },
+            "description": "Rode com o token do client (selecione manualmente o Bearer `{{clientToken}}`), espera 403. Staff também receberia 403 nesta rota."
           }
         }
       ]

@@ -34,7 +34,7 @@ import { ChangeWorkOrderStatusUseCase } from '@/application/use-cases/work-order
 import { ConfirmWorkOrderPaymentUseCase } from '@/application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
 import { GetWorkOrderStatsDetailUseCase } from '@/application/use-cases/work-order-stats/get-work-order-stats-detail/get-work-order-stats-detail.use-case';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -86,6 +86,12 @@ const orderView = (o: WorkOrder) => ({
   createdAt: o.createdAt,
   updatedAt: o.updatedAt,
 });
+
+// A listagem não expõe os itens: eles ficam apenas no GET /:id. O total usa os itens carregados.
+const orderSummaryView = (o: WorkOrder) => {
+  const { items: _items, ...summary } = orderView(o);
+  return summary;
+};
 
 const WORK_ORDER_ID_EXAMPLE = '550e8400-e29b-41d4-a716-446655440020';
 const WORK_ORDER_ITEM_ID_EXAMPLE = '550e8400-e29b-41d4-a716-446655440010';
@@ -268,7 +274,7 @@ export class WorkOrdersController {
       },
       actor: toWorkOrderActor(actor),
     });
-    return { ...result, data: result.data.map(orderView) };
+    return { ...result, data: result.data.map(orderSummaryView) };
   }
 
   @Get(':id')

@@ -1,10 +1,7 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InsufficientStockError } from '@/domain/errors/insufficient-stock.error';
+import { InvalidWorkOrderItemError } from '@/domain/errors/invalid-work-order-item.error';
+import { WorkOrderItemNotFoundError } from '@/domain/errors/work-order-item-not-found.error';
 import {
   WORK_ORDER_UNIT_OF_WORK,
   WorkOrderUnitOfWork,
@@ -31,11 +28,11 @@ export class ChangeWorkOrderItemUseCase {
     const result = await this.uow.run(async (r) => {
       const order = await requireWorkOrder(r, input.id);
       const item = order.items.find((i) => i.id === input.itemId);
-      if (!item) throw new NotFoundException('Item não encontrado');
+      if (!item) throw new WorkOrderItemNotFoundError(input.itemId);
       const previousQuantity = item.quantity;
       if (item.productId) {
         if (!Number.isInteger(input.quantity))
-          throw new BadRequestException(
+          throw new InvalidWorkOrderItemError(
             'A quantidade de produtos deve ser inteira',
           );
         const stock = await r.stocks.findByProductId(item.productId);
@@ -45,7 +42,11 @@ export class ChangeWorkOrderItemUseCase {
           )
           .reduce((n, i) => n + i.quantity, 0);
         if (!stock || stock.available < otherQuantity + input.quantity)
-          throw new ConflictException('Saldo insuficiente em estoque');
+          throw new InsufficientStockError(
+            item.productId,
+            stock?.available ?? 0,
+            otherQuantity + input.quantity,
+          );
       }
       order.changeItemQuantity(input.itemId, input.quantity);
       return { order: await r.workOrders.save(order), item, previousQuantity };

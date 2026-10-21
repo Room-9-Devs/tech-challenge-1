@@ -16,7 +16,10 @@ import {
   WORK_ORDER_REPOSITORY,
   WorkOrderRepository,
 } from '@/domain/repositories/work-order.repository';
-import { DomainEventEmitter } from '@/infrastructure/services/events/domain-event-emitter.service';
+import {
+  DOMAIN_EVENT_SUBSCRIBER,
+  DomainEventSubscriber,
+} from '@/application/ports/domain-event-subscriber.port';
 
 // Política "Notificar Cliente": reage à mudança de status sem que o caso de uso conheça os e-mails.
 @Injectable()
@@ -38,12 +41,12 @@ export class WorkOrderNotificationHandler implements OnApplicationBootstrap {
   constructor(
     @Inject(WORK_ORDER_REPOSITORY) private readonly orders: WorkOrderRepository,
     @Inject(WORK_ORDER_NOTIFIER) private readonly notifier: WorkOrderNotifier,
-    private readonly domainEventEmitter: DomainEventEmitter,
+    @Inject(DOMAIN_EVENT_SUBSCRIBER) private readonly domainEventSubscriber: DomainEventSubscriber,
     private readonly issueWorkOrderApprovalToken: IssueWorkOrderApprovalTokenUseCase,
   ) {}
 
   onApplicationBootstrap(): void {
-    this.domainEventEmitter.on(
+    this.domainEventSubscriber.on(
       'work_order.status_changed',
       this.handle.bind(this),
     );

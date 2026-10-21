@@ -8,7 +8,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { ChangeRoleRequestDto } from './permissions.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 
 @ApiTags('Permissões')
 @ApiBearerAuth('access-token')

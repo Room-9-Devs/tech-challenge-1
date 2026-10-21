@@ -52,12 +52,4 @@ export class RecordEventRequestDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown> | null;
-
-  @ApiPropertyOptional({
-    description: 'Username do autor do evento.',
-    example: 'admin',
-  })
-  @IsOptional()
-  @IsString()
-  createdBy?: string | null;
 }

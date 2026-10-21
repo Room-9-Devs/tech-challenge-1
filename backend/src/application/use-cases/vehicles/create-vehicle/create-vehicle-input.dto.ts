@@ -5,4 +5,5 @@ export interface CreateVehicleInputDto {
   brand: string;
   year: number;
   color: string;
+  createdBy?: string;
 }

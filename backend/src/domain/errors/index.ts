@@ -28,3 +28,6 @@ export * from './invalid-work-order-item.error';
 export * from './work-order-not-found.error';
 export * from './work-order-conflict.error';
 export * from './work-order-approval-link-invalid.error';
+export * from './work-order-item-not-found.error';
+export * from './work-order-access-denied.error';
+export * from './invalid-work-order-stats-filter.error';

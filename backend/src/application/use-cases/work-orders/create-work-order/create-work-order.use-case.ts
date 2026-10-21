@@ -1,9 +1,6 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidWorkOrderError } from '@/domain/errors/invalid-work-order.error';
+import { VehicleNotFoundError } from '@/domain/errors/vehicle-not-found.error';
 import { WorkOrder } from '@/domain/entities/work-order.entity';
 import { VEHICLE_REPOSITORY } from '../../vehicles/create-vehicle/create-vehicle.use-case';
 import { VehicleRepository } from '@/domain/repositories/vehicle.repository';
@@ -38,9 +35,9 @@ export class CreateWorkOrderUseCase {
     input: CreateWorkOrderInputDto,
   ): Promise<CreateWorkOrderOutputDto> {
     const vehicle = await this.vehicles.findById(input.vehicleId);
-    if (!vehicle) throw new NotFoundException('Veículo não encontrado');
+    if (!vehicle) throw new VehicleNotFoundError(input.vehicleId);
     if (!vehicle.user_id)
-      throw new BadRequestException('O veículo não possui cliente associado');
+      throw new InvalidWorkOrderError('O veículo não possui cliente associado');
     const order = WorkOrder.create({
       number: await this.numbers.next(),
       vehicleId: vehicle.id,

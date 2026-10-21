@@ -7,6 +7,9 @@ export interface ListUsersFiltersInputDto {
   entityId?: string;
   role?: string;
   profile?: object;
+  document?: string;
+  cpf?: string;
+  cnpj?: string;
 
   [key: string]: string | number | object | undefined;
 }
