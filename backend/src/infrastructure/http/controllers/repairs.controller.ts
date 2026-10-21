@@ -27,7 +27,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { CreateRepairUseCase } from '@/application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from '@/application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from '@/application/use-cases/repairs/list-repairs/list-repairs.use-case';

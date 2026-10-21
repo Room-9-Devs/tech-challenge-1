@@ -7,22 +7,26 @@ import {
   VehicleDeletedEvent,
 } from '@/domain/events/vehicle.events';
 import { EVENT_RECORDER, EventRecorder } from '@/application/ports/event-recorder.port';
-import { DomainEventEmitter } from '@/infrastructure/services/events/domain-event-emitter.service';
+import {
+  DOMAIN_EVENT_SUBSCRIBER,
+  DomainEventSubscriber,
+} from '@/application/ports/domain-event-subscriber.port';
 
 @Injectable()
 export class VehicleEventAuditHandler implements OnApplicationBootstrap {
   constructor(
     @Inject(EVENT_RECORDER)
     private readonly eventRecorder: EventRecorder,
-    private readonly domainEventEmitter: DomainEventEmitter,
+    @Inject(DOMAIN_EVENT_SUBSCRIBER)
+    private readonly domainEventSubscriber: DomainEventSubscriber,
   ) {}
 
   onApplicationBootstrap(): void {
-    this.domainEventEmitter.on('vehicle.created', this.handleCreated.bind(this));
-    this.domainEventEmitter.on('vehicle.updated', this.handleUpdated.bind(this));
-    this.domainEventEmitter.on('vehicle.associated_to_user', this.handleAssociated.bind(this));
-    this.domainEventEmitter.on('vehicle.dissociated_from_user', this.handleDissociated.bind(this));
-    this.domainEventEmitter.on('vehicle.deleted', this.handleDeleted.bind(this));
+    this.domainEventSubscriber.on('vehicle.created', this.handleCreated.bind(this));
+    this.domainEventSubscriber.on('vehicle.updated', this.handleUpdated.bind(this));
+    this.domainEventSubscriber.on('vehicle.associated_to_user', this.handleAssociated.bind(this));
+    this.domainEventSubscriber.on('vehicle.dissociated_from_user', this.handleDissociated.bind(this));
+    this.domainEventSubscriber.on('vehicle.deleted', this.handleDeleted.bind(this));
   }
 
   private async handleCreated(event: VehicleCreatedEvent): Promise<void> {

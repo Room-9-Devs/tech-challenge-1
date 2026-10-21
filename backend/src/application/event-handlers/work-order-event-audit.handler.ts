@@ -3,7 +3,10 @@ import {
   EVENT_RECORDER,
   EventRecorder,
 } from '@/application/ports/event-recorder.port';
-import { DomainEventEmitter } from '@/infrastructure/services/events/domain-event-emitter.service';
+import {
+  DOMAIN_EVENT_SUBSCRIBER,
+  DomainEventSubscriber,
+} from '@/application/ports/domain-event-subscriber.port';
 import {
   WorkOrderCreatedEvent,
   WorkOrderItemAddedEvent,
@@ -17,25 +20,26 @@ import {
 export class WorkOrderEventAuditHandler implements OnApplicationBootstrap {
   constructor(
     @Inject(EVENT_RECORDER) private readonly eventRecorder: EventRecorder,
-    private readonly domainEventEmitter: DomainEventEmitter,
+    @Inject(DOMAIN_EVENT_SUBSCRIBER)
+    private readonly domainEventSubscriber: DomainEventSubscriber,
   ) {}
 
   onApplicationBootstrap(): void {
-    this.domainEventEmitter.on('work_order.created', this.handle.bind(this));
-    this.domainEventEmitter.on(
+    this.domainEventSubscriber.on('work_order.created', this.handle.bind(this));
+    this.domainEventSubscriber.on(
       'work_order.status_changed',
       this.handle.bind(this),
     );
-    this.domainEventEmitter.on(
+    this.domainEventSubscriber.on(
       'work_order.payment_confirmed',
       this.handle.bind(this),
     );
-    this.domainEventEmitter.on('work_order.item_added', this.handle.bind(this));
-    this.domainEventEmitter.on(
+    this.domainEventSubscriber.on('work_order.item_added', this.handle.bind(this));
+    this.domainEventSubscriber.on(
       'work_order.item_quantity_changed',
       this.handle.bind(this),
     );
-    this.domainEventEmitter.on(
+    this.domainEventSubscriber.on(
       'work_order.item_removed',
       this.handle.bind(this),
     );

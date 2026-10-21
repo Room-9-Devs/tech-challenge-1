@@ -34,7 +34,7 @@ import { ChangeWorkOrderStatusUseCase } from '@/application/use-cases/work-order
 import { ConfirmWorkOrderPaymentUseCase } from '@/application/use-cases/work-orders/confirm-work-order-payment/confirm-work-order-payment.use-case';
 import { GetWorkOrderStatsDetailUseCase } from '@/application/use-cases/work-order-stats/get-work-order-stats-detail/get-work-order-stats-detail.use-case';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';

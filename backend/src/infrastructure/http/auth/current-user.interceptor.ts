@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 import { Request } from 'express';
 import { AccessTokenPayload } from '@/application/ports/token-service.port';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
-import { CurrentUser } from './current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 export interface RequestWithCurrentUser extends Request {
   user?: AccessTokenPayload;

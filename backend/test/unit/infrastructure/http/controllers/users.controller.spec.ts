@@ -2,7 +2,7 @@ import { UsersController } from '@/infrastructure/http/controllers/users.control
 import { CreateUserRequestDto } from '@/infrastructure/http/dtos/create-user-request.dto';
 import { ListUsersQueryDto } from '@/infrastructure/http/dtos/list-users-query.dto';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
 import { FakeUserRepository } from '../../../../fakes/fake-user.repository';
 import { FakeRoleRepository } from '../../../../fakes/fake-role.repository';

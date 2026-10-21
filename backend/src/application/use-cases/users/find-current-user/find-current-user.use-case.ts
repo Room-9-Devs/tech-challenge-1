@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { UserRepository } from '@/domain/repositories/user.repository';
 import { USER_REPOSITORY } from '../create-user/create-user.use-case';
 import { ROLE_REPOSITORY, RoleRepository } from '@/application/ports/role.repository';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 @Injectable()
 export class FindCurrentUserUseCase {

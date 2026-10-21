@@ -11,7 +11,7 @@ import { GetFipeDataUseCase } from '@/application/use-cases/vehicles/get-fipe-da
 import { TOKEN_SERVICE } from '@/application/ports/token-service.port';
 import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
-import { CurrentUser } from '@/infrastructure/http/auth/current-user.type';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
 
 describe('Vehicle HTTP validation', () => {
   let app: INestApplication;

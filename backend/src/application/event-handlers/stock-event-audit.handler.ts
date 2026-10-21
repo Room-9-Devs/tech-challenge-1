@@ -6,21 +6,25 @@ import {
   StockReleasedEvent,
 } from '@/domain/events/stock.events';
 import { EVENT_RECORDER, EventRecorder } from '@/application/ports/event-recorder.port';
-import { DomainEventEmitter } from '@/infrastructure/services/events/domain-event-emitter.service';
+import {
+  DOMAIN_EVENT_SUBSCRIBER,
+  DomainEventSubscriber,
+} from '@/application/ports/domain-event-subscriber.port';
 
 @Injectable()
 export class StockEventAuditHandler implements OnApplicationBootstrap {
   constructor(
     @Inject(EVENT_RECORDER)
     private readonly eventRecorder: EventRecorder,
-    private readonly domainEventEmitter: DomainEventEmitter,
+    @Inject(DOMAIN_EVENT_SUBSCRIBER)
+    private readonly domainEventSubscriber: DomainEventSubscriber,
   ) {}
 
   onApplicationBootstrap(): void {
-    this.domainEventEmitter.on('stock.adjusted', this.handleAdjusted.bind(this));
-    this.domainEventEmitter.on('stock.reserved', this.handleReserved.bind(this));
-    this.domainEventEmitter.on('stock.consumed', this.handleConsumed.bind(this));
-    this.domainEventEmitter.on('stock.released', this.handleReleased.bind(this));
+    this.domainEventSubscriber.on('stock.adjusted', this.handleAdjusted.bind(this));
+    this.domainEventSubscriber.on('stock.reserved', this.handleReserved.bind(this));
+    this.domainEventSubscriber.on('stock.consumed', this.handleConsumed.bind(this));
+    this.domainEventSubscriber.on('stock.released', this.handleReleased.bind(this));
   }
 
   private async handleAdjusted(event: StockAdjustedEvent): Promise<void> {

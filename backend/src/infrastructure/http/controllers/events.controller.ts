@@ -29,7 +29,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventLinks } from '../hateoas/resources/event.links';
 import { EVENT_ENTITY_TYPES, EventEntityType, isEventEntityType } from '@/domain/types/entity-reference.type';

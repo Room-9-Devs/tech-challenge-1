@@ -38,7 +38,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
-import { CurrentUser as CurrentUserType } from '../auth/current-user.type';
+import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
 import { ListUsersFiltersInputDto } from '@/application/use-cases/users/list-users/list-users-input.dto';
 import { ListUsersQueryDto } from '../dtos/list-users-query.dto';
 import { parseFiltersQuery } from '@/shared/pagination/parse-filters-query';
