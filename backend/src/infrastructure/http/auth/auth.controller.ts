@@ -40,7 +40,7 @@ export class AuthController {
   @Patch('password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Alterar senha' })
   @ApiBody({ type: ChangePasswordRequestDto })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Senha alterada e sessões de refresh revogadas.' })
