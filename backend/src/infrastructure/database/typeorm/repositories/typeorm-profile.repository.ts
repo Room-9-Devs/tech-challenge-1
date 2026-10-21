@@ -103,4 +103,31 @@ export class TypeOrmProfileRepository implements ProfileRepository {
         }
       : null;
   }
+
+  async update(
+    type: UserEntityType,
+    id: string,
+    data: Partial<Pick<ProfileRecord, 'name' | 'phone' | 'jobTitle'>>,
+  ): Promise<ProfileRecord | null> {
+    if (type === 'client') {
+      const client = await this.clients.findOneBy({ id });
+      if (!client) return null;
+
+      if (data.name !== undefined) client.name = data.name;
+      if (data.phone !== undefined) client.phone = data.phone;
+
+      await this.clients.save(client);
+      return this.findById(type, id);
+    }
+
+    const employee = await this.employees.findOneBy({ id });
+    if (!employee) return null;
+
+    if (data.name !== undefined) employee.name = data.name;
+    if (data.phone !== undefined) employee.phone = data.phone;
+    if (data.jobTitle !== undefined) employee.jobTitle = data.jobTitle;
+
+    await this.employees.save(employee);
+    return this.findById(type, id);
+  }
 }

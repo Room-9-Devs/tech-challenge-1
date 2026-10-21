@@ -8,6 +8,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { RoleOrmEntity } from './role.orm-entity';
 import { VehicleOrmEntity } from './vehicle.orm-entity';
@@ -45,6 +46,9 @@ export class UserOrmEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date | null;
 
   @OneToMany(() => VehicleOrmEntity, (vehicle) => vehicle.user)
   vehicles: VehicleOrmEntity[];

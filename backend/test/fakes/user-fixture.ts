@@ -8,6 +8,7 @@ export function makeUser(overrides: Partial<{
   entityType: UserEntityType;
   entityId: string;
   roleId: string;
+  deletedAt: Date | null;
 }> = {}): User {
   return User.reconstitute({
     id: overrides.id || 'user-1',
@@ -17,5 +18,6 @@ export function makeUser(overrides: Partial<{
     entityType: overrides.entityType || 'employee',
     entityId: overrides.entityId || 'employee-1',
     roleId: overrides.roleId || 'role-staff',
+    deletedAt: overrides.deletedAt ?? null,
   });
 }

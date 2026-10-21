@@ -12,18 +12,20 @@ export interface UserProps {
   entityType: UserEntityType;
   entityId: string;
   roleId: string;
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export class User {
   private readonly _id: string;
-  private readonly _username: string;
-  private readonly _email: string;
+  private _username: string;
+  private _email: string;
   private _password: string;
   private readonly _entityType: UserEntityType;
   private readonly _entityId: string;
   private _roleId: string;
+  private _deletedAt: Date | null;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -35,6 +37,7 @@ export class User {
     this._entityType = props.entityType;
     this._entityId = props.entityId;
     this._roleId = props.roleId;
+    this._deletedAt = props.deletedAt ?? null;
     this._createdAt = props.createdAt ?? new Date();
     this._updatedAt = props.updatedAt ?? new Date();
   }
@@ -55,8 +58,25 @@ export class User {
   get entityType(): UserEntityType { return this._entityType; }
   get entityId(): string { return this._entityId; }
   get roleId(): string { return this._roleId; }
+  get deletedAt(): Date | null { return this._deletedAt; }
   get createdAt(): Date { return this._createdAt; }
   get updatedAt(): Date { return this._updatedAt; }
+
+  public changeUsername(username: string): void {
+    if (!username || username.trim().length < 3) {
+      throw new InvalidUserError('Username must be at least 3 characters long');
+    }
+    this._username = username;
+    this._updatedAt = new Date();
+  }
+
+  public changeEmail(email: string): void {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      throw new InvalidUserError('Invalid email');
+    }
+    this._email = email.toLowerCase();
+    this._updatedAt = new Date();
+  }
 
   public changePassword(password: string): void {
     if (!password) throw new InvalidUserError('Password is required');
@@ -71,6 +91,14 @@ export class User {
     }
     this._roleId = roleId;
     this._updatedAt = new Date();
+  }
+
+  public deactivate(): void {
+    if (this._deletedAt) {
+      throw new InvalidUserError('User is already deactivated');
+    }
+    this._deletedAt = new Date();
+    this._updatedAt = this._deletedAt;
   }
 
   public static isRoleAllowed(entityType: UserEntityType, roleSlug: string): boolean {

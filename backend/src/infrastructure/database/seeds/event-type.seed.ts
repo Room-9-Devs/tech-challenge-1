@@ -47,6 +47,11 @@ export const DEFAULT_EVENT_TYPES = [
     allowedEntityTypes: ['user' as const],
   },
   {
+    code: 'user.deleted',
+    name: 'Usuário excluído',
+    allowedEntityTypes: ['user' as const],
+  },
+  {
     code: 'vehicle.created',
     name: 'Veículo criado',
     allowedEntityTypes: ['vehicle' as const],

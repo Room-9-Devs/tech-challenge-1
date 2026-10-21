@@ -17,6 +17,8 @@ import { StatsController } from './infrastructure/http/controllers/stats.control
 import { CreateUserUseCase } from './application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from './application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from './application/use-cases/users/list-users/list-users.use-case';
+import { UpdateUserUseCase } from './application/use-cases/users/update-user/update-user.use-case';
+import { DeleteUserUseCase } from './application/use-cases/users/delete-user/delete-user.use-case';
 import { CreateRepairUseCase } from './application/use-cases/repairs/create-repair/create-repair.use-case';
 import { FindRepairUseCase } from './application/use-cases/repairs/find-repair/find-repair.use-case';
 import { ListRepairsUseCase } from './application/use-cases/repairs/list-repairs/list-repairs.use-case';
@@ -133,6 +135,8 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
     CreateUserUseCase,
     FindUserUseCase,
     ListUsersUseCase,
+    UpdateUserUseCase,
+    DeleteUserUseCase,
     CreateVehicleUseCase,
     FindVehicleUseCase,
     ListVehiclesUseCase,

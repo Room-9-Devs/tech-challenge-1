@@ -34,11 +34,29 @@ export class FakeProfileRepository implements ProfileRepository {
     type: UserEntityType,
     id: string,
   ): Promise<ProfileRecord | null> {
-    return (
-      this.profiles.find(
-        (profile) => profile.type === type && profile.id === id,
-      ) || null
+    const profile = this.profiles.find(
+      (candidate) => candidate.type === type && candidate.id === id,
     );
+    return profile ? { ...profile } : null;
+  }
+
+  async update(
+    type: UserEntityType,
+    id: string,
+    data: Partial<Pick<ProfileRecord, 'name' | 'phone' | 'jobTitle'>>,
+  ): Promise<ProfileRecord | null> {
+    const profile = this.profiles.find(
+      (candidate) => candidate.type === type && candidate.id === id,
+    );
+    if (!profile) return null;
+
+    if (data.name !== undefined) profile.name = data.name;
+    if (data.phone !== undefined) profile.phone = data.phone;
+    if (type === 'employee' && data.jobTitle !== undefined) {
+      profile.jobTitle = data.jobTitle;
+    }
+
+    return { ...profile };
   }
 
   snapshot(): ProfileRecord[] {

@@ -43,7 +43,7 @@ export class FakeUserRepository implements UserRepository {
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.users.find((user) => user.id === id) || null;
+    return this.users.find((user) => user.id === id && !user.deletedAt) || null;
   }
 
   async findAll(
@@ -56,6 +56,8 @@ export class FakeUserRepository implements UserRepository {
 
     const allowedFilters = ['username', 'email', 'entityType', 'profile.name', 'profile.document', 'cpf', 'cnpj'];
 
+    let data = this.users.filter((user) => !user.deletedAt);
+
     const usesProfiles =
       !!search ||
       Object.keys(filters).some((key) =>
@@ -65,8 +67,6 @@ export class FakeUserRepository implements UserRepository {
     const profiles = usesProfiles
       ? await this.resolveProfileRecords()
       : new Map<string, ProfileRecord | null>();
-
-    let data = this.users;
 
     const documentFilterKeys = ['profile.document', 'cpf', 'cnpj'];
 
@@ -123,11 +123,11 @@ export class FakeUserRepository implements UserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.users.find((user) => user.email === email) || null;
+    return this.users.find((user) => user.email === email && !user.deletedAt) || null;
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.users.find((user) => user.username === username) || null;
+    return this.users.find((user) => user.username === username && !user.deletedAt) || null;
   }
 
   clear(): void {

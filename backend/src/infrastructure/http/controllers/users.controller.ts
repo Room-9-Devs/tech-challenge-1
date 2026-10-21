@@ -13,6 +13,8 @@ import {
   UseInterceptors,
   ForbiddenException,
   UnauthorizedException,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,7 +27,10 @@ import {
 import { CreateUserUseCase } from '@/application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from '@/application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from '@/application/use-cases/users/list-users/list-users.use-case';
+import { UpdateUserUseCase } from '@/application/use-cases/users/update-user/update-user.use-case';
+import { DeleteUserUseCase } from '@/application/use-cases/users/delete-user/delete-user.use-case';
 import { CreateUserRequestDto } from '../dtos/create-user-request.dto';
+import { UpdateUserRequestDto } from '../dtos/update-user-request.dto';
 import { UserResponseDto } from '../dtos/user-response.dto';
 import { ListUsersResponseDto } from '../dtos/list-users-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -74,6 +79,8 @@ export class UsersController {
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly findUserUseCase: FindUserUseCase,
     private readonly listUsersUseCase: ListUsersUseCase,
+    private readonly updateUserUseCase: UpdateUserUseCase,
+    private readonly deleteUserUseCase: DeleteUserUseCase,
   ) { }
 
   @Post()
@@ -169,6 +176,82 @@ export class UsersController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<UserResponseDto> {
     return this.findUserUseCase.execute({ id });
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseInterceptors(CurrentUserInterceptor)
+  @ApiBearerAuth('access-token')
+  @Roles('admin', 'staff')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar dados do usuário' })
+  @ApiBody({ type: UpdateUserRequestDto })
+  @ApiParam({
+    name: 'id',
+    description: 'User UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Usuário atualizado com sucesso',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Usuário não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Já existe um usuário com este username ou e-mail',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'ID não é um UUID válido ou dados inválidos',
+  })
+  @HateoasItem(userLinks)
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserRequestDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<UserResponseDto> {
+    if (!currentUser) throw new UnauthorizedException();
+    return this.updateUserUseCase.execute({
+      id,
+      ...dto,
+      updatedBy: currentUser.username,
+    });
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseInterceptors(CurrentUserInterceptor)
+  @ApiBearerAuth('access-token')
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Excluir usuário (soft delete)' })
+  @ApiParam({
+    name: 'id',
+    description: 'User UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Usuário excluído (soft delete) com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Usuário não encontrado',
+  })
+  @HateoasItem(userLinks)
+  async remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<void> {
+    if (!currentUser) throw new UnauthorizedException();
+    await this.deleteUserUseCase.execute({
+      id,
+      deletedBy: currentUser.username,
+    });
   }
 
   @Get()

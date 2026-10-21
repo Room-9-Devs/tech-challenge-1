@@ -24,6 +24,18 @@ export class UserUpdatedEvent extends DomainEvent {
   }
 }
 
+export class UserDeletedEvent extends DomainEvent {
+  readonly eventType = 'user.deleted';
+
+  constructor(
+    readonly entityId: string,
+    readonly createdBy: string | undefined,
+    readonly metadata: { username: string; email: string },
+  ) {
+    super();
+  }
+}
+
 export class UserPasswordChangedEvent extends DomainEvent {
   readonly eventType = 'user.password_changed';
 

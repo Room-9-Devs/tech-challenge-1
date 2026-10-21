@@ -5,6 +5,8 @@ import { UsersController } from '@/infrastructure/http/controllers/users.control
 import { CreateUserUseCase } from '@/application/use-cases/users/create-user/create-user.use-case';
 import { FindUserUseCase } from '@/application/use-cases/users/find-user/find-user.use-case';
 import { ListUsersUseCase } from '@/application/use-cases/users/list-users/list-users.use-case';
+import { UpdateUserUseCase } from '@/application/use-cases/users/update-user/update-user.use-case';
+import { DeleteUserUseCase } from '@/application/use-cases/users/delete-user/delete-user.use-case';
 import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
 import { CurrentUserInterceptor } from '@/infrastructure/http/auth/current-user.interceptor';
 import { JwtAuthGuard } from '@/infrastructure/http/auth/jwt-auth.guard';
@@ -15,6 +17,8 @@ describe('Users HTTP validation', () => {
   const create = { execute: jest.fn() };
   const find = { execute: jest.fn() };
   const list = { execute: jest.fn() };
+  const update = { execute: jest.fn() };
+  const remove = { execute: jest.fn() };
   const userId = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeAll(async () => {
@@ -24,6 +28,8 @@ describe('Users HTTP validation', () => {
         { provide: CreateUserUseCase, useValue: create },
         { provide: FindUserUseCase, useValue: find },
         { provide: ListUsersUseCase, useValue: list },
+        { provide: UpdateUserUseCase, useValue: update },
+        { provide: DeleteUserUseCase, useValue: remove },
         {
           provide: FindCurrentUserUseCase,
           useValue: {

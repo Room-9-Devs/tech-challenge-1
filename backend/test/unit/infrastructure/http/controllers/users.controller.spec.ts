@@ -9,16 +9,26 @@ import { FakeRoleRepository } from '../../../../fakes/fake-role.repository';
 import { makeUser } from '../../../../fakes/user-fixture';
 
 describe('UsersController', () => {
+  const makeController = (
+    create: unknown = {},
+    find: unknown = {},
+    list: unknown = {},
+    update: unknown = {},
+    remove: unknown = {},
+  ): UsersController => new UsersController(
+    create as never,
+    find as never,
+    list as never,
+    update as never,
+    remove as never,
+  );
+
   it('delegates client creation to the use case', async () => {
     const create = {
       execute: jest.fn().mockResolvedValue({ id: 'user-1' }),
     };
 
-    const controller = new UsersController(
-      create as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = makeController(create);
 
     const input = {
       username: 'cliente',
@@ -57,11 +67,7 @@ describe('UsersController', () => {
       }),
     };
 
-    const controller = new UsersController(
-      {} as never,
-      find as never,
-      list as never,
-    );
+    const controller = makeController({}, find, list);
 
     await controller.me({ user: { sub: 'user-1' } });
     await controller.findById('user-2');
@@ -90,11 +96,7 @@ describe('UsersController', () => {
       }),
     };
 
-    const controller = new UsersController(
-      {} as never,
-      {} as never,
-      list as never,
-    );
+    const controller = makeController({}, {}, list);
 
     await controller.findAll({
       sort: JSON.stringify([{ field: 'profile.name', order: 'asc' }]),
@@ -115,11 +117,7 @@ describe('UsersController', () => {
       }),
     };
 
-    const controller = new UsersController(
-      {} as never,
-      {} as never,
-      list as never,
-    );
+    const controller = makeController({}, {}, list);
 
     await controller.findAll({
       filters: JSON.stringify({ 'profile.document': '11111111111' }),
@@ -150,11 +148,7 @@ describe('UsersController', () => {
     
     const create = {execute: jest.fn(),};
 
-    const controller = new UsersController(
-      create as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = makeController(create);
 
     const input = {
       entityType: 'employee',
@@ -181,11 +175,7 @@ describe('UsersController', () => {
     const findCurrentUser = new FindCurrentUserUseCase(users, new FakeRoleRepository());
 
     const create = { execute: jest.fn() };
-    const controller = new UsersController(
-      create as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = makeController(create);
 
     const currentUser = await findCurrentUser.execute('staff-1');
     const input = {
@@ -204,11 +194,7 @@ describe('UsersController', () => {
   it('rejects creation when there is no current user', async () => {
     const create = { execute: jest.fn() };
 
-    const controller = new UsersController(
-      create as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = makeController(create);
 
     const input = {
       username: 'cliente',
@@ -233,11 +219,7 @@ describe('UsersController', () => {
       execute: jest.fn().mockResolvedValue({ id: 'employee-1' }),
     };
 
-    const controller = new UsersController(
-      create as never,
-      {} as never,
-      {} as never,
-    );
+    const controller = makeController(create);
 
     const input = {
       entityType: 'employee',
@@ -255,5 +237,72 @@ describe('UsersController', () => {
     });
 
     expect(create.execute).toHaveBeenCalledWith({ ...input, createdBy: 'admin' });
+  });
+
+  it('delegates user update to the use case (PATCH)', async () => {
+    const update = {
+      execute: jest.fn().mockResolvedValue({ id: 'user-1', username: 'novo' }),
+    };
+
+    const controller = makeController({}, {}, {}, update);
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
+    };
+
+    const dto = { username: 'novo' } as never;
+
+    await expect(
+      controller.update('user-1', dto, currentUser),
+    ).resolves.toEqual({ id: 'user-1', username: 'novo' });
+
+    expect(update.execute).toHaveBeenCalledWith({
+      id: 'user-1',
+      username: 'novo',
+      updatedBy: 'admin',
+    });
+  });
+
+  it('rejects update without current user', async () => {
+    const controller = makeController();
+
+    await expect(
+      controller.update('user-1', {} as never, undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('delegates user deletion to the use case (DELETE)', async () => {
+    const remove = {
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const controller = makeController({}, {}, {}, {}, remove);
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
+    };
+
+    await expect(
+      controller.remove('user-1', currentUser),
+    ).resolves.toBeUndefined();
+
+    expect(remove.execute).toHaveBeenCalledWith({
+      id: 'user-1',
+      deletedBy: 'admin',
+    });
+  });
+
+  it('rejects deletion without current user', async () => {
+    const controller = makeController();
+
+    await expect(
+      controller.remove('user-1', undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
