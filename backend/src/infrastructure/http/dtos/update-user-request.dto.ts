@@ -1,11 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
   IsEmail,
+  IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 
 export class UpdateUserProfileRequestDto {
@@ -14,8 +18,11 @@ export class UpdateUserProfileRequestDto {
     example: 'José Silveira',
     maxLength: 150,
   })
-  @IsOptional()
+  // Opcional quando ausente; null e texto só com espaços são recusados.
+  @ValidateIf((_, value) => value !== undefined)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty()
   @MaxLength(150)
   name?: string;
 
@@ -23,7 +30,8 @@ export class UpdateUserProfileRequestDto {
     description: 'Telefone do perfil',
     example: '(11) 99999-9999',
   })
-  @IsOptional()
+  // Opcional quando ausente; null é recusado (a coluna é obrigatória). O formato é validado pelo value object Phone.
+  @ValidateIf((_, value) => value !== undefined)
   @IsString()
   @MaxLength(20)
   phone?: string;
@@ -71,5 +79,7 @@ export class UpdateUserRequestDto {
   })
   @IsOptional()
   @IsObject()
+  @ValidateNested()
+  @Type(() => UpdateUserProfileRequestDto)
   profile?: UpdateUserProfileRequestDto;
 }
