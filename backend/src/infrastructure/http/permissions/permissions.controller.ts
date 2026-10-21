@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ListRolesUseCase } from '@/application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from '@/application/use-cases/permissions/change-role.use-case';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -32,6 +32,7 @@ export class PermissionsController {
   @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Alterar role de um usuário' })
+  @ApiParam({ name: 'userId', description: 'UUID do usuário', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiBody({ type: ChangeRoleRequestDto })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Role alterado com sucesso.' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'userId não é um UUID válido.' })

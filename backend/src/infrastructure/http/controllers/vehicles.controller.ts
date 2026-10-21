@@ -83,29 +83,29 @@ export class VehiclesController {
   @Post(':user_id')
   @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new vehicle' })
+  @ApiOperation({ summary: 'Cadastra um veículo vinculado ao usuário dono' })
   @ApiParam({
     name: 'user_id',
-    description: 'Vehicle owner UUID',
+    description: 'UUID do usuário dono do veículo',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiBody({ type: CreateVehicleRequestDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Vehicle created successfully',
+    description: 'Veículo cadastrado com sucesso',
     type: VehicleResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
+    description: 'Dados de entrada inválidos, como placa fora dos formatos aceitos',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Vehicle with this license plate already exists',
+    description: 'Já existe um veículo com esta placa',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Vehicle owner not found',
+    description: 'Dono do veículo não encontrado',
   })
   @HateoasItem(vehicleLinks)
   async create(
@@ -121,18 +121,39 @@ export class VehiclesController {
   }
 
   @Get('fipe/:code')
-  @ApiOperation({ summary: 'Get FIPE prices by FIPE code' })
-  @ApiParam({ name: 'code', example: '001004-9' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'FIPE prices' })
+  @ApiOperation({ summary: 'Consulta os preços da tabela FIPE pelo código FIPE' })
+  @ApiParam({ name: 'code', description: 'Código FIPE do veículo', example: '001004-9' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Preços FIPE do veículo' })
   async getFipeData(@Param('code') code: string): Promise<FipePrice[]> {
     return this.getFipeDataUseCase.execute(code);
   }
 
   @Put(':id')
   @UseInterceptors(CurrentUserInterceptor)
-  @ApiOperation({ summary: 'Replace vehicle details' })
+  @ApiOperation({ summary: 'Atualiza os dados do veículo (o dono não muda)' })
+  @ApiParam({
+    name: 'id',
+    description: 'UUID do veículo',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @ApiBody({ type: UpdateVehicleRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: VehicleResponseDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Veículo atualizado com sucesso',
+    type: VehicleResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'ID não é um UUID válido ou dados de entrada inválidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Veículo não encontrado',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Já existe outro veículo com esta placa',
+  })
   @HateoasItem(vehicleLinks)
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -145,8 +166,24 @@ export class VehiclesController {
   @Delete(':id')
   @UseInterceptors(CurrentUserInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete vehicle' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT })
+  @ApiOperation({ summary: 'Exclui um veículo' })
+  @ApiParam({
+    name: 'id',
+    description: 'UUID do veículo',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Veículo excluído com sucesso',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'ID não é um UUID válido',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Veículo não encontrado',
+  })
   async delete(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -155,20 +192,20 @@ export class VehiclesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Find vehicle by ID' })
+  @ApiOperation({ summary: 'Busca veículo pelo ID' })
   @ApiParam({
     name: 'id',
-    description: 'Vehicle UUID',
+    description: 'UUID do veículo',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Vehicle found',
+    description: 'Veículo encontrado',
     type: VehicleResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Vehicle not found',
+    description: 'Veículo não encontrado',
   })
   @HateoasItem(vehicleLinks)
   async findById(
@@ -178,7 +215,7 @@ export class VehiclesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List vehicles with pagination, search and filters' })
+  @ApiOperation({ summary: 'Lista veículos com paginação, busca e filtros' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({
@@ -205,7 +242,7 @@ export class VehiclesController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Paginated list of vehicles',
+    description: 'Lista paginada de veículos',
     type: ListVehiclesResponseDto,
   })
   @HateoasCollection(vehicleLinks)

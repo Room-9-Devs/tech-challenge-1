@@ -6,13 +6,13 @@ import { Links } from '../hateoas/link.types';
 
 export class ListVehiclesResponseDto {
   @ApiProperty({
-    description: 'List of vehicles',
+    description: 'Lista de veículos',
     type: [VehicleResponseDto],
   })
   data: VehicleResponseDto[];
 
   @ApiProperty({
-    description: 'Pagination metadata',
+    description: 'Metadados da paginação',
     type: PaginationMetaDto,
   })
   meta: PaginationMetaDto;

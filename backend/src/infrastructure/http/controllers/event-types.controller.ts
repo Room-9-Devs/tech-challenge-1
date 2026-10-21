@@ -78,7 +78,7 @@ export class EventTypesController {
   @Roles('admin', 'staff')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Consultar tipo de evento por ID' })
-  @ApiParam({ name: 'id', description: 'Event Type UUID' })
+  @ApiParam({ name: 'id', description: 'UUID do tipo de evento' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Tipo de evento encontrado',
@@ -97,7 +97,7 @@ export class EventTypesController {
   @Roles('admin', 'staff')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Atualizar tipo de evento' })
-  @ApiParam({ name: 'id', description: 'Event Type UUID' })
+  @ApiParam({ name: 'id', description: 'UUID do tipo de evento' })
   @ApiBody({ type: UpdateEventTypeRequestDto })
   @ApiResponse({
     status: HttpStatus.OK,

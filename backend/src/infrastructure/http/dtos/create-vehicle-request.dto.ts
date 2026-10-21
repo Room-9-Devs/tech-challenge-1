@@ -26,7 +26,7 @@ export class CreateVehicleRequestDto {
   license_plate: string;
 
   @ApiProperty({
-    description: 'Vehicle model',
+    description: 'Modelo do veículo',
     example: 'Corolla',
     minLength: 2,
     maxLength: 100,
@@ -38,7 +38,7 @@ export class CreateVehicleRequestDto {
   model: string;
 
   @ApiProperty({
-    description: 'Vehicle brand',
+    description: 'Marca do veículo',
     example: 'Toyota',
     minLength: 2,
     maxLength: 100,
@@ -50,7 +50,7 @@ export class CreateVehicleRequestDto {
   brand: string;
 
   @ApiProperty({
-    description: 'Vehicle manufacturing year',
+    description: 'Ano de fabricação do veículo',
     example: 2022,
     minimum: 1886,
     maximum: new Date().getFullYear() + 1,
@@ -61,8 +61,8 @@ export class CreateVehicleRequestDto {
   year: number;
 
   @ApiProperty({
-    description: 'Vehicle color',
-    example: 'Black',
+    description: 'Cor do veículo',
+    example: 'Preto',
     minLength: 2,
     maxLength: 50,
   })

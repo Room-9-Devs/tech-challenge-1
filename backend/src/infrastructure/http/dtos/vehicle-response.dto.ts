@@ -4,14 +4,14 @@ import { Links } from '../hateoas/link.types';
 
 export class VehicleResponseDto {
   @ApiProperty({
-    description: 'Vehicle unique identifier',
+    description: 'UUID do veículo',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   id: string;
 
   @ApiProperty({
     description:
-      'Vehicle owner UUID; null only for legacy records awaiting backfill',
+      'UUID do dono do veículo; nulo apenas em registros legados ainda sem dono vinculado',
     type: String,
     nullable: true,
     example: '550e8400-e29b-41d4-a716-446655440000',
@@ -19,43 +19,43 @@ export class VehicleResponseDto {
   user_id: string | null;
 
   @ApiProperty({
-    description: 'Vehicle license plate',
+    description: 'Placa do veículo, sem hífen e em maiúsculas',
     example: 'ABC1234',
   })
   license_plate: string;
 
   @ApiProperty({
-    description: 'Vehicle model',
+    description: 'Modelo do veículo',
     example: 'Corolla',
   })
   model: string;
 
   @ApiProperty({
-    description: 'Vehicle brand',
+    description: 'Marca do veículo',
     example: 'Toyota',
   })
   brand: string;
 
   @ApiProperty({
-    description: 'Vehicle manufacturing year',
+    description: 'Ano de fabricação do veículo',
     example: 2022,
   })
   year: number;
 
   @ApiProperty({
-    description: 'Vehicle color',
-    example: 'Black',
+    description: 'Cor do veículo',
+    example: 'Preto',
   })
   color: string;
 
   @ApiProperty({
-    description: 'Creation timestamp',
+    description: 'Data de criação',
     example: '2026-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Last update timestamp',
+    description: 'Data da última atualização',
     example: '2026-01-01T00:00:00.000Z',
   })
   updatedAt: Date;
