@@ -1,3 +1,4 @@
+import { Cpf, Cnpj } from '@/domain/value-objects';
 import { seedClients } from '@/infrastructure/database/seeds/client.seed';
 import { seedEmployees } from '@/infrastructure/database/seeds/employee.seed';
 import { seedRoles } from '@/infrastructure/database/seeds/role.seed';
@@ -47,6 +48,110 @@ describe('database seeds', () => {
     const dataSource = { getRepository: jest.fn((entity: any) => entity.name.includes('User') ? userRepository : entity.name.includes('Role') ? roleRepository : entity.name.includes('Employee') ? employeeRepository : clientRepository) };
     await seedUsers(dataSource as never);
     expect(userRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('seeds fake documents that are valid according to the value objects', async () => {
+    const created: Array<{ documentType: string; document: string }> = [];
+    const repository = {
+      findOneBy: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: { documentType: string; document: string }) => {
+        created.push(value);
+        return value;
+      }),
+      save: jest.fn().mockResolvedValue(undefined),
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+    const dataSource = { getRepository: jest.fn().mockReturnValue(repository) };
+
+    await seedClients(dataSource as never);
+    await seedEmployees(dataSource as never);
+
+    expect(created).toHaveLength(4);
+    expect(new Set(created.map((record) => record.document)).size).toBe(4);
+    for (const record of created) {
+      expect(() =>
+        record.documentType === 'CPF'
+          ? new Cpf(record.document)
+          : new Cnpj(record.document),
+      ).not.toThrow();
+    }
+  });
+
+  it('looks the seeded client user up by the document declared in the client seed', async () => {
+    const seededClients: Array<{ document: string }> = [];
+    const clientSeedRepository = {
+      findOneBy: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: { document: string }) => {
+        seededClients.push(value);
+        return value;
+      }),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    await seedClients({
+      getRepository: jest.fn().mockReturnValue(clientSeedRepository),
+    } as never);
+
+    const clientLookups: Array<Record<string, string>> = [];
+    const userRepository = {
+      findOneBy: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: Record<string, string>) => value),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    const roleRepository = {
+      findOneByOrFail: jest.fn(async ({ slug }: { slug: string }) => ({
+        id: slug,
+      })),
+    };
+    const employeeRepository = {
+      findOneByOrFail: jest.fn(async ({ name }: { name: string }) => ({
+        id: name,
+      })),
+    };
+    const profileRepository = {
+      findOneByOrFail: jest.fn(
+        async (query: Record<string, string>) => {
+          clientLookups.push(query);
+          return { id: 'client-1' };
+        },
+      ),
+    };
+    const dataSource = {
+      getRepository: jest.fn((entity: { name: string }) =>
+        entity.name.includes('User')
+          ? userRepository
+          : entity.name.includes('Role')
+            ? roleRepository
+            : entity.name.includes('Employee')
+              ? employeeRepository
+              : profileRepository,
+      ),
+    };
+
+    await seedUsers(dataSource as never);
+
+    expect(clientLookups).toEqual([{ document: seededClients[0].document }]);
+  });
+
+  it('refreshes stale profile documents instead of inserting duplicates', async () => {
+    const repository = {
+      findOneBy: jest.fn(async (query: Record<string, string>) =>
+        query.document ? null : { id: `existing-${query.name}`, ...query },
+      ),
+      create: jest.fn((value: Record<string, string>) => value),
+      save: jest.fn().mockResolvedValue(undefined),
+      update: jest.fn().mockResolvedValue(undefined),
+    };
+    const dataSource = { getRepository: jest.fn().mockReturnValue(repository) };
+
+    await seedClients(dataSource as never);
+    await seedEmployees(dataSource as never);
+
+    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledTimes(4);
+    expect(repository.update).toHaveBeenCalledWith(
+      'existing-Agnaldo Guimarães',
+      expect.objectContaining({ document: '45612378955' }),
+    );
   });
 });
 

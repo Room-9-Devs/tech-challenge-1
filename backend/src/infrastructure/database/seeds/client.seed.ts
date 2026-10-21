@@ -5,7 +5,7 @@ const clients = [
   {
     name: 'Agnaldo Guimarães',
     documentType: 'CPF' as const,
-    document: '11111111111',
+    document: '45612378955',
     phone: '11999999999',
   },
 ];
@@ -14,11 +14,18 @@ export async function seedClients(dataSource: DataSource): Promise<void> {
   const repository = dataSource.getRepository(ClientOrmEntity);
 
   for (const client of clients) {
-    const existingClient = await repository.findOneBy({
+    const existingByDocument = await repository.findOneBy({
       document: client.document,
     });
 
-    if (existingClient) {
+    if (existingByDocument) {
+      continue;
+    }
+
+    const existingByName = await repository.findOneBy({ name: client.name });
+
+    if (existingByName) {
+      await repository.update(existingByName.id, { ...client });
       continue;
     }
 

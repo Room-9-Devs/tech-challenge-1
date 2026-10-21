@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WorkOrderStatus } from '@/domain/entities/work-order-status.enum';
 import { WorkOrderItemResponseDto } from './work-order-item-response.dto';
+import { ApiLinksProperty } from '../hateoas/api-links-property.decorator';
+import { Links } from '../hateoas/link.types';
 
 export class WorkOrderResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440020' })
@@ -41,6 +43,16 @@ export class WorkOrderResponseDto {
 
   @ApiProperty({ example: '2026-10-10T12:00:00.000Z' })
   updatedAt: Date;
+
+  @ApiLinksProperty({
+    self: { href: '/work-orders/550e8400-e29b-41d4-a716-446655440020', method: 'GET' },
+    vehicle: { href: '/vehicles/550e8400-e29b-41d4-a716-446655440000', method: 'GET' },
+    client: { href: '/users/550e8400-e29b-41d4-a716-446655440030', method: 'GET' },
+    events: { href: '/events/work_order/550e8400-e29b-41d4-a716-446655440020', method: 'GET' },
+    'add-item': { href: '/work-orders/550e8400-e29b-41d4-a716-446655440020/items', method: 'POST' },
+    'start-diagnosis': { href: '/work-orders/550e8400-e29b-41d4-a716-446655440020/status', method: 'PATCH' },
+  })
+  _links?: Links;
 }
 
 export class WorkOrderVehicleResponseDto {

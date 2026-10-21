@@ -254,6 +254,8 @@ npm run seed
 
 Os seeds são separados por entidade (`roles`, `clients`, `employees` e `users`) e são idempotentes. Todos os usuários seedados usam a senha `password123`; esses dados são destinados somente ao ambiente de desenvolvimento.
 
+Os documentos dos perfis seedados são fictícios, porém válidos: os dígitos verificadores conferem com os value objects `Cpf`/`Cnpj`. Se o banco já foi seedado anteriormente, o seed atualiza o documento desses perfis em vez de criar registros duplicados.
+
 ## Execução com Docker Compose
 
 Este projeto utiliza **exatamente 2 containers**:
@@ -409,6 +411,30 @@ No PowerShell: `$env:SONAR_TOKEN="<seu-token>"; npm run sonar`.
 A configuração fica em `backend/sonar-project.properties`. As migrations ficam fora da
 análise, e bootstrap, módulos, seeds e scripts de banco ficam fora da cobertura. O token
 nunca deve ser versionado.
+## Segurança (Trivy)
+
+O [Trivy](https://trivy.dev) roda no GitHub Actions ([.github/workflows/trivy.yml](.github/workflows/trivy.yml)) em todo PR, em push para `main`/`develop`, semanalmente e sob demanda. São dois jobs:
+
+- **Repositório**: vulnerabilidades no `package-lock.json`, secrets commitados e misconfig de `Dockerfile`/`docker-compose.yml`
+- **Imagem**: build da imagem do backend e scan de vulnerabilidades do SO base e dos pacotes Node
+
+O pipeline falha quando há achados `HIGH` ou `CRITICAL` com correção disponível. As regras ficam em [trivy.yaml](trivy.yaml) e exceções aceitas em [.trivyignore](.trivyignore) (sempre com justificativa).
+
+> As actions estão fixadas por SHA de commit, e não por tag, por causa do comprometimento do `trivy-action` em março/2026 (CVE-2026-33634). Ao atualizar, resolva o SHA com `git ls-remote --tags https://github.com/aquasecurity/trivy-action`.
+
+### Rodando localmente
+
+Só precisa do Docker rodando (o Trivy é executado em container). Dentro de `backend/`:
+
+```bash
+npm run security:scan        # repositório + imagem
+npm run security:scan:fs     # só repositório (deps, secrets, Dockerfile/compose)
+npm run security:scan:image  # build e scan da imagem do backend
+```
+
+O comando sai com código 1 se houver achados `HIGH`/`CRITICAL`. A primeira execução baixa a base de vulnerabilidades (~130 MB), que fica em cache no volume `trivy-cache`.
+
+> O script ([backend/scripts/trivy-scan.js](backend/scripts/trivy-scan.js)) envia ao container só os arquivos versionados pelo git, em vez de montar a pasta, porque o bind mount do Docker Desktop no Windows é lento demais para percorrer o `node_modules`. Ao atualizar o Trivy, mude a versão no script e no workflow.
 
 ## Swagger / OpenAPI
 
@@ -486,8 +512,8 @@ Lista todos os usuários.
 
 ## HATEOAS
 
-As respostas de `products`, `repairs`, `vehicles`, `users`, `stock`, `events` e
-`event-types` incluem o campo `_links`
+As respostas de `products`, `repairs`, `vehicles`, `users`, `stock`, `events`,
+`event-types` e `work-orders` incluem o campo `_links`
 com as ações disponíveis para o recurso. Cada link tem `href` e `method`:
 
 ```json
@@ -511,7 +537,13 @@ com as ações disponíveis para o recurso. Cada link tem `href` e `method`:
   para seus veículos (`vehicles`) e para o cadastro de veículo (`add-vehicle`);
   produto aponta para seu estoque (`stock`) e movimentações (`movements`);
   movimentação aponta para produto, estoque e quem a registrou (`creator`).
-- **Histórico**: produtos, reparos, veículos, usuários e estoques têm o link `events`
+- **Ordens de serviço seguem o fluxo de status**: só aparecem as próximas ações válidas
+  (`start-diagnosis`, `send-quote`, `approve`/`reject`, `confirm-payment`, `start`,
+  `complete`, `deliver`), todas apontando para `PATCH /work-orders/:id/status`, exceto
+  `confirm-payment`. `add-item` só existe antes do envio do orçamento, e `send-quote`
+  só aparece quando a OS tem itens. O cliente dono da OS recebe `approve`/`reject`
+  enquanto ela aguarda aprovação; a equipe recebe também `vehicle` e `client`.
+- **Histórico**: produtos, reparos, veículos, usuários, estoques e ordens de serviço têm o link `events`
   (`/events/:entityType/:entityId`); cada evento aponta para o tipo de evento e para a
   entidade de origem.
 - **Listas sem paginação** (`GET /event-types` e `GET /events/...`) continuam sendo

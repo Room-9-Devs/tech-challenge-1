@@ -1,0 +1,23 @@
+# Configuração do Trivy usada no CI (.github/workflows/trivy.yml) e localmente.
+# Referência: https://trivy.dev/docs/latest/references/configuration/config-file/
+
+# Falha o scan (exit code 1) quando houver achados com essas severidades
+severity:
+  - HIGH
+  - CRITICAL
+exit-code: 1
+
+scan:
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+  # Não use skip-dirs para node_modules: o mesmo arquivo é usado no scan da imagem,
+  # e isso esconderia as dependências instaladas nela.
+
+vulnerability:
+  # Ignora CVEs que ainda não têm versão corrigida (não há ação possível)
+  ignore-unfixed: true
+
+# Exceções aceitas ficam em .trivyignore (uma por linha, com justificativa)
+ignorefile: .trivyignore

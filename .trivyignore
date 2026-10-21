@@ -1,0 +1,6 @@
+# Achados do Trivy aceitos conscientemente.
+# Adicione um ID por linha (CVE-..., DS-..., etc.) com comentário explicando o motivo
+# e, de preferência, uma data de revisão. Ex.:
+#
+# # Sem impacto: lib usada só em dev; revisar em 2026-12
+# CVE-2026-00000
