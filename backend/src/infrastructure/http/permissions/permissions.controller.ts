@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ListRolesUseCase } from '@/application/use-cases/permissions/list-roles.use-case';
 import { ChangeRoleUseCase } from '@/application/use-cases/permissions/change-role.use-case';
@@ -9,6 +9,7 @@ import { ChangeRoleRequestDto } from './permissions.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CurrentUserInterceptor } from '../auth/current-user.interceptor';
 import { CurrentUser as CurrentUserType } from '@/application/use-cases/users/current-user.dto';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 @ApiTags('Permissões')
 @ApiBearerAuth('access-token')
@@ -38,7 +39,7 @@ export class PermissionsController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'userId não é um UUID válido.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Usuário ou role não encontrado.' })
   async changeRole(
-    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('userId', ParseUuidPipe) userId: string,
     @Body() dto: ChangeRoleRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ) {

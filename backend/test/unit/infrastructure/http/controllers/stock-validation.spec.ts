@@ -1,4 +1,5 @@
-import { ExecutionContext, INestApplication, ValidationPipe } from '@nestjs/common';
+import { ExecutionContext, INestApplication } from '@nestjs/common';
+import { AppValidationPipe } from '@/infrastructure/http/pipes/app-validation.pipe';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { StockController } from '@/infrastructure/http/controllers/stock.controller';
@@ -58,11 +59,7 @@ describe('Stock HTTP validation', () => {
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
+      new AppValidationPipe(),
     );
     await app.init();
   });

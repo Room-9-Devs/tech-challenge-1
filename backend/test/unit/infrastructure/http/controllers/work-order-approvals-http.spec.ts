@@ -1,4 +1,5 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
+import { AppValidationPipe } from '@/infrastructure/http/pipes/app-validation.pipe';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { REFRESH_TOKEN_SERVICE } from '@/application/ports/refresh-token-service.port';
@@ -123,11 +124,7 @@ describe('Work order approval over HTTP', () => {
     app = moduleRef.createNestApplication();
     // Mesma configuração global do main.ts
     app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
+      new AppValidationPipe(),
     );
     app.useGlobalFilters(new DomainExceptionFilter());
     await app.init();

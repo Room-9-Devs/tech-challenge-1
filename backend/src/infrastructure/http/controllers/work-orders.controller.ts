@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -62,6 +61,7 @@ import {
   workOrderLinks,
   workOrderPaymentLinks,
 } from '../hateoas/resources/work-order.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const itemView = (i: WorkOrderItem) => ({
   id: i.id,
@@ -308,7 +308,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async find(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() actor: CurrentUserType,
   ) {
     const result = await this.findWorkOrder.execute({
@@ -375,7 +375,7 @@ export class WorkOrdersController {
     description: 'Autenticação obrigatória',
   })
   async stats(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() actor: CurrentUserType,
   ): Promise<WorkOrderStatsDetailResponseDto> {
     return this.getWorkOrderStatsDetail.execute({
@@ -431,7 +431,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async addItem(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: AddWorkOrderItemRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -479,8 +479,8 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async changeItem(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Param('id', ParseUuidPipe) id: string,
+    @Param('itemId', ParseUuidPipe) itemId: string,
     @Body() body: ChangeWorkOrderItemRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -523,8 +523,8 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async removeItem(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Param('id', ParseUuidPipe) id: string,
+    @Param('itemId', ParseUuidPipe) itemId: string,
     @CurrentUser() actor: CurrentUserType,
   ) {
     return orderView(
@@ -627,7 +627,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderLinks)
   async changeStatus(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: ChangeWorkOrderStatusRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {
@@ -669,7 +669,7 @@ export class WorkOrdersController {
   })
   @HateoasItem(workOrderPaymentLinks)
   async confirmPayment(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() body: ConfirmWorkOrderPaymentRequestDto,
     @CurrentUser() actor: CurrentUserType,
   ) {

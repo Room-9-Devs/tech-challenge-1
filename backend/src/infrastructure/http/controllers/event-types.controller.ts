@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Post,
   Put,
   UseGuards,
@@ -30,6 +29,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { HateoasCollection, HateoasItem } from '../hateoas/hateoas.decorator';
 import { eventTypeLinks } from '../hateoas/resources/event.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 @ApiTags('Tipos de Evento')
 @Controller('event-types')
@@ -87,7 +87,7 @@ export class EventTypesController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Tipo de evento não encontrado' })
   @HateoasItem(eventTypeLinks)
   async findById(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<EventTypeResponseDto> {
     return this.findEventTypeUseCase.execute(id);
   }
@@ -106,7 +106,7 @@ export class EventTypesController {
   })
   @HateoasItem(eventTypeLinks)
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateEventTypeRequestDto,
   ): Promise<EventTypeResponseDto> {
     return this.updateEventTypeUseCase.execute({ id, ...dto });

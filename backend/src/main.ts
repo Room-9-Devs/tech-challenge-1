@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './infrastructure/http/filters/domain-exception.filter';
+import { AppValidationPipe } from './infrastructure/http/pipes/app-validation.pipe';
 import { RepairSeedService } from './infrastructure/database/typeorm/seeds/repair.seed';
 import { ProductSeedService } from './infrastructure/database/typeorm/seeds/product.seed';
 import { EventTypeSeedService } from './infrastructure/database/seeds/event-type.seed';
@@ -16,7 +17,7 @@ process.on('unhandledRejection', (reason) => {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(new AppValidationPipe());
   app.getHttpAdapter().getInstance().set('query parser', 'extended');
 
   app.useGlobalFilters(new DomainExceptionFilter());

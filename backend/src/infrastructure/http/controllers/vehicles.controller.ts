@@ -9,7 +9,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -52,6 +51,7 @@ import {
   HateoasItem,
 } from '../hateoas/hateoas.decorator';
 import { vehicleLinks } from '../hateoas/resources/vehicle.links';
+import { ParseUuidPipe } from '../pipes/parse-uuid.pipe';
 
 const ALLOWED_VEHICLE_SORT_COLUMNS = [
   'licensePlate',
@@ -109,7 +109,7 @@ export class VehiclesController {
   })
   @HateoasItem(vehicleLinks)
   async create(
-    @Param('user_id', new ParseUUIDPipe()) user_id: string,
+    @Param('user_id', ParseUuidPipe) user_id: string,
     @Body() dto: CreateVehicleRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<VehicleResponseDto> {
@@ -156,7 +156,7 @@ export class VehiclesController {
   })
   @HateoasItem(vehicleLinks)
   async update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Body() dto: UpdateVehicleRequestDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<VehicleResponseDto> {
@@ -185,7 +185,7 @@ export class VehiclesController {
     description: 'Veículo não encontrado',
   })
   async delete(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.deleteVehicleUseCase.execute(id, currentUser?.username);
@@ -209,7 +209,7 @@ export class VehiclesController {
   })
   @HateoasItem(vehicleLinks)
   async findById(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseUuidPipe) id: string,
   ): Promise<VehicleResponseDto> {
     return this.findVehicleUseCase.execute({ id });
   }
