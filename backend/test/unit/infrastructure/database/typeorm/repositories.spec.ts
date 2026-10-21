@@ -251,6 +251,24 @@ describe('TypeOrmUserRepository', () => {
     });
   });
 
+  it('uppercases alphanumeric cnpj filters to match the stored document', async () => {
+    const { queryBuilder, wheres } = createQueryBuilder();
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };
+    const service = new TypeOrmUserRepository(repository as never);
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      filters: { cnpj: '12.abc.345/0001-88', 'profile.document': '12abc345000188' },
+    });
+
+    expect(wheres[0].params).toEqual({
+      filter_cnpj_document: '12ABC345000188',
+      filter_cnpj_type: 'CNPJ',
+    });
+    expect(wheres[1].params).toEqual({ filter_profile_document: '12ABC345000188' });
+  });
+
   it('ignores document filters that are not allowed', async () => {
     const { queryBuilder, wheres } = createQueryBuilder();
     const repository = { createQueryBuilder: jest.fn().mockReturnValue(queryBuilder) };

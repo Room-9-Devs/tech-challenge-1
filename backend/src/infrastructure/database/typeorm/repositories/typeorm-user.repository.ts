@@ -22,10 +22,12 @@ const PROFILE_DOCUMENT_TYPE_EXPRESSION =
   'COALESCE(client.document_type, employee.document_type)';
 const PROFILE_DOCUMENT_FIELD = 'profile.document';
 
-// O documento é gravado apenas com dígitos, mas o CPF/CNPJ é costumeiramente
-// informado com máscara; precisamos dele limpo para casar com a coluna.
+// O documento é gravado sem máscara e em maiúsculas (o CNPJ pode ser alfanumérico),
+// mas costuma ser informado com máscara; precisamos dele igual à coluna.
 const normalizeDocument = (value: unknown): string =>
-  typeof value === 'string' ? value.replace(/[.\-/ \s]/g, '') : String(value ?? '');
+  typeof value === 'string'
+    ? value.replace(/[.\-/ \s]/g, '').toUpperCase()
+    : String(value ?? '');
 
 @Injectable()
 export class TypeOrmUserRepository implements UserRepository {

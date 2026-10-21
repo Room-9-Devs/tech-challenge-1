@@ -23,7 +23,7 @@ export class FakeUserRepository implements UserRepository {
   private readField(user: User, field: string, profiles: Map<string, ProfileRecord | null>): unknown {
     const profile = profiles.get(user.id) ?? null;
     const normalizeDocument = (value: string): string =>
-      value.replace(/[.\-/ \s]/g, '');
+      value.replace(/[.\-/ \s]/g, '').toUpperCase();
     if (field === 'profile.name') return profile?.name ?? '';
     if (field === 'profile.document') return profile?.document ? normalizeDocument(profile.document) : '';
     if (field === 'cpf') {
