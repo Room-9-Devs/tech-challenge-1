@@ -4,7 +4,7 @@
 > **Ambiente:** Docker local (`backend` NestJS :3000, `postgres` 18-alpine, `adminer`), volume do Postgres **resetado do zero** antes da execução
 > **Método:** requisições HTTP via `curl`/`fetch` na API (`http://localhost:3000`), com eventos validados em `GET /events/{entidade}/{id}` e estado do estoque em `GET /stock`
 > **Escopo:** fluxo completo de duas OS cobrindo o novo modelo de reserva — `stock.reserved` no envio do orçamento (reserva direta na tabela `stocks`, sem movement), `stock.consumed` + movement **OUT** na aprovação e `stock.released` no cancelamento (sem movement).
-> **Documentação de eventos:** [`docs/events.md`](events.md) (seção `stock`, atualizada neste mesmo PR)
+> **Documentação de eventos:** [`docs/ddd/eventos-de-dominio.md`](../ddd/eventos-de-dominio.md) (seção `stock`, atualizada neste mesmo PR)
 
 ---
 

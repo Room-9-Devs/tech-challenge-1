@@ -32,7 +32,7 @@ Adotar **eventos de domínio** publicados **em memória**, e registrar a auditor
 - O histórico de uma entidade é consultado por `GET /events/:entityType/:entityId`, e eventos manuais podem ser registrados por `POST /events`, ambos restritos aos perfis `admin` e `staff`.
 - Eventos que fazem parte da própria regra de negócio, como a reserva de estoque de uma OS, são gravados dentro da mesma transação da operação, e não pelos *handlers*.
 
-A lista completa de eventos está documentada em `docs/events.md`.
+A lista completa de eventos está documentada em [Eventos de Domínio](../ddd/eventos-de-dominio.md).
 
 ## Alternativas consideradas
 
