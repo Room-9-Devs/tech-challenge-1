@@ -2,7 +2,7 @@
 
 **Data:** 17/10/2026 · **Branch:** `feat/stats` · **Feature:** comparativo OS × estatística global da oficina
 
-Complemento do [`relatorio-e2e-estatisticas.md`](./relatorio-e2e-estatisticas.md) (estatísticas globais). Este relatório documenta a segunda parte: o endpoint de estatísticas individuais por ordem de serviço e a validação, realizada **exclusivamente por rotas HTTP** (sem scripts automatizados).
+Complemento do [`e2e-estatisticas.md`](./e2e-estatisticas.md) (estatísticas globais). Este relatório documenta a segunda parte: o endpoint de estatísticas individuais por ordem de serviço e a validação, realizada **exclusivamente por rotas HTTP** (sem scripts automatizados).
 
 ---
 

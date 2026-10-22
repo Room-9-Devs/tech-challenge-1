@@ -1,4 +1,4 @@
-# Eventos do Sistema
+# Eventos de Domínio
 
 ## Visão Geral
 
@@ -47,39 +47,41 @@ Registro imutável de cada ocorrência.
 
 ### `client`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `client.created` | Cliente cadastrado | `{ name, documentType, document }` |
 | `client.updated` | Cliente atualizado | `{ changedFields, old, new }` |
 
 ### `employee`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
-| `employee.created` | Funcionário cadastrado | `{ name, documentType, document, jobTitle }` |
-| `employee.updated` | Funcionário atualizado | `{ changedFields, old, new }` |
+| `employee.created` | Colaborador cadastrado | `{ name, documentType, document, jobTitle }` |
+| `employee.updated` | Colaborador atualizado | `{ changedFields, old, new }` |
 
 ### `user`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `user.created` | Conta de usuário criada | `{ username, email, role }` |
 | `user.updated` | Conta de usuário atualizada | `{ changedFields, old, new }` |
 | `user.password_changed` | Senha alterada | `{ changedAt }` |
 | `user.role_changed` | Role do usuário alterada | `{ oldRole, newRole }` |
+| `user.deleted` | Usuário excluído (exclusão lógica) | `{ username, email }` |
 
 ### `vehicle`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `vehicle.created` | Veículo cadastrado | `{ licensePlate, model, brand, year, color }` |
 | `vehicle.updated` | Veículo atualizado | `{ changedFields, old, new }` |
+| `vehicle.deleted` | Veículo removido | `{ licensePlate }` |
 | `vehicle.associated_to_user` | Veículo vinculado a usuário | `{ userId }` |
 | `vehicle.dissociated_from_user` | Veículo desvinculado de usuário | `{ userId }` |
 
 ### `product`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `product.created` | Produto cadastrado | `{ sku, name, productType, unit, cost, salePrice }` |
 | `product.updated` | Produto atualizado | `{ changedFields, old, new }` |
@@ -87,18 +89,18 @@ Registro imutável de cada ocorrência.
 
 ### `stock`
 
-Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O movimento de reserva é manipulado diretamente no campo `reserved` da tabela `stocks` (sem gerar movement) e apenas o consumo físico na aprovação gera uma movimentação do tipo `OUT`. Os eventos carregam o estado completo do estoque antes e depois da operação para fins de auditoria.
+`stock.adjusted` é gerado a cada movimentação manual de estoque (`POST /stock/movements`). Os demais são gerados pelo fluxo de ordens de serviço: a reserva é manipulada diretamente no campo `reserved` da tabela `stocks` (sem gerar movimentação) e apenas o consumo físico na aprovação gera uma movimentação do tipo `OUT`. Esses três eventos carregam o estado do estoque antes e depois da operação, para fins de auditoria, e são gravados direto na transação da OS (ver [Automáticos](#automáticos)).
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
-| `stock.adjusted` | Quantidade em estoque ajustada | `{ productId, oldQuantity, newQuantity, reason }` |
+| `stock.adjusted` | Movimentação manual registrada: entrada (`IN`), saída (`OUT`) ou ajuste (`ADJUSTMENT`) | `{ productId, oldQuantity, newQuantity, reason, movementId, movementType, quantity }` (`reason` é a descrição da movimentação) |
 | `stock.reserved` | Reserva de estoque para a OS (transição para `awaiting_approval`); aumenta `reserved` e reduz o disponível | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
 | `stock.consumed` | Reserva consumida na aprovação da OS (transição para `approved`); reduz `reserved` e `quantity` fisicamente | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
 | `stock.released` | Reserva devolvida ao disponível no cancelamento da OS (transição para `cancelled`) | `{ productId, quantity, workOrderId, workOrderNumber, reservedBefore, reservedAfter, availableBefore, availableAfter }` |
 
 ### `repair`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `repair.created` | Serviço de reparo cadastrado | `{ description, unitValue }` |
 | `repair.updated` | Serviço de reparo atualizado | `{ changedFields, old, new }` |
@@ -106,7 +108,7 @@ Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O m
 
 ### `work_order`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `work_order.created` | Ordem de serviço criada | `{ number }` |
 | `work_order.status_changed` | Status da ordem de serviço alterado | `{ from, to, reason }` |
@@ -117,7 +119,7 @@ Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O m
 
 ### `auth`
 
-| Código | Descrição | Metadados sugeridos |
+| Código | Descrição | Metadados |
 |---|---|---|
 | `auth.login.succeeded` | Login bem-sucedido | `{ ip, userAgent }` |
 | `auth.login.failed` | Login falho | `{ username, reason }` |
@@ -127,11 +129,14 @@ Eventos de estoque gerados automaticamente pelo fluxo de ordens de serviço. O m
 
 ### Automáticos
 
-Gerados por handlers de Domain Events após ações nos casos de uso. Exemplos:
+Gerados pelos próprios casos de uso, sem chamada manual. Há duas formas de registro:
 
-- Criar usuário → `user.created`
-- Atualizar veículo → `vehicle.updated`
-- Alterar preço → `product.price_changed`
+- **Por Domain Event (a maioria):** o caso de uso publica o evento de domínio pela porta `DomainEventPublisher`, e o handler de auditoria do contexto (`*-event-audit.handler.ts`) o grava na tabela `events`. Exemplos:
+  - Criar usuário → `user.created`
+  - Atualizar veículo → `vehicle.updated`
+  - Alterar preço → `product.price_changed`
+  - Mudar o status da OS → `work_order.status_changed`
+- **Direto na transação da OS:** `stock.reserved`, `stock.consumed` e `stock.released` são gravados pela própria mudança de status da OS (`work-order-transaction.helpers.ts`), na mesma transação da reserva, baixa ou liberação. Assim, o histórico de estoque nunca fica divergente do saldo.
 
 ### Manuais
 
@@ -140,6 +145,25 @@ Registrados via endpoint `POST /events` para:
 - Eventos de sistema
 - Integrações externas
 - Eventos que não nascem de um caso de uso existente
+
+Regras do registro manual:
+
+- `entityType` precisa ser um tipo de entidade válido (senão **400**);
+- o tipo de evento (`eventTypeCode`) precisa existir (senão **404**);
+- o tipo de evento precisa permitir o `entityType` informado (senão **400**).
+
+## Endpoints
+
+Todos exigem JWT e papel `admin` ou `staff`.
+
+| Método e rota | Uso |
+|---|---|
+| `POST /events` | Registra um evento manualmente |
+| `GET /events/:entityType/:entityId` | Lista o histórico de uma entidade |
+| `POST /event-types` | Cadastra um tipo de evento |
+| `GET /event-types` | Lista os tipos de evento |
+| `GET /event-types/:id` | Consulta um tipo de evento |
+| `PUT /event-types/:id` | Altera um tipo de evento |
 
 ## Registro de Auditoria
 
@@ -160,7 +184,7 @@ Além da auditoria, alguns eventos disparam reações automáticas (políticas d
 
 | Evento | Condição | Reação | Handler |
 |---|---|---|---|
-| `work_order.status_changed` | `to = awaiting_approval` | E-mail com o orçamento para o cliente | `WorkOrderNotificationHandler` |
+| `work_order.status_changed` | `to = awaiting_approval` | Gera o token de aprovação e envia ao cliente o e-mail com o orçamento e os links para aprovar ou recusar | `WorkOrderNotificationHandler` |
 | `work_order.status_changed` | `to = completed` | E-mail de serviço concluído para o cliente | `WorkOrderNotificationHandler` |
 
 As notificações são best-effort: uma falha ao montar ou enviar o e-mail é registrada em log e não desfaz a mudança de status.
@@ -170,7 +194,7 @@ As notificações são best-effort: uma falha ao montar ou enviar o e-mail é re
 Para adicionar um novo evento:
 
 1. Inclua o código na lista deste documento.
-2. Crie ou reaproveite o `event_type` na migration/seed.
+2. Cadastre o `event_type` no `EventTypeSeedService` (`backend/src/infrastructure/database/seeds/event-type.seed.ts`), que roda na inicialização da API e cria os tipos que ainda não existem no banco.
 3. Publique o evento de domínio correspondente no caso de uso, ou
 4. Exponha o registro manual via `POST /events`.
 

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Oficina Mecânica API",
-    "description": "Collection para testar a API da oficina mecânica.\n\n1. Rode `Autenticação > Login (admin)`: o token é salvo automaticamente na variável `accessToken`. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão (403).\n2. As rotas protegidas usam o token do admin pela autenticação Bearer da collection.\n3. Os requests de criação geram dados únicos a cada execução e salvam o ID criado em variáveis (`productId`, `stockProductId`, `stockMovementId`, `repairId`, `vehicleId`, `userId`, `clientUserId`, `employeeUserId`, `eventTypeId`, `workOrderId`, `workOrderItemId`).\n4. Cada pasta cobre o fluxo feliz e os erros esperados (400, 401, 403, 404, 409).\n5. A pasta `Bugs conhecidos (falham até corrigir)` valida o comportamento correto em casos que hoje estão errados. Ela fica vermelha até os bugs serem corrigidos.\n6. A pasta `Encerramento` altera a senha (e restaura) e faz logout.\n7. A pasta `Crash de auditoria` derruba o servidor de propósito. Fica desligada; para rodar, defina `runCrashTest` = `true`.\n8. A pasta `Ordens de Serviço` encadeia o ciclo completo de uma OS (abertura, itens, orçamento, aprovação, pagamento, execução e entrega). Ela usa o veículo criado em `Veículos` (`vehicleId`) e o serviço criado em `Tipos de Reparo/Serviço` (`repairId`), então rode essas pastas antes. A subpasta `Aprovação em HTML` usa a variável `approvalToken`, preenchida manualmente com o token do link do e-mail (vazia, os requests esperam 404).\n\nTodos os requests validam o status HTTP esperado, então dá para usar o Collection Runner.\nOs usuários de desenvolvimento são criados com `npm run seed` (senha `password123`).",
+    "description": "Collection para testar a API da oficina mecânica.\n\n1. Rode `Autenticação > Login (admin)`: o token é salvo automaticamente na variável `accessToken`. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão (403).\n2. As rotas protegidas usam o token do admin pela autenticação Bearer da collection.\n3. Os requests de criação geram dados únicos a cada execução e salvam o ID criado em variáveis (`productId`, `stockProductId`, `stockMovementId`, `repairId`, `vehicleId`, `userId`, `clientUserId`, `employeeUserId`, `eventTypeId`, `workOrderId`, `workOrderItemId`, `cancelWorkOrderId`).\n4. Cada pasta cobre o fluxo feliz e os erros esperados (400, 401, 403, 404, 409).\n5. A pasta `Ordens de Serviço` é independente das demais: os requests `Preparar` criam o cliente (com login próprio, em `osClientToken`), o veículo, o serviço e a peça. Ela encadeia o ciclo completo de uma OS (abertura, itens, orçamento com reserva de estoque, aprovação pelo cliente, baixa do estoque, pagamento, execução, entrega e histórico) e a recusa de um orçamento com liberação da reserva. A subpasta `Aprovação em HTML` usa a variável `approvalToken`, preenchida manualmente com o token do link do e-mail (vazia, os requests esperam 404).\n6. A pasta `Estatísticas` cobre os indicadores (`GET /stats`), exclusivos do admin.\n7. A pasta `Resiliência da auditoria` confirma que uma falha num handler de auditoria não derruba o servidor; ela restaura os dados que altera.\n8. A pasta `Encerramento` altera a senha (e restaura) e faz logout.\n\nTodos os requests validam o status HTTP esperado, então dá para usar o Collection Runner.\nOs usuários de desenvolvimento são criados com `npm run seed` (senha `password123`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -124,8 +124,36 @@
       "value": ""
     },
     {
-      "key": "runCrashTest",
-      "value": "false"
+      "key": "osClientUsername",
+      "value": ""
+    },
+    {
+      "key": "osClientUserId",
+      "value": ""
+    },
+    {
+      "key": "osClientToken",
+      "value": ""
+    },
+    {
+      "key": "osLicensePlate",
+      "value": ""
+    },
+    {
+      "key": "osVehicleId",
+      "value": ""
+    },
+    {
+      "key": "osRepairId",
+      "value": ""
+    },
+    {
+      "key": "osProductId",
+      "value": ""
+    },
+    {
+      "key": "cancelWorkOrderId",
+      "value": ""
     }
   ],
   "item": [
@@ -641,6 +669,65 @@
               ]
             }
           }
+        },
+        {
+          "name": "Refresh concorrente com o mesmo token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (login)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "const refreshToken = pm.response.json().refreshToken;",
+                  "Promise.all([1, 2, 3].map(() => send(\"POST\", \"/auth/refresh\", \"\", { refreshToken })))",
+                  "  .then((responses) => {",
+                  "    const codes = responses.map((r) => r.code);",
+                  "    pm.test(\"Só 1 de 3 refreshes simultâneos pode passar (recebido: \" + codes.join(\", \") + \")\", () => pm.expect(codes.filter((c) => c === 200).length).to.equal(1));",
+                  "  });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"jeremias.lopes\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Faz login e manda 3 refreshes ao mesmo tempo com o mesmo token. Só um pode receber 200: a revogação do refresh token é atômica."
+          }
         }
       ]
     },
@@ -1014,6 +1101,77 @@
           }
         },
         {
+          "name": "Staff cadastrando funcionário (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.variables.set(\"uniq\", Date.now().toString());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"func.staff.{{uniq}}\",\n  \"email\": \"func.staff.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"employee\",\n  \"name\": \"Funcionário via Staff\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-6666\",\n  \"jobTitle\": \"Mecânico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Só o admin cadastra funcionários; o staff cadastra apenas clientes."
+          }
+        },
+        {
           "name": "Meu perfil",
           "event": [
             {
@@ -1123,7 +1281,7 @@
                 "exec": [
                   "pm.test(\"Status 200 (listagem por CPF)\", () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                  "pm.test(\"Resultado único\", () => pm.expect(body.meta.totalItems).to.be.below(2));"
                 ]
               }
             }
@@ -1159,7 +1317,7 @@
                 "exec": [
                   "pm.test(\"Status 200 (listagem por CNPJ)\", () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test(\"Resultado único\", () => expect(body.meta.totalItems).toBeLessThan(2));"
+                  "pm.test(\"Resultado único\", () => pm.expect(body.meta.totalItems).to.be.below(2));"
                 ]
               }
             }
@@ -1373,6 +1531,34 @@
               "path": [
                 "users",
                 "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar usuário com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "abc"
               ]
             }
           }
@@ -1670,7 +1856,17 @@
                 "{{userToDeleteId}}"
               ]
             },
-            "description": "Rode com o token do client (selecione manualmente o Bearer `{{clientToken}}`), espera 403. Staff também receberia 403 nesta rota."
+            "description": "Rode com o token do client (selecione manualmente o Bearer `{{clientToken}}`), espera 403. Staff também receberia 403 nesta rota.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
       ]
@@ -1873,6 +2069,50 @@
                 "permissions",
                 "users",
                 "00000000-0000-4000-8000-000000000000",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alterar role com userId não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"client\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/users/abc/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                "users",
+                "abc",
                 "role"
               ]
             }
@@ -2135,6 +2375,56 @@
           }
         },
         {
+          "name": "Criar reparo com valor acima de numeric(10,2) (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"uniq\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Reparo caro {{uniq}}\",\n  \"unitValue\": 100000000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
           "name": "Listar reparos como client (200)",
           "event": [
             {
@@ -2195,6 +2485,34 @@
               "path": [
                 "repairs",
                 "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar reparo com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/repairs/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs",
+                "abc"
               ]
             }
           }
@@ -2295,6 +2613,48 @@
                 "{{repairId}}"
               ]
             }
+          }
+        },
+        {
+          "name": "Recriar reparo com descrição de um removido (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"{{repairDescription}}\",\n  \"unitValue\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            },
+            "description": "Usa a descrição do reparo removido acima. A descrição é única só entre os reparos ativos, então um reparo removido não bloqueia um novo com a mesma descrição."
           }
         }
       ]
@@ -3957,6 +4317,51 @@
             },
             "description": "Dispara 15 OUT de 1 unidade ao mesmo tempo. O lock da transação deve aceitar exatamente 10 e deixar o saldo em 0."
           }
+        },
+        {
+          "name": "Movimentação de estoque gera evento de auditoria",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                  "",
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "const stock = pm.response.json().data[0];",
+                  "send(\"GET\", \"/events/stock/\" + stock.id, pm.collectionVariables.get(\"accessToken\")).then((res) => {",
+                  "  pm.test(\"Existem eventos de estoque registrados (recebido: \" + res.json().length + \")\", () => pm.expect(res.json().length).to.be.above(0));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{stockProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{stockProductId}}\"}"
+                }
+              ]
+            },
+            "description": "Usa o produto da pasta Estoque, que já teve IN, OUT e ADJUSTMENT. Cada movimentação manual grava um evento `stock.adjusted` no histórico."
+          }
         }
       ]
     },
@@ -4312,6 +4717,39 @@
           }
         },
         {
+          "name": "Listar veículos com filtro userId inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (filtro userId não é UUID)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles?filters={\"userId\":\"abc\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"userId\":\"abc\"}"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Buscar veículo por ID",
           "event": [
             {
@@ -4393,6 +4831,77 @@
                 "abc"
               ]
             }
+          }
+        },
+        {
+          "name": "Busca por placa com hífen encontra o veículo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                  "const digit = () => Math.floor(Math.random() * 10);",
+                  "pm.variables.set(\"oldPlate\", letter() + letter() + letter() + \"-\" + digit() + digit() + digit() + digit());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (veículo com placa antiga criado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "if (pm.response.code === 201) {",
+                  "  const token = pm.collectionVariables.get(\"accessToken\");",
+                  "  const plate = pm.variables.get(\"oldPlate\");",
+                  "  const id = pm.response.json().id;",
+                  "  send(\"GET\", \"/vehicles?search=\" + encodeURIComponent(plate), token).then((res) => {",
+                  "    pm.test(\"Busca por \" + plate + \" encontra o veículo (recebido: \" + res.json().data.length + \")\", () => pm.expect(res.json().data.length).to.be.above(0));",
+                  "    return send(\"DELETE\", \"/vehicles/\" + id, token);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{oldPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            },
+            "description": "Cadastra com placa ABC-1234 (salva como ABC1234) e busca com hífen. O veículo é removido no final."
           }
         },
         {
@@ -4757,6 +5266,186 @@
               ]
             }
           }
+        },
+        {
+          "name": "Criar tipo de evento com código duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{eventTypeCode}}\",\n  \"name\": \"Duplicado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar tipo de evento com código inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"User.Created X\",\n  \"name\": \"Inválido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar tipo de evento inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/event-types/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar tipo de evento com ID não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/event-types/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar tipo de evento com nome vazio (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{eventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{eventTypeId}}"
+              ]
+            }
+          }
         }
       ]
     },
@@ -4834,13 +5523,594 @@
               ]
             }
           }
+        },
+        {
+          "name": "Registrar evento não permitido para a entidade (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"vehicle\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar evento com tipo inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventTypeCode\": \"nao.existe\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar evento com createdBy no corpo (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"usuario.fantasma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events"
+              ]
+            },
+            "description": "O autor do evento vem sempre do token. O campo `createdBy` não é aceito no corpo e a validação rejeita a requisição."
+          }
+        },
+        {
+          "name": "Client registrando evento em nome de outro (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"jose.silveira\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Client lendo auditoria (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/user/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "user",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar eventos com entityType inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/foo/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "foo",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar eventos com entityId não-UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/user/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "user",
+                "abc"
+              ]
+            }
+          }
         }
       ]
     },
     {
       "name": "Ordens de Serviço",
-      "description": "Requer login com role admin ou staff (leitura também aceita client). O fluxo encadeia o ciclo completo da OS usando o veículo criado em `Veículos` (`vehicleId`, dono `clientUserId`) e o serviço criado em `Tipos de Reparo/Serviço` (`repairId`), então rode essas pastas antes. Os IDs criados são salvos em `workOrderId` e `workOrderItemId`.\nA subpasta `Aprovação em HTML` cobre as rotas públicas do link do e-mail de orçamento: devolvem HTML e não usam token de login (o token do link é a credencial).",
+      "description": "Requer login com role admin ou staff (leitura também aceita client). A pasta é independente: os requests `Preparar` criam o cliente (com login próprio), o veículo, o serviço e a peça usados nas OS. O fluxo principal cobre abertura, itens, envio do orçamento com reserva de estoque, consulta e aprovação pelo próprio cliente, baixa do estoque, pagamento, execução, entrega e histórico. A subpasta `Recusa do orçamento` cobre a recusa com liberação da reserva, e `Aprovação em HTML` cobre as rotas públicas do link do e-mail.",
       "item": [
+        {
+          "name": "Preparar: cadastrar cliente da OS",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
+                  "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
+                  "const checkDigit = (base) => {",
+                  "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
+                  "  const rest = (sum * 10) % 11;",
+                  "  return rest === 10 ? 0 : rest;",
+                  "};",
+                  "digits.push(checkDigit(digits));",
+                  "digits.push(checkDigit(digits));",
+                  "pm.collectionVariables.set(\"osClientUsername\", \"carlos.lima.\" + Date.now());",
+                  "pm.variables.set(\"document\", digits.join(\"\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (cliente cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"osClientUserId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{osClientUsername}}\",\n  \"email\": \"{{osClientUsername}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"client\",\n  \"name\": \"Carlos Lima\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Cliente dono do veículo das OS desta pasta. A pasta não depende de dados das outras pastas."
+          }
+        },
+        {
+          "name": "Preparar: login do cliente da OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (login do cliente)\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"osClientToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{osClientUsername}}\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Token salvo em `osClientToken`, usado quando o próprio cliente consulta e decide a OS."
+          }
+        },
+        {
+          "name": "Preparar: cadastrar veículo do cliente",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                  "const digit = () => Math.floor(Math.random() * 10);",
+                  "pm.collectionVariables.set(\"osLicensePlate\", letter() + letter() + letter() + digit() + letter() + digit() + digit());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (veículo cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"osVehicleId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{osLicensePlate}}\",\n  \"model\": \"Onix\",\n  \"brand\": \"Chevrolet\",\n  \"year\": 2020,\n  \"color\": \"Prata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{osClientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{osClientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparar: cadastrar serviço",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"osRepairDescription\", \"Revisão de freios \" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (serviço cadastrado)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"osRepairId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"{{osRepairDescription}}\",\n  \"unitValue\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/repairs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "repairs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparar: cadastrar peça",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"osProductSku\", \"PASTILHA-\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (peça cadastrada)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"osProductId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{osProductSku}}\",\n  \"name\": \"Pastilha de freio\",\n  \"description\": \"Jogo de pastilhas dianteiras\",\n  \"productType\": \"PART\",\n  \"unit\": \"UNIT\",\n  \"cost\": 30,\n  \"salePrice\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparar: entrada de 10 peças no estoque",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (entrada registrada)\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Estoque com 10 peças disponíveis\", () => pm.expect(pm.response.json().stock.available).to.eql(10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{osProductId}}\",\n  \"movementType\": \"IN\",\n  \"quantity\": 10,\n  \"description\": \"Compra de pastilhas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stock/movements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock",
+                "movements"
+              ]
+            }
+          }
+        },
         {
           "name": "Abrir OS",
           "event": [
@@ -4874,7 +6144,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"observations\": \"Cliente relata ruído ao frear em baixa velocidade.\"\n}",
+              "raw": "{\n  \"vehicleId\": \"{{osVehicleId}}\",\n  \"observations\": \"Cliente relata ruído ao frear em baixa velocidade.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4890,7 +6160,7 @@
                 "work-orders"
               ]
             },
-            "description": "O cliente da OS é o dono do veículo. Rode `Veículos` antes para ter `vehicleId`."
+            "description": "O cliente da OS é o dono do veículo (`osClientUserId`)."
           }
         },
         {
@@ -5008,7 +6278,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\"\n}",
+              "raw": "{\n  \"vehicleId\": \"{{osVehicleId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5076,7 +6346,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/work-orders?page=1&limit=10&search={{licensePlate}}&sort=[{\"field\":\"createdAt\",\"order\":\"desc\"}]&filters={\"status\":\"received\"}",
+              "raw": "{{baseUrl}}/work-orders?page=1&limit=10&search={{osLicensePlate}}&sort=[{\"field\":\"createdAt\",\"order\":\"desc\"}]&filters={\"status\":\"received\"}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -5094,7 +6364,7 @@
                 },
                 {
                   "key": "search",
-                  "value": "{{licensePlate}}"
+                  "value": "{{osLicensePlate}}"
                 },
                 {
                   "key": "sort",
@@ -5251,7 +6521,7 @@
                   "    const item = body.items[body.items.length - 1];",
                   "    pm.expect(item).to.have.property(\"unitPrice\");",
                   "    pm.expect(item).to.have.property(\"subtotal\");",
-                  "    pm.expect(item.serviceId).to.equal(pm.collectionVariables.get(\"repairId\"));",
+                  "    pm.expect(item.serviceId).to.equal(pm.collectionVariables.get(\"osRepairId\"));",
                   "  });",
                   "}"
                 ]
@@ -5268,7 +6538,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
+              "raw": "{\n  \"serviceId\": \"{{osRepairId}}\",\n  \"quantity\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5355,7 +6625,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1.5\n}",
+              "raw": "{\n  \"productId\": \"{{osProductId}}\",\n  \"quantity\": 1.5\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5398,7 +6668,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 999999\n}",
+              "raw": "{\n  \"productId\": \"{{osProductId}}\",\n  \"quantity\": 999999\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5416,7 +6686,7 @@
                 "items"
               ]
             },
-            "description": "O produto de `Produtos` nasce com estoque 0, então a quantidade 999999 sempre estoura o saldo."
+            "description": "A peça da pasta tem 10 unidades disponíveis, então a quantidade 999999 estoura o saldo."
           }
         },
         {
@@ -5452,7 +6722,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
+              "raw": "{\n  \"serviceId\": \"{{osRepairId}}\",\n  \"quantity\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5599,96 +6869,6 @@
           }
         },
         {
-          "name": "Enviar orçamento sem itens (400)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 400 (OS sem itens)\", () => pm.response.to.have.status(400));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"awaiting_approval\",\n  \"reason\": \"Tentativa de enviar orçamento sem itens.\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-orders",
-                "{{workOrderId}}",
-                "status"
-              ]
-            },
-            "description": "Após \"Remover item\", a OS fica sem itens; aguardar aprovação exige pelo menos um."
-          }
-        },
-        {
-          "name": "Adicionar serviço novamente",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 201 (item re-adicionado)\", () => pm.response.to.have.status(201));",
-                  "",
-                  "if (pm.response.code === 201) pm.collectionVariables.set(\"workOrderItemId\", pm.response.json().items[pm.response.json().items.length - 1].id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"serviceId\": \"{{repairId}}\",\n  \"quantity\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-orders",
-                "{{workOrderId}}",
-                "items"
-              ]
-            },
-            "description": "Recria o item removido para o fluxo continuar com orçamento válido; `workOrderItemId` recebe o novo ID."
-          }
-        },
-        {
           "name": "Iniciar diagnóstico",
           "event": [
             {
@@ -5731,6 +6911,145 @@
                 "status"
               ]
             }
+          }
+        },
+        {
+          "name": "Enviar orçamento sem itens (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (OS sem itens)\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"awaiting_approval\",\n  \"reason\": \"Tentativa de enviar orçamento sem itens.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "A OS está em diagnóstico e sem itens (o item foi removido acima); enviar o orçamento exige pelo menos um item."
+          }
+        },
+        {
+          "name": "Adicionar serviço novamente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (item re-adicionado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"workOrderItemId\", pm.response.json().items[pm.response.json().items.length - 1].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{osRepairId}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            },
+            "description": "Recria o item removido para o fluxo continuar com orçamento válido; `workOrderItemId` recebe o novo ID."
+          }
+        },
+        {
+          "name": "Adicionar peça ao orçamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (peça adicionada)\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Orçamento com serviço e peça\", () => pm.expect(body.items).to.have.lengthOf(2));",
+                  "  pm.test(\"Total = R$ 150 (serviço) + 2 × R$ 45 (peça) = R$ 240\", () => pm.expect(body.totalPrice).to.eql(240));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{osProductId}}\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}",
+                "items"
+              ]
+            },
+            "description": "O preço unitário vem do preço de venda do produto no momento da inclusão. O saldo é só verificado aqui; a reserva acontece no envio do orçamento."
           }
         },
         {
@@ -5821,6 +7140,164 @@
               ]
             },
             "description": "O e-mail de aprovação é disparado neste momento (o token fica no e-mail; veja a subpasta `Aprovação em HTML`)."
+          }
+        },
+        {
+          "name": "Peças reservadas no envio do orçamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                  "const stock = pm.response.json().data[0];",
+                  "pm.test(\"Quantidade 10, reservado 2, disponível 8\", () => {",
+                  "  pm.expect(stock.quantity).to.eql(10);",
+                  "  pm.expect(stock.reserved).to.eql(2);",
+                  "  pm.expect(stock.available).to.eql(8);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{osProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{osProductId}}\"}"
+                }
+              ]
+            },
+            "description": "Ao enviar o orçamento, as peças da OS ficam reservadas: a quantidade não muda, mas o disponível cai."
+          }
+        },
+        {
+          "name": "Cliente lista as próprias OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (lista do cliente)\", () => pm.response.to.have.status(200));",
+                  "const orders = pm.response.json().data;",
+                  "pm.test(\"Só traz OS do próprio cliente\", () => orders.forEach((o) => pm.expect(o.clientId).to.equal(pm.collectionVariables.get(\"osClientUserId\"))));",
+                  "pm.test(\"Inclui a OS do fluxo\", () => pm.expect(orders.map((o) => o.id)).to.include(pm.collectionVariables.get(\"workOrderId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{osClientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cliente detalha a própria OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (detalhe da própria OS)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Aguardando aprovação\", () => pm.expect(pm.response.json().status).to.equal(\"awaiting_approval\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{osClientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cliente detalha OS alheia (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (OS de outro cliente)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-orders/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "work-orders",
+                "{{workOrderId}}"
+              ]
+            },
+            "description": "O cliente do seed (`agnaldo.guimaraes`) não é o dono da OS."
           }
         },
         {
@@ -5931,7 +7408,7 @@
           }
         },
         {
-          "name": "Aprovar orçamento",
+          "name": "Cliente aprova o próprio orçamento",
           "event": [
             {
               "listen": "test",
@@ -5955,7 +7432,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"reason\": \"Orçamento aprovado em nome do cliente.\"\n}",
+              "raw": "{\n  \"status\": \"approved\",\n  \"reason\": \"Orçamento aprovado pelo cliente.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5973,7 +7450,57 @@
                 "status"
               ]
             },
-            "description": "Decisão registrada pela equipe aqui; o próprio dono aprovaria pelo e-mail (subpasta `Aprovação em HTML`)."
+            "description": "O dono da OS decide pela API, com o próprio token. A decisão também pode vir pelo link do e-mail (subpasta `Aprovação em HTML`) ou ser registrada pela equipe.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{osClientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Baixa das peças na aprovação",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                  "const stock = pm.response.json().data[0];",
+                  "pm.test(\"Quantidade 8, reservado 0, disponível 8\", () => {",
+                  "  pm.expect(stock.quantity).to.eql(8);",
+                  "  pm.expect(stock.reserved).to.eql(0);",
+                  "  pm.expect(stock.available).to.eql(8);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{osProductId}}\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stock"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"productId\":\"{{osProductId}}\"}"
+                }
+              ]
+            },
+            "description": "Na aprovação, a reserva vira saída: a quantidade cai e o reservado volta a 0."
           }
         },
         {
@@ -6287,11 +7814,399 @@
           }
         },
         {
+          "name": "Histórico de eventos da OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (histórico)\", () => pm.response.to.have.status(200));",
+                  "const codes = pm.response.json().map((e) => e.eventTypeCode);",
+                  "pm.test(\"Registra abertura, itens, mudanças de status e pagamento\", () => {",
+                  "  pm.expect(codes).to.include.members([\"work_order.created\", \"work_order.item_added\", \"work_order.status_changed\", \"work_order.payment_confirmed\"]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/work_order/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "work_order",
+                "{{workOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recusa do orçamento",
+          "description": "Segunda OS para o mesmo veículo, recusada pelo cliente: a OS vai para `cancelled` e a reserva de estoque é liberada. Roda depois do fluxo principal (usa o saldo deixado por ele).",
+          "item": [
+            {
+              "name": "Abrir OS para recusa",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201 (OS aberta)\", () => pm.response.to.have.status(201));",
+                      "if (pm.response.code === 201) pm.collectionVariables.set(\"cancelWorkOrderId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vehicleId\": \"{{osVehicleId}}\",\n  \"observations\": \"Troca de pastilhas.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Iniciar diagnóstico",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (em diagnóstico)\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"under_diagnosis\",\n  \"reason\": \"Veículo encaminhado para diagnóstico.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders/{{cancelWorkOrderId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders",
+                    "{{cancelWorkOrderId}}",
+                    "status"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Adicionar 3 peças ao orçamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201 (peças adicionadas)\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"productId\": \"{{osProductId}}\",\n  \"quantity\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders/{{cancelWorkOrderId}}/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders",
+                    "{{cancelWorkOrderId}}",
+                    "items"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Enviar orçamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (orçamento enviado)\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"awaiting_approval\",\n  \"reason\": \"Orçamento enviado ao cliente.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders/{{cancelWorkOrderId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders",
+                    "{{cancelWorkOrderId}}",
+                    "status"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Peças reservadas",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                      "const stock = pm.response.json().data[0];",
+                      "pm.test(\"Quantidade 8, reservado 3, disponível 5\", () => {",
+                      "  pm.expect(stock.quantity).to.eql(8);",
+                      "  pm.expect(stock.reserved).to.eql(3);",
+                      "  pm.expect(stock.available).to.eql(5);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{osProductId}}\"}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stock"
+                  ],
+                  "query": [
+                    {
+                      "key": "filters",
+                      "value": "{\"productId\":\"{{osProductId}}\"}"
+                    }
+                  ]
+                },
+                "description": "As 3 peças desta OS ficam reservadas."
+              }
+            },
+            {
+              "name": "Cliente recusa o orçamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (orçamento recusado)\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Status cancelled\", () => pm.expect(pm.response.json().status).to.equal(\"cancelled\"));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{osClientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"cancelled\",\n  \"reason\": \"Valor acima do esperado.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders/{{cancelWorkOrderId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders",
+                    "{{cancelWorkOrderId}}",
+                    "status"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Reserva liberada na recusa",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
+                      "const stock = pm.response.json().data[0];",
+                      "pm.test(\"Quantidade 8, reservado 0, disponível 8\", () => {",
+                      "  pm.expect(stock.quantity).to.eql(8);",
+                      "  pm.expect(stock.reserved).to.eql(0);",
+                      "  pm.expect(stock.available).to.eql(8);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{osProductId}}\"}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stock"
+                  ],
+                  "query": [
+                    {
+                      "key": "filters",
+                      "value": "{\"productId\":\"{{osProductId}}\"}"
+                    }
+                  ]
+                },
+                "description": "Na recusa, a reserva é liberada e as peças voltam ao disponível, sem movimentação de saída."
+              }
+            },
+            {
+              "name": "Alterar status de OS cancelada (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 (OS cancelada não muda de status)\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"delivered\",\n  \"reason\": \"Tentativa de entregar OS cancelada.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-orders/{{cancelWorkOrderId}}/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-orders",
+                    "{{cancelWorkOrderId}}",
+                    "status"
+                  ]
+                },
+                "description": "`cancelled` é um status final: nenhuma transição sai dele."
+              }
+            }
+          ]
+        },
+        {
           "name": "Aprovação em HTML (rota pública)",
           "description": "Rotas do link do e-mail de orçamento: sem autenticação JWT (o token do link é a credencial) e respondem em HTML. Cole em `approvalToken` o token do e-mail recebido quando a OS entra em `awaiting_approval`. Sem token (ou token inválido), a resposta é 404 em HTML, já coberto pelos testes.",
           "item": [
             {
-              "name": "Abrir página de confirmação (GET)",
+              "name": "Abrir página de aprovação (GET)",
               "event": [
                 {
                   "listen": "test",
@@ -6324,7 +8239,7 @@
               }
             },
             {
-              "name": "Registrar decisão do orçamento (POST)",
+              "name": "Registrar aprovação (POST)",
               "event": [
                 {
                   "listen": "test",
@@ -6360,968 +8275,635 @@
                 },
                 "description": "Registra a decisão: `approve` move a OS para approved; `reject` cancela. O link vale uma única vez e expira após a OS sair de awaiting_approval."
               }
+            },
+            {
+              "name": "Abrir página de recusa (GET)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (token real) ou 404 (token vazio/inválido)\", () => pm.expect([200, 404]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-order-approvals/{{approvalToken}}/reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-order-approvals",
+                    "{{approvalToken}}",
+                    "reject"
+                  ]
+                },
+                "description": "Página de confirmação da recusa, com campo opcional de motivo. Só exibe; não altera a OS."
+              }
+            },
+            {
+              "name": "Registrar recusa (POST)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200 (token real) ou 404 (token vazio/inválido)\", () => pm.expect([200, 404]).to.include(pm.response.code));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/work-order-approvals/{{approvalToken}}/reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "work-order-approvals",
+                    "{{approvalToken}}",
+                    "reject"
+                  ]
+                },
+                "description": "Registra a recusa: a OS vai para `cancelled` e a reserva de estoque é liberada. O motivo é opcional.",
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "reason",
+                      "value": "Valor acima do esperado.",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
             }
           ]
         }
       ]
     },
     {
-      "name": "Bugs conhecidos (falham até corrigir)",
+      "name": "Estatísticas",
+      "description": "Indicadores das ordens de serviço por período (`GET /stats`), exclusivos do admin.",
       "item": [
         {
-          "name": "Autenticação",
-          "item": [
+          "name": "Estatísticas gerais",
+          "event": [
             {
-              "name": "Refresh concorrente com o mesmo token",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 200 (login)\", () => pm.response.to.have.status(200));",
-                      "",
-                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
-                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
-                      "  method,",
-                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
-                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
-                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
-                      "const refreshToken = pm.response.json().refreshToken;",
-                      "Promise.all([1, 2, 3].map(() => send(\"POST\", \"/auth/refresh\", \"\", { refreshToken })))",
-                      "  .then((responses) => {",
-                      "    const codes = responses.map((r) => r.code);",
-                      "    pm.test(\"Só 1 de 3 refreshes simultâneos pode passar (recebido: \" + codes.join(\", \") + \")\", () => pm.expect(codes.filter((c) => c === 200).length).to.equal(1));",
-                      "  });"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "auth": {
-                  "type": "noauth"
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"login\": \"jeremias.lopes\",\n  \"password\": \"password123\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Faz login e manda 3 refreshes ao mesmo tempo com o mesmo token. Hoje mais de um recebe 200 (revogação não atômica)."
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estatísticas)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Período padrão all\", () => pm.expect(body.period).to.equal(\"all\"));",
+                  "pm.test(\"Traz contagens e tempos médios\", () => {",
+                  "  pm.expect(body.stats).to.have.property(\"wo_started\");",
+                  "  pm.expect(body.stats).to.have.property(\"wo_completed\");",
+                  "  pm.expect(body.stats).to.have.property(\"avg_time_from_received\");",
+                  "  pm.expect(body.stats).to.have.property(\"avg_time_from_in_progress_to_completed\");",
+                  "});"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ]
+            },
+            "description": "Sem parâmetros, considera todas as OS. Cada estatística traz `name`, `value` e `hint`."
+          }
         },
         {
-          "name": "Usuários e permissões",
-          "item": [
+          "name": "Estatísticas da semana",
+          "event": [
             {
-              "name": "Buscar usuário com ID não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/users/abc",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "users",
-                    "abc"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Alterar role com userId não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"role\": \"client\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/permissions/users/abc/role",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "permissions",
-                    "users",
-                    "abc",
-                    "role"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Staff cadastrando funcionário (403)",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));",
-                      "if (digits.every((d) => d === digits[0])) digits[8] = (digits[8] + 1) % 10;",
-                      "const checkDigit = (base) => {",
-                      "  const sum = base.reduce((acc, d, i) => acc + d * (base.length + 1 - i), 0);",
-                      "  const rest = (sum * 10) % 11;",
-                      "  return rest === 10 ? 0 : rest;",
-                      "};",
-                      "digits.push(checkDigit(digits));",
-                      "digits.push(checkDigit(digits));",
-                      "pm.variables.set(\"uniq\", Date.now().toString());",
-                      "pm.variables.set(\"document\", digits.join(\"\"));"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 403 (hoje retorna 201)\", () => pm.response.to.have.status(403));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "{{staffToken}}",
-                      "type": "string"
-                    }
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"username\": \"func.staff.{{uniq}}\",\n  \"email\": \"func.staff.{{uniq}}@example.com\",\n  \"password\": \"password123\",\n  \"entityType\": \"employee\",\n  \"name\": \"Funcionário via Staff\",\n  \"documentType\": \"CPF\",\n  \"document\": \"{{document}}\",\n  \"phone\": \"(11) 97777-6666\",\n  \"jobTitle\": \"Mecânico\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/users",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "users"
-                  ]
-                },
-                "description": "A checagem compara o UUID do papel com \"staff\" e nunca bloqueia."
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estatísticas)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Período week\", () => pm.expect(pm.response.json().period).to.equal(\"week\"));"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stats?period=week",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week"
+                }
+              ]
+            },
+            "description": "Períodos aceitos: today, week, two-weeks, month, two-months, three-months, year, month-start, year-start, all e custom."
+          }
         },
         {
-          "name": "Estoque",
-          "item": [
+          "name": "Estatísticas por intervalo de datas",
+          "event": [
             {
-              "name": "Movimentação de estoque gera evento de auditoria",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 200 (consulta do estoque)\", () => pm.response.to.have.status(200));",
-                      "",
-                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
-                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
-                      "  method,",
-                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
-                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
-                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
-                      "const stock = pm.response.json().data[0];",
-                      "send(\"GET\", \"/events/stock/\" + stock.id, pm.collectionVariables.get(\"accessToken\")).then((res) => {",
-                      "  pm.test(\"Existem eventos de estoque registrados (recebido: \" + res.json().length + \")\", () => pm.expect(res.json().length).to.be.above(0));",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/stock?filters={\"productId\":\"{{stockProductId}}\"}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "stock"
-                  ],
-                  "query": [
-                    {
-                      "key": "filters",
-                      "value": "{\"productId\":\"{{stockProductId}}\"}"
-                    }
-                  ]
-                },
-                "description": "Usa o produto da pasta Estoque, que já teve IN, OUT e ADJUSTMENT. Hoje nenhum evento stock.* é gravado."
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);",
+                  "pm.variables.set(\"statsStartDate\", day(-30));",
+                  "pm.variables.set(\"statsEndDate\", day(0));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (estatísticas)\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Datas informadas viram período custom\", () => {",
+                  "  pm.expect(body.period).to.equal(\"custom\");",
+                  "  pm.expect(body.start_date).to.equal(pm.variables.get(\"statsStartDate\"));",
+                  "  pm.expect(body.end_date).to.equal(pm.variables.get(\"statsEndDate\"));",
+                  "});"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stats?start_date={{statsStartDate}}&end_date={{statsEndDate}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "{{statsStartDate}}"
+                },
+                {
+                  "key": "end_date",
+                  "value": "{{statsEndDate}}"
+                }
+              ]
+            },
+            "description": "`start_date` e `end_date` (YYYY-MM-DD) têm prioridade sobre `period`."
+          }
         },
         {
-          "name": "Veículos",
-          "item": [
+          "name": "Período inválido (400)",
+          "event": [
             {
-              "name": "Busca por placa com hífen encontra o veículo",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
-                      "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
-                      "const digit = () => Math.floor(Math.random() * 10);",
-                      "pm.variables.set(\"oldPlate\", letter() + letter() + letter() + \"-\" + digit() + digit() + digit() + digit());"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 201 (veículo com placa antiga criado)\", () => pm.response.to.have.status(201));",
-                      "",
-                      "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
-                      "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
-                      "  method,",
-                      "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
-                      "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
-                      "}, (err, res) => (err ? reject(err) : resolve(res))));",
-                      "if (pm.response.code === 201) {",
-                      "  const token = pm.collectionVariables.get(\"accessToken\");",
-                      "  const plate = pm.variables.get(\"oldPlate\");",
-                      "  const id = pm.response.json().id;",
-                      "  send(\"GET\", \"/vehicles?search=\" + encodeURIComponent(plate), token).then((res) => {",
-                      "    pm.test(\"Busca por \" + plate + \" encontra o veículo (recebido: \" + res.json().data.length + \")\", () => pm.expect(res.json().data.length).to.be.above(0));",
-                      "    return send(\"DELETE\", \"/vehicles/\" + id, token);",
-                      "  });",
-                      "}"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"license_plate\": \"{{oldPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "vehicles",
-                    "{{clientUserId}}"
-                  ]
-                },
-                "description": "Cadastra com placa ABC-1234 (salva como ABC1234) e busca com hífen. O veículo é removido no final."
-              }
-            },
-            {
-              "name": "Listar veículos com filtro userId inválido (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles?filters={\"userId\":\"abc\"}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "vehicles"
-                  ],
-                  "query": [
-                    {
-                      "key": "filters",
-                      "value": "{\"userId\":\"abc\"}"
-                    }
-                  ]
-                }
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (período inválido)\", () => pm.response.to.have.status(400));"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stats?period=decade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "decade"
+                }
+              ]
+            }
+          }
         },
         {
-          "name": "Reparos",
-          "item": [
+          "name": "Data em formato inválido (400)",
+          "event": [
             {
-              "name": "Buscar reparo com ID não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/repairs/abc",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "repairs",
-                    "abc"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Criar reparo com valor acima de numeric(10,2) (400)",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.variables.set(\"uniq\", Date.now().toString());"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"description\": \"Reparo caro {{uniq}}\",\n  \"unitValue\": 100000000\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/repairs",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "repairs"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Recriar reparo com descrição de um removido (201)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 201 (hoje retorna 500)\", () => pm.response.to.have.status(201));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"description\": \"{{repairDescription}}\",\n  \"unitValue\": 100\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/repairs",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "repairs"
-                  ]
-                },
-                "description": "Usa a descrição do reparo removido na pasta Tipos de Reparo/Serviço. A constraint UNIQUE não considera o soft delete."
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (data fora de YYYY-MM-DD)\", () => pm.response.to.have.status(400));"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stats?start_date=21-10-2026",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "21-10-2026"
+                }
+              ]
+            }
+          }
         },
         {
-          "name": "Tipos de evento e eventos",
-          "item": [
+          "name": "Estatísticas como staff (403)",
+          "event": [
             {
-              "name": "Criar tipo de evento com código duplicado (409)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 409 (hoje retorna 500)\", () => pm.response.to.have.status(409));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"code\": \"{{eventTypeCode}}\",\n  \"name\": \"Duplicado\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/event-types",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "event-types"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Criar tipo de evento com código inválido (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"code\": \"User.Created X\",\n  \"name\": \"Inválido\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/event-types",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "event-types"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Buscar tipo de evento inexistente (404)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 404 (hoje retorna 500)\", () => pm.response.to.have.status(404));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/event-types/00000000-0000-4000-8000-000000000000",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "event-types",
-                    "00000000-0000-4000-8000-000000000000"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Buscar tipo de evento com ID não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/event-types/abc",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "event-types",
-                    "abc"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Atualizar tipo de evento com nome vazio (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 200)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/event-types/{{eventTypeId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "event-types",
-                    "{{eventTypeId}}"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Registrar evento não permitido para a entidade (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"vehicle\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/events",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Registrar evento com tipo inexistente (404)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 404 (hoje retorna 500)\", () => pm.response.to.have.status(404));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"eventTypeCode\": \"nao.existe\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/events",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Registrar evento com createdBy inexistente (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"usuario.fantasma\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/events",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Client registrando evento em nome de outro (403)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 403 (hoje retorna 201)\", () => pm.response.to.have.status(403));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "{{clientToken}}",
-                      "type": "string"
-                    }
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"eventTypeCode\": \"user.updated\",\n  \"entityType\": \"user\",\n  \"entityId\": \"{{clientUserId}}\",\n  \"createdBy\": \"jose.silveira\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/events",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Client lendo auditoria (403)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 403 (hoje retorna 200)\", () => pm.response.to.have.status(403));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "{{clientToken}}",
-                      "type": "string"
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/events/user/{{clientUserId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events",
-                    "user",
-                    "{{clientUserId}}"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Listar eventos com entityType inválido (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/events/foo/{{clientUserId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events",
-                    "foo",
-                    "{{clientUserId}}"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Listar eventos com entityId não-UUID (400)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"Status 400 (hoje retorna 500)\", () => pm.response.to.have.status(400));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/events/user/abc",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "events",
-                    "user",
-                    "abc"
-                  ]
-                }
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (só admin)\", () => pm.response.to.have.status(403));"
+                ]
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estatísticas como client (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403 (só admin)\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stats"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resiliência da auditoria",
+      "item": [
+        {
+          "name": "Cadastrar veículo para o teste",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
+                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
+                  "const digit = () => Math.floor(Math.random() * 10);",
+                  "pm.variables.set(\"crashPlate\", letter() + letter() + letter() + digit() + letter() + digit() + digit());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (veículo criado)\", () => pm.response.to.have.status(201));",
+                  "",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"crashVehicleId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{clientUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quebrar o tipo vehicle.updated",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
+                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
+                  "  method,",
+                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
+                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
+                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
+                  "send(\"GET\", \"/event-types\", pm.collectionVariables.get(\"accessToken\")).then((res) => {",
+                  "  pm.collectionVariables.set(\"crashEventTypeId\", res.json().find((t) => t.code === \"vehicle.updated\").id);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tipo alterado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"client\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{crashEventTypeId}}"
+              ]
+            },
+            "description": "Faz a gravação do evento vehicle.updated falhar."
+          }
+        },
+        {
+          "name": "Atualizar veículo (dispara a falha na auditoria)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (veículo atualizado mesmo com a auditoria falhando)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{crashVehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Servidor continua no ar",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 1500);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (servidor continua no ar)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Confirma que a falha na auditoria do passo anterior não derrubou o servidor."
+          }
+        },
+        {
+          "name": "Restaurar o tipo vehicle.updated",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (tipo restaurado)\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"vehicle\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "event-types",
+                "{{crashEventTypeId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover veículo do teste",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (veículo removido)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicles",
+                "{{crashVehicleId}}"
+              ]
+            }
+          }
         }
       ],
-      "description": "Cada request aqui valida o comportamento CORRETO. Enquanto o bug existir, o teste falha; depois da correção, passa."
+      "description": "Confirma que uma falha num handler de auditoria não derruba o servidor nem a requisição: o erro é só registrado em log. Quebra temporariamente o tipo de evento `vehicle.updated`, atualiza um veículo e, no fim, restaura o tipo e remove o veículo do teste."
     },
     {
       "name": "Encerramento",
@@ -7457,291 +9039,6 @@
               ]
             },
             "description": "Revoga o refresh token. Rode Login (admin) novamente para continuar testando."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Crash de auditoria (desligado por padrão)",
-      "item": [
-        {
-          "name": "Cadastrar veículo para o teste",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const letters = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";",
-                  "const letter = () => letters[Math.floor(Math.random() * letters.length)];",
-                  "const digit = () => Math.floor(Math.random() * 10);",
-                  "pm.variables.set(\"crashPlate\", letter() + letter() + letter() + digit() + letter() + digit() + digit());"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 201 (veículo criado)\", () => pm.response.to.have.status(201));",
-                  "",
-                  "if (pm.response.code === 201) pm.collectionVariables.set(\"crashVehicleId\", pm.response.json().id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Preto\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/vehicles/{{clientUserId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "vehicles",
-                "{{clientUserId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Quebrar o tipo vehicle.updated",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const send = (method, path, token, body) => new Promise((resolve, reject) => pm.sendRequest({",
-                  "  url: pm.collectionVariables.get(\"baseUrl\") + path,",
-                  "  method,",
-                  "  header: { \"Content-Type\": \"application/json\", Authorization: \"Bearer \" + token },",
-                  "  body: body ? { mode: \"raw\", raw: JSON.stringify(body) } : undefined",
-                  "}, (err, res) => (err ? reject(err) : resolve(res))));",
-                  "send(\"GET\", \"/event-types\", pm.collectionVariables.get(\"accessToken\")).then((res) => {",
-                  "  pm.collectionVariables.set(\"crashEventTypeId\", res.json().find((t) => t.code === \"vehicle.updated\").id);",
-                  "});"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 200 (tipo alterado)\", () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"client\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "event-types",
-                "{{crashEventTypeId}}"
-              ]
-            },
-            "description": "Faz a gravação do evento vehicle.updated falhar."
-          }
-        },
-        {
-          "name": "Atualizar veículo (dispara a falha na auditoria)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 200 (resposta antes do crash)\", () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"license_plate\": \"{{crashPlate}}\",\n  \"model\": \"Corolla\",\n  \"brand\": \"Toyota\",\n  \"year\": 2022,\n  \"color\": \"Azul\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "vehicles",
-                "{{crashVehicleId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Servidor continua no ar",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "setTimeout(() => {}, 1500);"
-                ]
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 200 (hoje o processo morre)\", () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/users/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
-            },
-            "description": "Hoje falha com erro de conexão. Rode `docker restart backend` e depois os 2 próximos requests."
-          }
-        },
-        {
-          "name": "Restaurar o tipo vehicle.updated",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 200 (tipo restaurado)\", () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Veículo atualizado\",\n  \"allowedEntityTypes\": [\n    \"vehicle\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/event-types/{{crashEventTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "event-types",
-                "{{crashEventTypeId}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Remover veículo do teste",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 204 (veículo removido)\", () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/vehicles/{{crashVehicleId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "vehicles",
-                "{{crashVehicleId}}"
-              ]
-            }
-          }
-        }
-      ],
-      "description": "Reproduz o crash do servidor quando um handler de auditoria falha. Só roda com a variável `runCrashTest` = `true`.\n\nDepois do crash, rode `docker restart backend`, faça o Login (admin) e execute \"Restaurar o tipo vehicle.updated\" e \"Remover veículo do teste\". Sem restaurar, todo update de veículo derruba o servidor.",
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "if (pm.collectionVariables.get(\"runCrashTest\") !== \"true\") {",
-              "  pm.execution.skipRequest();",
-              "}"
-            ]
           }
         }
       ]
