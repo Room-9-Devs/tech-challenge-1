@@ -18,6 +18,14 @@ Cada relatório registra a branch e o commit testados, o ambiente, o passo a pas
 
 Os testes unitários e de integração ficam em [`backend/test`](../../backend/test). As instruções para rodá-los e gerar o relatório de cobertura estão no [README principal](../../README.md#testes).
 
+| Relatório | Data | O que comprova | Resultado |
+|---|---|---|---|
+| [Cobertura dos testes automatizados](cobertura-testes.md) | 22/10/2026 | Cobertura dos testes unitários (`npm run test:cov:unit`) com as exclusões do SonarQube, por camada e por domínio crítico, frente à meta de 80% do [ADR-013](../adr/adr-013-analise-estatica-sonarqube.md). | ✅ 784 testes, 86,25% de linhas; todos os domínios críticos acima de 80% |
+
 ## Análise de vulnerabilidades
 
-A análise é feita com o Trivy, no GitHub Actions ([`.github/workflows/trivy.yml`](../../.github/workflows/trivy.yml)) e localmente pelo script `npm run security:scan`. A decisão e as regras estão no [ADR-014](../adr/adr-014-analise-vulnerabilidades-trivy.md) e as instruções no [README principal](../../README.md#segurança-trivy).
+A análise é feita com o Trivy, no GitHub Actions ([`.github/workflows/trivy.yml`](../../.github/workflows/trivy.yml)) e localmente pelo script `npm run security:scan`. A decisão e as regras estão no [ADR-014](../adr/adr-014-analise-vulnerabilidades-trivy.md) e as instruções no [README principal](../../README.md#análise-de-vulnerabilidades-trivy).
+
+| Relatório | Data | O que comprova | Resultado |
+|---|---|---|---|
+| [Análise de vulnerabilidades com Trivy](analise-vulnerabilidades-trivy.md) | 22/10/2026 | Dependências (`package-lock.json`), *secrets*, configuração do `Dockerfile` e imagem Docker do backend (SO e pacotes Node.js), além das correções feitas desde a primeira análise. | ✅ 0 `HIGH`/`CRITICAL` com correção disponível |
