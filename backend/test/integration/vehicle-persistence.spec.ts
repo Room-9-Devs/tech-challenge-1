@@ -4,6 +4,8 @@ import { AppDataSource } from '@/infrastructure/database/typeorm/data-source';
 import { CreateAuthUsersSchema1704067200000 } from '@/infrastructure/database/typeorm/migrations/1704067200000-create-auth-users-schema';
 import { AddEmployeeDocuments1704067201000 } from '@/infrastructure/database/typeorm/migrations/1704067201000-add-employee-documents';
 import { CreateVehiclesTable1790815050000 } from '@/infrastructure/database/typeorm/migrations/1790815050000-create-vehicles-table';
+import { CreateEventsAndEventTypes1791499396508 } from '@/infrastructure/database/typeorm/migrations/1791499396508-create-events-and-event-types';
+import { UsersSoftDelete1792190000000 } from '@/infrastructure/database/typeorm/migrations/1792190000000-add-users-soft-delete';
 import { AddUserToVehiclesTable1790987850000 } from '@/infrastructure/database/typeorm/migrations/1790987850000-add-user-to-vehicles-table';
 import { backfillVehicleOwners } from '@/infrastructure/database/typeorm/backfill-vehicle-owners';
 import { TypeOrmUserRegistrationUnitOfWork } from '@/infrastructure/database/typeorm/typeorm-user-registration-unit-of-work';
@@ -65,6 +67,8 @@ databaseTests('PostgreSQL vehicle and user persistence regressions', () => {
         CreateAuthUsersSchema1704067200000,
         AddEmployeeDocuments1704067201000,
         CreateVehiclesTable1790815050000,
+        CreateEventsAndEventTypes1791499396508,
+        UsersSoftDelete1792190000000,
       ],
       migrationsRun: false,
       synchronize: false,
