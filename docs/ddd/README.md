@@ -69,7 +69,7 @@ A [Linguagem Ubíqua](linguagem-ubiqua.md) é o vocabulário compartilhado entre
 2. **Status da OS:** Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada, Entregue e Cancelada.
 3. **Atributos e valores:** Número da OS, Orçamento, Preço Total, Preço unitário, Subtotal, Valor do serviço, Custo e Preço de venda, Tipo de produto, Unidade de medida, Quantidade reservada e disponível, CPF/CNPJ, Placa e Telefone.
 4. **Processos e operações:** Abertura da OS, Inclusão de item, Mudança de status, Envio do orçamento, Aprovação e Recusa, Confirmação de pagamento, Reserva, Baixa e Liberação de estoque, Movimentação manual e Notificação do cliente.
-5. **Segurança e controle de acesso:** Papel, RBAC, Token de acesso (JWT), Refresh token e Link de aprovação.
+5. **Segurança e controle de acesso:** Papel, Token de acesso (JWT), Refresh token e Link de aprovação.
 
 ## Glossário
 
@@ -95,7 +95,7 @@ Como os principais termos do domínio aparecem na implementação ([`backend/src
 | Movimentação de Estoque | `StockMovement` (`IN`, `OUT`, `ADJUSTMENT`) | [`domain/entities/stock-movement.entity.ts`](../../backend/src/domain/entities/stock-movement.entity.ts) |
 | Reserva / Baixa de estoque | `Stock.reserve`, `Stock.consumeReservation`; eventos `stock.reserved`, `stock.consumed` | [`work-order-transaction.helpers.ts`](../../backend/src/application/use-cases/work-orders/work-order-transaction.helpers.ts) |
 | Evento | `DomainEvent`, `Event` | [`domain/events`](../../backend/src/domain/events), [`domain/entities/event.entity.ts`](../../backend/src/domain/entities/event.entity.ts) |
-| Papel (RBAC) | `admin`, `staff`, `client`; `@Roles` + `RolesGuard` | [`infrastructure/http/auth`](../../backend/src/infrastructure/http/auth) |
+| Papel | `admin`, `staff`, `client`; `@Roles` + `RolesGuard` | [`infrastructure/http/auth`](../../backend/src/infrastructure/http/auth) |
 
 Como os bounded contexts viraram componentes da API e como as entidades viraram tabelas:
 
