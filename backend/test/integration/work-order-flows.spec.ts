@@ -33,7 +33,7 @@ databaseTests('PostgreSQL work order integration flows', () => {
   }, 30000);
 
   afterAll(async () => {
-    await harness.close();
+    await harness?.close();
   }, 30000);
 
   async function readOrder(id: string) {

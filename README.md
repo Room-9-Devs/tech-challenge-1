@@ -452,7 +452,7 @@ Benefícios:
 ### Testes de integração
 
 Validam a persistência real com PostgreSQL. São opt-in e aceitam apenas a base local
-isolada `fiap_fipe_test` em `localhost:5433`. Criam e removem somente schemas temporários
+isolada `app_test` em `localhost:5433`. Criam e removem somente schemas temporários
 `regression_*`, sem alterar tabelas existentes:
 
 ```powershell

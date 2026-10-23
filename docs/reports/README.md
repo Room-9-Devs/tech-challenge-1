@@ -14,6 +14,14 @@ Executados contra a stack real (API NestJS e PostgreSQL no Docker), por requisi�
 
 Cada relatório registra a branch e o commit testados, o ambiente, o passo a passo e as respostas obtidas.
 
+## Testes de integração (banco real)
+
+Executados via use cases reais contra um PostgreSQL isolado (schema temporário `regression_*` com migrations aplicadas), sem HTTP, verificando o estado persistido por SQL. São opt-in (`RUN_DATABASE_INTEGRATION_TESTS=true`) contra a base `app_test` em `localhost:5433`.
+
+| Relatório | Data | O que comprova | Resultado |
+|---|---|---|---|
+| [Fluxos principais da Ordem de Serviço](integracao-fluxo-os.md) | 22/10/2026 | Ciclo completo da OS (criação → entrega) com reserva, baixa e liberação de estoque na decisão do cliente, pagamento obrigatório, rollback de inclusão e de reserva em concorrência, regras de transição/travamento de itens e isolamento entre clientes. | ✅ 7 testes (12 com a regressão de usuário/veículo), 0 falhas |
+
 ## Testes automatizados e cobertura
 
 Os testes unitários e de integração ficam em [`backend/test`](../../backend/test). As instruções para rodá-los e gerar o relatório de cobertura estão no [README principal](../../README.md#testes).

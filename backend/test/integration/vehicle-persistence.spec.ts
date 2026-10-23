@@ -37,12 +37,12 @@ databaseTests('PostgreSQL vehicle and user persistence regressions', () => {
     const options = AppDataSource.options;
     if (
       options.type !== 'postgres' ||
-      options.database !== 'fiap_fipe_test' ||
+      options.database !== 'app_test' ||
       !['localhost', '127.0.0.1'].includes(options.host) ||
       options.port !== 5433
     ) {
       throw new Error(
-        'Integration tests require the isolated local fiap_fipe_test database on port 5433',
+        'Integration tests require the isolated local app_test database on port 5433',
       );
     }
     admin = new DataSource({

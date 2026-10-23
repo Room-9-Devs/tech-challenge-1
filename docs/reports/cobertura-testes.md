@@ -21,7 +21,7 @@ npm run test:cov:unit
 | Relatório | `backend/coverage/` (`lcov.info` lido pelo SonarQube e HTML em `lcov-report/`) |
 | Exclusões | As mesmas do `backend/sonar-project.properties`: `main.ts`, `*.module.ts`, `data-source.ts`, migrations, seeds, scripts de banco e `backfill-*` |
 
-Os testes de integração (`test/integration`) são opt-in e exigem a base isolada `fiap_fipe_test` (ver [README](../../README.md#testes-de-integração)). Eles **não entram** nos números abaixo.
+Os testes de integração (`test/integration`) são opt-in e exigem a base isolada `app_test` (ver [README](../../README.md#testes-de-integração)). Eles **não entram** nos números abaixo.
 
 ## 2. Resultado da suíte
 
