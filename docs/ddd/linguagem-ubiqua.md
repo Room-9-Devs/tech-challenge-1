@@ -82,8 +82,7 @@ Termos relacionados a usuários, papéis, regras de acesso e autenticação.
 
 | # | Termo | Termo em código | Definição | Exemplo |
 |---|---|---|---|---|
-| 47 | **Papel (Role)** | `role` | Papel do usuário no sistema. Cada rota da API declara quais papéis podem acessá-la. | `admin`: tudo, inclusive indicadores e permissões; `staff`: atendimento, OS e estoque; `client`: as próprias OS |
-| 48 | **RBAC** | `@Roles` + `RolesGuard` | Role-Based Access Control: controle de acesso baseado em papéis. Um papel fora da lista da rota recebe 403. | `client` só aprova ou recusa o orçamento da própria OS |
-| 49 | **Token de acesso (JWT)** | `access_token` | Credencial de curta duração recebida no login e enviada no cabeçalho `Authorization` de cada requisição. | `Authorization: Bearer eyJhbGciOi...` |
-| 50 | **Refresh token** | `refresh_token` | Credencial opaca usada para obter um novo token de acesso sem fazer login de novo. É invalidada no logout. | `POST /auth/refresh` |
-| 51 | **Link de aprovação** | `work_order_approval_token` | Link de uso único enviado por e-mail para o cliente aprovar ou recusar o orçamento sem fazer login. Tem validade e deixa de valer quando a OS é decidida por qualquer caminho. | Link válido por 72 horas para a OS-0001/2026 |
+| 47 | **Papel (Role)** | `role` | Papel do usuário no sistema. Cada rota da API declara quais papéis podem acessá-la. Um papel fora da lista da rota recebe 403. | `admin`: tudo, inclusive indicadores e permissões; `staff`: atendimento, OS e estoque; `client`: as próprias OS |
+| 48 | **Token de acesso (JWT)** | `access_token` | Credencial de curta duração recebida no login e enviada no cabeçalho `Authorization` de cada requisição. | `Authorization: Bearer eyJhbGciOi...` |
+| 48 | **Refresh token** | `refresh_token` | Credencial opaca usada para obter um novo token de acesso sem fazer login de novo. É invalidada no logout. | `POST /auth/refresh` |
+| 49 | **Link de aprovação** | `work_order_approval_token` | Link de uso único enviado por e-mail para o cliente aprovar ou recusar o orçamento sem fazer login. Tem validade e deixa de valer quando a OS é decidida por qualquer caminho. | Link válido por 72 horas para a OS-0001/2026 |

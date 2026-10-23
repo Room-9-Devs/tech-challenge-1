@@ -83,7 +83,7 @@ erDiagram
 
 | Entidade | Tabela | Descrição |
 |---|---|---|
-| Papel | `roles` | Papel de acesso (RBAC): `admin`, `staff`, `client`. |
+| Papel | `roles` | Papel de acesso: `admin`, `staff`, `client`. |
 | Usuário | `users` | Credencial de acesso. Aponta para o perfil de Cliente ou de Colaborador. |
 | Cliente / Colaborador | `clients` / `employees` | Dados cadastrais do perfil (nome, CPF/CNPJ, telefone). |
 | Refresh Token | `refresh_tokens` | Sessão de login renovável. |

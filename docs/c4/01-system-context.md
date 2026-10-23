@@ -45,9 +45,9 @@ C4Context
 | **Cliente** | Pessoa física ou jurídica que solicita serviços na oficina. | É cadastrado pelo Atendente. Recebe por e-mail o orçamento, com links para aprovar ou recusar, e o aviso de conclusão do serviço. Aprova ou recusa o orçamento pelo link do e-mail (sem login) ou pela API (com login). Pela API, também acompanha as próprias OS e consulta o catálogo de serviços. |
 | **Atendente** | Colaborador que recebe o cliente e o veículo. | Identifica ou cadastra clientes e veículos; consulta o preço do veículo na tabela FIPE; cria a Ordem de Serviço; envia o orçamento para aprovação; confirma o pagamento; entrega o veículo. Mantém o catálogo de serviços, peças e insumos e o estoque. |
 | **Mecânico** | Colaborador que realiza o trabalho técnico. | Inicia e conclui o diagnóstico; adiciona serviços e itens à OS; inicia a execução; conclui o serviço. |
-| **Administrador** | Colaborador responsável pelo acesso ao sistema e pela gestão da oficina. | Gerencia usuários, papéis e permissões (RBAC): consulta e exclui usuários, lista os papéis disponíveis e altera o papel de um usuário. Consulta os indicadores das ordens de serviço. |
+| **Administrador** | Colaborador responsável pelo acesso ao sistema e pela gestão da oficina. | Gerencia usuários e papéis: consulta e exclui usuários, lista os papéis disponíveis e altera o papel de um usuário. Consulta os indicadores das ordens de serviço. |
 
-> Atendente, Mecânico e Administrador são **Colaboradores** da oficina. No sistema, cada pessoa é um **Usuário** com um **Papel** que define suas **Permissões** (RBAC): `admin` (Administrador), `staff` (Atendente e Mecânico) e `client` (Cliente). Todos se autenticam com JWT. A exceção é a aprovação do orçamento pelo link do e-mail, em que o token do link é a credencial.
+> Atendente, Mecânico e Administrador são **Colaboradores** da oficina. No sistema, cada pessoa é um **Usuário** com um **Papel** que define suas permissões: `admin` (Administrador), `staff` (Atendente e Mecânico) e `client` (Cliente). Todos se autenticam com JWT. A exceção é a aprovação do orçamento pelo link do e-mail, em que o token do link é a credencial.
 
 ### Sistema
 

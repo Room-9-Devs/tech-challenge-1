@@ -10,7 +10,7 @@ flowchart TB
   cliente["<b>Cliente</b><br/>[Pessoa]<br/>Pessoa física ou jurídica que solicita<br/>serviços para o seu veículo."]
 
   subgraph api["API — Container: NestJS 11, TypeScript"]
-    auth["<b>Identidade e Acesso</b><br/>[Componente: controllers + use cases]<br/>Login JWT, cadastro de clientes e<br/>colaboradores, papéis e Guards de RBAC."]
+    auth["<b>Identidade e Acesso</b><br/>[Componente: controllers + use cases]<br/>Login JWT, cadastro de clientes e<br/>colaboradores, papéis e Guards."]
     cadastros["<b>Cadastros</b><br/>[Componente: controllers + use cases]<br/>Veículos (placa, dono, preço FIPE)<br/>e catálogo de serviços."]
     os["<b>Ordem de Serviço</b><br/>[Componente: controllers + use cases]<br/>OS, itens, orçamento, pagamento<br/>e regras de transição de status."]
     aprov["<b>Aprovação do Orçamento</b><br/>[Componente: controller + use cases]<br/>Páginas HTML abertas pelo link do<br/>e-mail; token de uso único com validade."]
