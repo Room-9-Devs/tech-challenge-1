@@ -5,8 +5,13 @@ export class UserMapper {
   static toDomain(ormEntity: UserOrmEntity): User {
     return User.reconstitute({
       id: ormEntity.id,
-      name: ormEntity.name,
+      username: ormEntity.username,
       email: ormEntity.email,
+      password: ormEntity.password,
+      entityType: ormEntity.entityType,
+      entityId: ormEntity.entityId,
+      roleId: ormEntity.roleId,
+      deletedAt: ormEntity.deletedAt ?? null,
       createdAt: ormEntity.createdAt,
       updatedAt: ormEntity.updatedAt,
     });
@@ -15,8 +20,13 @@ export class UserMapper {
   static toPersistence(domainEntity: User): UserOrmEntity {
     const ormEntity = new UserOrmEntity();
     ormEntity.id = domainEntity.id;
-    ormEntity.name = domainEntity.name;
+    ormEntity.username = domainEntity.username;
     ormEntity.email = domainEntity.email;
+    ormEntity.password = domainEntity.password;
+    ormEntity.entityType = domainEntity.entityType;
+    ormEntity.entityId = domainEntity.entityId;
+    ormEntity.roleId = domainEntity.roleId;
+    ormEntity.deletedAt = domainEntity.deletedAt ?? null;
     ormEntity.createdAt = domainEntity.createdAt;
     ormEntity.updatedAt = domainEntity.updatedAt;
     return ormEntity;

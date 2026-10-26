@@ -1,6 +1,22 @@
 import { DataSource } from 'typeorm';
+import { loadEnvironment } from '../../../config/environment';
+import { ClientOrmEntity } from './entities/client.orm-entity';
+import { EmployeeOrmEntity } from './entities/employee.orm-entity';
+import { RefreshTokenOrmEntity } from './entities/refresh-token.orm-entity';
+import { RoleOrmEntity } from './entities/role.orm-entity';
 import { UserOrmEntity } from './entities/user.orm-entity';
-import { CreateUsersTable1704067200000 } from './migrations/1704067200000-create-users-table';
+import { VehicleOrmEntity } from './entities/vehicle.orm-entity';
+import { RepairOrmEntity } from './entities/repair.orm-entity';
+import { ProductOrmEntity } from './entities/product.orm-entity';
+import { StockOrmEntity } from './entities/stock.orm-entity';
+import { EventTypeOrmEntity } from './entities/event-type.orm-entity';
+import { EventOrmEntity } from './entities/event.orm-entity';
+import { StockMovementOrmEntity } from './entities/stock-movement.orm-entity';
+import { WorkOrderOrmEntity } from './entities/work-order.orm-entity';
+import { WorkOrderItemOrmEntity } from './entities/work-order-item.orm-entity';
+import { WorkOrderApprovalTokenOrmEntity } from './entities/work-order-approval-token.orm-entity';
+
+loadEnvironment();
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -9,8 +25,24 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'app',
-  entities: [UserOrmEntity],
-  migrations: [CreateUsersTable1704067200000],
+  entities: [
+    UserOrmEntity,
+    RoleOrmEntity,
+    ClientOrmEntity,
+    EmployeeOrmEntity,
+    RefreshTokenOrmEntity,
+    VehicleOrmEntity,
+    RepairOrmEntity,
+    ProductOrmEntity,
+    StockOrmEntity,
+    EventTypeOrmEntity,
+    EventOrmEntity,
+    StockMovementOrmEntity,
+    WorkOrderOrmEntity,
+    WorkOrderItemOrmEntity,
+    WorkOrderApprovalTokenOrmEntity,
+  ],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsRun: false,
   synchronize: false,
 });

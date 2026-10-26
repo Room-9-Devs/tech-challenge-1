@@ -1,119 +1,308 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from '@/infrastructure/http/controllers/users.controller';
-import { CreateUserUseCase } from '@/application/use-cases/users/create-user/create-user.use-case';
-import { FindUserUseCase } from '@/application/use-cases/users/find-user/find-user.use-case';
-import { ListUsersUseCase } from '@/application/use-cases/users/list-users/list-users.use-case';
 import { CreateUserRequestDto } from '@/infrastructure/http/dtos/create-user-request.dto';
+import { ListUsersQueryDto } from '@/infrastructure/http/dtos/list-users-query.dto';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { CurrentUser } from '@/application/use-cases/users/current-user.dto';
+import { FindCurrentUserUseCase } from '@/application/use-cases/users/find-current-user/find-current-user.use-case';
+import { FakeUserRepository } from '../../../../fakes/fake-user.repository';
+import { FakeRoleRepository } from '../../../../fakes/fake-role.repository';
+import { makeUser } from '../../../../fakes/user-fixture';
 
 describe('UsersController', () => {
-  let controller: UsersController;
-  let createUserUseCase: jest.Mocked<CreateUserUseCase>;
-  let findUserUseCase: jest.Mocked<FindUserUseCase>;
-  let listUsersUseCase: jest.Mocked<ListUsersUseCase>;
+  const makeController = (
+    create: unknown = {},
+    find: unknown = {},
+    list: unknown = {},
+    update: unknown = {},
+    remove: unknown = {},
+  ): UsersController => new UsersController(
+    create as never,
+    find as never,
+    list as never,
+    update as never,
+    remove as never,
+  );
 
-  beforeEach(async () => {
-    const mockCreateUserUseCase = {
-      execute: jest.fn(),
+  it('delegates client creation to the use case', async () => {
+    const create = {
+      execute: jest.fn().mockResolvedValue({ id: 'user-1' }),
     };
 
-    const mockFindUserUseCase = {
-      execute: jest.fn(),
+    const controller = makeController(create);
+
+    const input = {
+      username: 'cliente',
+      email: 'cliente@example.com',
+      password: 'password123',
+      entityType: 'client',
+      name: 'Cliente',
+      documentType: 'CPF',
+      document: '11111111111',
+      phone: '11999999999',
+    } as CreateUserRequestDto;
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
     };
 
-    const mockListUsersUseCase = {
-      execute: jest.fn(),
-    };
+    await expect(controller.create(input, currentUser)).resolves.toEqual({
+      id: 'user-1',
+    });
 
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
-      providers: [
-        {
-          provide: CreateUserUseCase,
-          useValue: mockCreateUserUseCase,
-        },
-        {
-          provide: FindUserUseCase,
-          useValue: mockFindUserUseCase,
-        },
-        {
-          provide: ListUsersUseCase,
-          useValue: mockListUsersUseCase,
-        },
-      ],
-    }).compile();
-
-    controller = module.get<UsersController>(UsersController);
-    createUserUseCase = module.get(CreateUserUseCase);
-    findUserUseCase = module.get(FindUserUseCase);
-    listUsersUseCase = module.get(ListUsersUseCase);
+    expect(create.execute).toHaveBeenCalledWith({ ...input, createdBy: 'admin' });
   });
 
-  describe('create', () => {
-    it('should call CreateUserUseCase and return the result', async () => {
-      const dto: CreateUserRequestDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-      };
+  it('delegates me, find and list operations', async () => {
+    const find = {
+      execute: jest.fn().mockResolvedValue({ id: 'user-1' }),
+    };
 
-      const expectedResult = {
-        id: 'uuid',
-        name: 'John Doe',
-        email: 'john@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+    const list = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
+    };
 
-      createUserUseCase.execute.mockResolvedValue(expectedResult);
+    const controller = makeController({}, find, list);
 
-      const result = await controller.create(dto);
+    await controller.me({ user: { sub: 'user-1' } });
+    await controller.findById('user-2');
+    await controller.findAll({
+      filters: JSON.stringify({ entityType: 'client' }),
+    } as ListUsersQueryDto);
+    await controller.findAll({} as ListUsersQueryDto);
 
-      expect(createUserUseCase.execute).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(expectedResult);
+    expect(find.execute).toHaveBeenNthCalledWith(1, { id: 'user-1' });
+    expect(find.execute).toHaveBeenNthCalledWith(2, { id: 'user-2' });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { entityType: 'client' },
+    });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: undefined,
     });
   });
 
-  describe('findById', () => {
-    it('should call FindUserUseCase and return the result', async () => {
-      const id = 'uuid';
+  it('allows profile.name in sort and filters', async () => {
+    const list = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
+    };
 
-      const expectedResult = {
-        id,
-        name: 'John Doe',
-        email: 'john@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+    const controller = makeController({}, {}, list);
 
-      findUserUseCase.execute.mockResolvedValue(expectedResult);
+    await controller.findAll({
+      sort: JSON.stringify([{ field: 'profile.name', order: 'asc' }]),
+      filters: JSON.stringify({ 'profile.name': 'José Silveira' }),
+    } as ListUsersQueryDto);
 
-      const result = await controller.findById(id);
-
-      expect(findUserUseCase.execute).toHaveBeenCalledWith({ id });
-      expect(result).toEqual(expectedResult);
+    expect(list.execute).toHaveBeenCalledWith({
+      sort: [{ field: 'profile.name', order: 'asc' }],
+      filters: { 'profile.name': 'José Silveira' },
     });
   });
 
-  describe('findAll', () => {
-    it('should call ListUsersUseCase and return the result', async () => {
-      const expectedResult = {
-        users: [
-          {
-            id: 'uuid-1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-      };
+  it('allows profile.document, cpf and cnpj in filters', async () => {
+    const list = {
+      execute: jest.fn().mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 10, totalItems: 0, totalPages: 1 },
+      }),
+    };
 
-      listUsersUseCase.execute.mockResolvedValue(expectedResult);
+    const controller = makeController({}, {}, list);
 
-      const result = await controller.findAll();
+    await controller.findAll({
+      filters: JSON.stringify({ 'profile.document': '11111111111' }),
+    } as ListUsersQueryDto);
 
-      expect(listUsersUseCase.execute).toHaveBeenCalled();
-      expect(result).toEqual(expectedResult);
+    await controller.findAll({
+      filters: JSON.stringify({ cpf: '11111111111' }),
+    } as ListUsersQueryDto);
+
+    await controller.findAll({
+      filters: JSON.stringify({ cnpj: '12345678000199' }),
+    } as ListUsersQueryDto);
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { 'profile.document': '11111111111' },
     });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { cpf: '11111111111' },
+    });
+
+    expect(list.execute).toHaveBeenCalledWith({
+      filters: { cnpj: '12345678000199' },
+    });
+  });
+
+  it('rejects employee creation by staff', async () => {
+    
+    const create = {execute: jest.fn(),};
+
+    const controller = makeController(create);
+
+    const input = {
+      entityType: 'employee',
+    } as CreateUserRequestDto;
+
+    const currentUser: CurrentUser = {
+      id: 'staff-1',
+      username: 'staff',
+      role: 'staff',
+      entityType: 'employee',
+    };
+
+    await expect(
+      controller.create(input, currentUser),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(create.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects employee creation when the real current user resolves to staff (regression USR-1)', async () => {
+    const users = new FakeUserRepository();
+    await users.save(makeUser({ id: 'staff-1', username: 'staff', roleId: 'role-staff' }));
+
+    const findCurrentUser = new FindCurrentUserUseCase(users, new FakeRoleRepository());
+
+    const create = { execute: jest.fn() };
+    const controller = makeController(create);
+
+    const currentUser = await findCurrentUser.execute('staff-1');
+    const input = {
+      entityType: 'employee',
+    } as CreateUserRequestDto;
+
+    expect(currentUser?.role).toBe('staff');
+
+    await expect(
+      controller.create(input, currentUser as CurrentUser),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(create.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects creation when there is no current user', async () => {
+    const create = { execute: jest.fn() };
+
+    const controller = makeController(create);
+
+    const input = {
+      username: 'cliente',
+      email: 'cliente@example.com',
+      password: 'password123',
+      entityType: 'client',
+      name: 'Cliente',
+      documentType: 'CPF',
+      document: '11111111111',
+      phone: '11999999999',
+    } as CreateUserRequestDto;
+
+    await expect(
+      controller.create(input, undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
+
+    expect(create.execute).not.toHaveBeenCalled();
+  });
+
+  it('allows administrator to create an employee', async () => {
+    const create = {
+      execute: jest.fn().mockResolvedValue({ id: 'employee-1' }),
+    };
+
+    const controller = makeController(create);
+
+    const input = {
+      entityType: 'employee',
+    } as CreateUserRequestDto;
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
+    };
+
+    await expect(controller.create(input, currentUser)).resolves.toEqual({
+      id: 'employee-1',
+    });
+
+    expect(create.execute).toHaveBeenCalledWith({ ...input, createdBy: 'admin' });
+  });
+
+  it('delegates user update to the use case (PATCH)', async () => {
+    const update = {
+      execute: jest.fn().mockResolvedValue({ id: 'user-1', username: 'novo' }),
+    };
+
+    const controller = makeController({}, {}, {}, update);
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
+    };
+
+    const dto = { username: 'novo' } as never;
+
+    await expect(
+      controller.update('user-1', dto, currentUser),
+    ).resolves.toEqual({ id: 'user-1', username: 'novo' });
+
+    expect(update.execute).toHaveBeenCalledWith({
+      id: 'user-1',
+      username: 'novo',
+      updatedBy: 'admin',
+    });
+  });
+
+  it('rejects update without current user', async () => {
+    const controller = makeController();
+
+    await expect(
+      controller.update('user-1', {} as never, undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('delegates user deletion to the use case (DELETE)', async () => {
+    const remove = {
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const controller = makeController({}, {}, {}, {}, remove);
+
+    const currentUser: CurrentUser = {
+      id: 'admin-1',
+      username: 'admin',
+      role: 'admin',
+      entityType: 'employee',
+    };
+
+    await expect(
+      controller.remove('user-1', currentUser),
+    ).resolves.toBeUndefined();
+
+    expect(remove.execute).toHaveBeenCalledWith({
+      id: 'user-1',
+      deletedBy: 'admin',
+    });
+  });
+
+  it('rejects deletion without current user', async () => {
+    const controller = makeController();
+
+    await expect(
+      controller.remove('user-1', undefined as unknown as CurrentUser),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });

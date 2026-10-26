@@ -1,8 +1,14 @@
 {
-  "name": "nestjs-clean-architecture-template",
+  "name": "tech-challenge",
   "version": "1.0.0",
-  "description": "Template base com NestJS + TypeScript + Clean Architecture + PostgreSQL + Docker",
-  "author": "",
+  "description": "API REST para gestão de oficina mecânica (clientes, veículos, serviços, peças, estoque e ordens de serviço), construída com NestJS, TypeScript, PostgreSQL, DDD e Clean Architecture — Tech Challenge da Fase 1 da pós-graduação SOAT da FIAP",
+  "contributors": [
+    "Felipe Santana",
+    "Julio Cavalcanti",
+    "Kevin Villanova",
+    "Matheus Andrell",
+    "Michel Lisboa"
+  ],
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -19,22 +25,38 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:unit": "jest --config jest.config.js --testPathPattern=unit",
     "test:integration": "jest --config jest.config.js --testPathPattern=integration",
+    "test:cov:unit": "jest --config jest.config.js --testPathPattern=unit --coverage",
+    "sonar": "sonar-scanner",
+    "security:scan": "node scripts/trivy-scan.js all",
+    "security:scan:fs": "node scripts/trivy-scan.js fs",
+    "security:scan:image": "node scripts/trivy-scan.js image",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/infrastructure/database/typeorm/data-source.ts",
+    "migration:generate:container": "npm run typeorm -- migration:generate -d src/infrastructure/database/typeorm/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/infrastructure/database/typeorm/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/infrastructure/database/typeorm/data-source.ts"
+    "migration:run:container": "npm run typeorm -- migration:run -d src/infrastructure/database/typeorm/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/infrastructure/database/typeorm/data-source.ts",
+    "migration:revert:container": "npm run typeorm -- migration:revert -d src/infrastructure/database/typeorm/data-source.ts",
+    "vehicles:backfill-owners": "ts-node -r tsconfig-paths/register src/infrastructure/database/scripts/backfill-vehicle-owners.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/run-seeds.ts",
+    "seed:container": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/run-seeds.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.2.3",
+    "@nestjs/jwt": "^12.0.2",
     "@nestjs/platform-express": "^11.2.3",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/typeorm": "^11.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "dotenv": "^18.0.5",
+    "eventemitter2": "^6.4.9",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.15.0",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.32.0",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.23",
     "uuid": "^11.0.0"
@@ -44,8 +66,10 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.2.3",
+    "@types/eventemitter2": "^2.2.1",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.15.0",
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^10.0.0",
@@ -58,6 +82,7 @@
     "jest": "^29.7.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.5.3",
+    "sonarqube-scanner": "5.0.1",
     "supertest": "^7.1.3",
     "ts-jest": "^29.3.2",
     "ts-loader": "^9.5.2",
@@ -70,25 +95,5 @@
     "body-parser": "^2.3.0",
     "lodash": "^4.17.21",
     "js-yaml": "^4.1.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": ".",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "src/**/*.(t|j)s"
-    ],
-    "coverageDirectory": "./coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
-    }
   }
 }
