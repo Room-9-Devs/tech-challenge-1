@@ -122,7 +122,7 @@ Registro imutável de cada ocorrência.
 | Código | Descrição | Metadados |
 |---|---|---|
 | `auth.login.succeeded` | Login bem-sucedido | `{ ip, userAgent }` |
-| `auth.login.failed` | Login falho | `{ username, reason }` |
+| `auth.login.failed` | Login falho | `{ username, reason, ip, userAgent }` |
 | `auth.logout.succeeded` | Logout realizado | `{ userId }` |
 
 ## Eventos Automáticos vs Manuais

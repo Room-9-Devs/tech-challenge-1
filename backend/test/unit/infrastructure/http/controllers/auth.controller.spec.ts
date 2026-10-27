@@ -1,13 +1,14 @@
 import { AuthController } from '@/infrastructure/http/auth/auth.controller';
 
 describe('AuthController', () => {
-  it('delegates login to the login use case', async () => {
+  it('delegates login to the login use case with the request origin', async () => {
     const login = { execute: jest.fn().mockResolvedValue({ accessToken: 'access', refreshToken: 'refresh' }) };
     const controller = new AuthController(login as never, {} as never, {} as never, {} as never);
     const input = { login: 'jose', password: 'password123' };
+    const request = { ip: '203.0.113.10', headers: { 'user-agent': 'PostmanRuntime/7.43.0' } };
 
-    await expect(controller.loginUser(input)).resolves.toEqual({ accessToken: 'access', refreshToken: 'refresh' });
-    expect(login.execute).toHaveBeenCalledWith(input);
+    await expect(controller.loginUser(request as never, input)).resolves.toEqual({ accessToken: 'access', refreshToken: 'refresh' });
+    expect(login.execute).toHaveBeenCalledWith({ ...input, ip: '203.0.113.10', userAgent: 'PostmanRuntime/7.43.0' });
   });
 
   it('delegates refresh and logout tokens', async () => {
