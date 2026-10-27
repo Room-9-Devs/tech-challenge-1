@@ -607,6 +607,7 @@ O índice completo está em [docs/README.md](docs/README.md):
 
 | Documento | Conteúdo |
 |---|---|
+| [Requisitos](docs/requirements/README.md) | Requisitos funcionais e não funcionais, regras de negócio, restrições de projeto e limitações conhecidas |
 | [DDD](docs/ddd/README.md) | Event Storming, modelo de domínio, eventos, Linguagem Ubíqua e glossário |
 | [C4](docs/c4/README.md) | Arquitetura em quatro níveis: contexto, containers, componentes e código |
 | [Modelo de dados](docs/database/README.md) | DER conceitual e DER físico |

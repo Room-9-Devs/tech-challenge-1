@@ -4,6 +4,7 @@ Documentação do **Sistema de Gestão da Oficina Mecânica**, o back-end (MVP) 
 
 | Pasta | Conteúdo |
 |---|---|
+| [requirements](requirements/README.md) | Requisitos funcionais, regras de negócio, requisitos não funcionais, restrições de projeto e limitações conhecidas, com a rastreabilidade para rotas, ADRs e evidências. |
 | [ddd](ddd/README.md) | Documentação de Domain-Driven Design: Event Storming, modelo de domínio (bounded contexts, Context Map, agregados, entidades e objetos de valor), eventos de domínio, Linguagem Ubíqua, glossário e relação com o código. |
 | [c4](c4/README.md) | Arquitetura no modelo C4: contexto, containers, componentes e código (componente Ordem de Serviço). |
 | [database](database/README.md) | Modelo de dados: DER conceitual e DER físico (PostgreSQL), referências polimórficas, constraints e índices. |
