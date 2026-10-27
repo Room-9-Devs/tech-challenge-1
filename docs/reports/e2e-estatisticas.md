@@ -12,7 +12,7 @@
 
 ## 2. Ambiente e método
 
-- Containers do `docker-compose.yml`: `backend` (NestJS, fuso UTC), `postgres` 18 (db `app`), `adminer` — volume do Postgres resetado do zero, com as seeds de base (12 serviços, 18 produtos, 9 tipos de evento) e de usuários (`seed:container`);
+- Containers do `docker-compose.yml`: `backend` (NestJS, fuso `America/Sao_Paulo`), `postgres` 18 (db `app`), `adminer` — volume do Postgres resetado do zero, com as seeds de base (12 serviços, 18 produtos, 9 tipos de evento) e de usuários (`seed:container`);
 - Execução **via API real**: fluxos de OS criados e conduzidos por requisições HTTP (método/payload descritos em [`e2e-ordem-de-servico.md`](e2e-ordem-de-servico.md), seção 9).
 
 ## 3. Cenário
