@@ -1,6 +1,6 @@
 # Relatório — Análise de Vulnerabilidades com Trivy
 
-**Data:** 22/10/2026 
+**Data:** 27/10/2026
 
 Resultado da análise de vulnerabilidades do backend com o Trivy, conforme a decisão e as regras do [ADR-014](../adr/adr-014-analise-vulnerabilidades-trivy.md).
 
@@ -17,9 +17,9 @@ npm run security:scan
 | Item | Valor |
 |---|---|
 | Trivy | v0.76.0 (imagem `aquasec/trivy:0.76.0`) |
-| Base de vulnerabilidades | v2, atualizada em 22/10/2026 07:10 UTC |
-| Imagem analisada | `tech-challenge-backend:local` (`sha256:a0bfe49dddc7…`), *build* de `backend/Dockerfile` |
-| Base da imagem | `node:24-alpine`: Alpine 3.24.2, Node.js v24.22.0, npm 11.21.1 |
+| Base de vulnerabilidades | v2, atualizada em 27/10/2026 13:12 UTC |
+| Imagem analisada | `tech-challenge-backend:local` (`sha256:ece12fa2fbfa…`), *build* de `backend/Dockerfile` |
+| Base da imagem | `node:24-alpine`: Alpine 3.24.3, Node.js v24.22.1, npm 11.21.1 |
 | Política | Falha em `HIGH`/`CRITICAL` com correção disponível; vulnerabilidades sem correção são ignoradas ([`trivy.yaml`](../../trivy.yaml)) |
 | Exceções aceitas | Nenhuma ([`.trivyignore`](../../.trivyignore) vazio) |
 
@@ -27,11 +27,11 @@ npm run security:scan
 
 | Análise | Alvo | Pacotes | Vulnerabilidades `HIGH`/`CRITICAL` | Secrets | Misconfig | Resultado |
 |---|---|---|---|---|---|---|
-| Repositório | `backend/package-lock.json` | 757 | **0** | — | — | ✅ |
+| Repositório | `backend/package-lock.json` | 758 | **0** | — | — | ✅ |
 | Repositório | `backend/Dockerfile` | — | — | — | **0** falhas (20 verificações) | ✅ |
 | Repositório | Todos os arquivos versionados | — | — | **0** | — | ✅ |
-| Imagem | SO (Alpine 3.24.2) | — | **0** | — | — | ✅ |
-| Imagem | Pacotes Node.js (app e npm global) | 914 | **0** | **0** | — | ✅ |
+| Imagem | SO (Alpine 3.24.3) | 19 | **0** | — | — | ✅ |
+| Imagem | Pacotes Node.js (app e npm global) | 961 | **0** | **0** | — | ✅ |
 
 ```
 ✅ Nenhum problema HIGH/CRITICAL encontrado.
@@ -43,18 +43,18 @@ Além da verificação, foi feita uma passada com **todas as severidades**, incl
 
 | Severidade | Vulnerabilidade | Pacote | Correção | Origem | Por que não bloqueia |
 |---|---|---|---|---|---|
-| HIGH | CVE-2026-93687 (DoS por padrões aninhados) | `braces` 3.0.3 | Sem correção publicada | `jest` e `nodemon` (dev) | Sem correção disponível |
 | HIGH | CVE-2026-85393 (falsificação de assinatura RSA) | `node-forge` 1.4.0 | Sem correção publicada | `sonarqube-scanner` (dev) | Sem correção disponível |
-| MEDIUM | CVE-2026-86472 (normalização de host) | `fast-uri` 3.1.7 | 3.1.8 | `@nestjs/cli` via `ajv` (dev) | Abaixo da linha de corte |
-| UNKNOWN | CVE-2026-107891 | `musl` / `musl-utils` 1.2.6-r2 | 1.2.6-r3 | SO da imagem | Severidade ainda não classificada |
+| MEDIUM | CVE-2026-111997 (DoS por excesso de caracteres `%` em endereços IP) | `ip-address` 10.7.2 | 10.7.4 | npm empacotado na imagem | Abaixo da linha de corte |
 
-O scan do repositório (`package-lock.json`) não encontrou nenhuma vulnerabilidade, de nenhuma severidade.
+O scan do repositório (`package-lock.json`, incluindo as dependências de desenvolvimento) não encontrou nenhuma vulnerabilidade, de nenhuma severidade. O SO da imagem também não tem nenhuma.
 
-Os três pacotes Node.js listados são **apenas dependências de desenvolvimento**: nenhum deles é carregado pela API em execução. Eles aparecem na imagem porque o `Dockerfile` atual é de desenvolvimento (`npm install` completo e `npm run start:dev`).
+Os dois pacotes acima **não são carregados pela API em execução**: o `node-forge` é dependência de desenvolvimento e aparece na imagem porque o `Dockerfile` atual é de desenvolvimento (`npm install` completo e `npm run start:dev`); o `ip-address` faz parte do npm instalado globalmente na imagem.
 
-## 4. Correções aplicadas antes desta análise
+## 4. Correções aplicadas
 
-A primeira execução do Trivy no projeto (19/10/2026) apontou os problemas abaixo, corrigidos na branch `20_utilizar_trivy`:
+### Primeira análise (19/10/2026)
+
+A primeira execução do Trivy no projeto apontou os problemas abaixo, corrigidos na branch `20_utilizar_trivy`:
 
 | Achado | Severidade | Correção |
 |---|---|---|
@@ -69,15 +69,24 @@ A primeira execução do Trivy no projeto (19/10/2026) apontou os problemas abai
 | | `package-lock.json` | `Dockerfile` | Imagem |
 |---|---|---|---|
 | **Antes** (19/10/2026) | 3 | 1 | 44 |
-| **Depois** (22/10/2026) | **0** | **0** | **0** |
+| **Depois** (27/10/2026) | **0** | **0** | **0** |
 
 *Achados `HIGH`/`CRITICAL` com correção disponível.*
+
+### Desde a análise anterior (22/10/2026)
+
+| Mudança | Efeito |
+|---|---|
+| Nova dependência `@nestjs/throttler` 6.5.0 (licença MIT), para limitar tentativas de login | Nenhuma vulnerabilidade; o `package-lock.json` passou de 757 para 758 pacotes |
+| Reconstrução da imagem: Alpine 3.24.2 → 3.24.3 e Node.js v24.22.0 → v24.22.1 | `musl`/`musl-utils` atualizados para 1.2.6-r3, corrigindo a CVE-2026-107891 |
+| `fast-uri` atualizado para 3.1.9 | Corrige a CVE-2026-86472 (normalização de host) |
+| CVE-2026-93687 (`braces` 3.0.3) | Deixou de ser apontada pela base de vulnerabilidades |
 
 ## 5. Observações
 
 1. **`docker-compose.yml`:** o Trivy não tem verificador de configuração para arquivos do Docker Compose. A análise de *misconfig* cobre o `Dockerfile`. O `docker-compose.yml` é analisado apenas pelo verificador de *secrets*.
-2. **Imagem de desenvolvimento:** uma imagem de produção em *multi-stage*, só com `npm ci --omit=dev` e `node dist/main`, eliminaria da imagem os três pacotes de desenvolvimento da seção 3.
-3. **`musl` 1.2.6-r3:** o `apk upgrade` do *build* aplica a correção assim que ela estiver no repositório do Alpine 3.24. Basta reconstruir a imagem.
+2. **Imagem de desenvolvimento:** uma imagem de produção em *multi-stage*, só com `npm ci --omit=dev` e `node dist/main`, eliminaria da imagem o `node-forge` da seção 3.
+3. **npm empacotado:** o `ip-address` 10.7.4 chegará à imagem quando uma nova versão do npm o incluir; a versão do npm é fixada no `Dockerfile`.
 4. **Execução contínua:** o workflow [`.github/workflows/trivy.yml`](../../.github/workflows/trivy.yml) repete esta verificação em todo *pull request*, em todo *push* para `main`/`develop` e semanalmente, com as actions fixadas por SHA (CVE-2026-33634).
 
 ## 6. Como reproduzir
@@ -94,4 +103,4 @@ O comando termina com código 1 se encontrar achados `HIGH`/`CRITICAL` com corre
 
 ## 7. Veredito
 
-**Aprovado.** Nenhuma vulnerabilidade `HIGH` ou `CRITICAL` com correção disponível foi encontrada no repositório nem na imagem do backend. Também não há *secrets* versionados nem falhas de configuração no `Dockerfile`. As únicas vulnerabilidades altas restantes estão em dependências de desenvolvimento e ainda não têm correção publicada.
+**Aprovado.** Nenhuma vulnerabilidade `HIGH` ou `CRITICAL` com correção disponível foi encontrada no repositório nem na imagem do backend. Também não há *secrets* versionados nem falhas de configuração no `Dockerfile`. A única vulnerabilidade alta restante está em uma dependência de desenvolvimento e ainda não tem correção publicada.
