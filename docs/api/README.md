@@ -19,7 +19,7 @@ Para chamar as rotas protegidas pelo Swagger, faça login em `POST /auth/login`,
 1. No Postman, use **Import** e selecione o arquivo da coleção.
 2. Confira a variável `baseUrl` da coleção (padrão `http://localhost:3000`).
 3. Rode **Autenticação > Login (admin)**: o token é salvo na variável `accessToken` e usado pelas rotas protegidas. Os logins de staff e client salvam `staffToken` e `clientToken`, usados nos testes de permissão.
-4. Os requests de criação geram dados únicos a cada execução e salvam os IDs criados em variáveis, usadas pelos requests seguintes. Rode as pastas na ordem da coleção, ou a coleção inteira pelo **Collection Runner**. A coleção pode ser executada várias vezes seguidas na mesma base.
+4. Os requests de criação geram dados únicos a cada execução e salvam os IDs criados em variáveis, usadas pelos requests seguintes. Rode as pastas na ordem da coleção, ou a coleção inteira pelo **Collection Runner**. A coleção pode ser executada várias vezes seguidas na mesma base. Login e renovação de token são limitados a 20 tentativas por minuto por IP, e cada execução faz 12 dessas chamadas: aguarde um minuto entre execuções ou aumente `AUTH_THROTTLE_LIMIT` no `backend/.env`.
 
 Observações sobre algumas pastas:
 

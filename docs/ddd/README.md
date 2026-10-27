@@ -11,6 +11,7 @@ O Event Storming e os diagramas foram feitos no Miro. Esta pasta guarda a versã
 | Documento | Arquivo | O que contém |
 |---|---|---|
 | Event Storming | [Criação da OS](event-storming-1-criacao-os.png) · [Acompanhamento da OS](event-storming-2-acompanhamento-os.png) · [Peças e insumos](event-storming-3-pecas-insumos.png) | Fluxos de criação da OS, acompanhamento da OS e gestão de peças e insumos, exportados do Miro |
+| Domain Storytelling | [domain-storytelling.md](domain-storytelling.md) | Histórias do atendimento: o processo atual (AS IS) e, com o sistema (TO BE), a abertura da OS, a aprovação e execução e a recusa do orçamento |
 | Modelo de Domínio | [modelo-de-dominio.md](modelo-de-dominio.md) · [Context Map (PNG)](context-map.png) | Bounded contexts, Context Map, agregados, entidades e objetos de valor |
 | Eventos de Domínio | [eventos-de-dominio.md](eventos-de-dominio.md) | Catálogo dos 33 eventos de domínio, metadados, registro de auditoria e reações (políticas) |
 | Linguagem Ubíqua | [linguagem-ubiqua.md](linguagem-ubiqua.md) | Termos do domínio por categoria, com o termo usado no código, definição e exemplo |

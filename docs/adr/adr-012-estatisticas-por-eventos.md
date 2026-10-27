@@ -2,7 +2,6 @@
 
 - **Status:** Aprovado
 - **Data:** 16/10/2026
-- **Atualização:** 17/10/2026 — estatísticas individuais por ordem de serviço
 - **Autor:** Kevin Villanova
 - **Revisores:** Felipe Santana, Julio Cavalcanti, Matheus Andrell, Michel Lisboa
 

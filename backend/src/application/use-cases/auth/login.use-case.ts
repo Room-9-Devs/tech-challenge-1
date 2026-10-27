@@ -10,7 +10,7 @@ import { TOKEN_SERVICE, TokenService } from '@/application/ports/token-service.p
 import { DOMAIN_EVENT_PUBLISHER, DomainEventPublisher } from '@/application/ports/domain-event-publisher.port';
 import { AuthLoginSucceededEvent, AuthLoginFailedEvent } from '@/domain/events/auth.events';
 
-export interface LoginInput { login: string; password: string; }
+export interface LoginInput { login: string; password: string; ip?: string; userAgent?: string; }
 export interface LoginOutput { accessToken: string; refreshToken: string; expiresIn: number; user: { id: string; username: string; email: string; role: string; entityType: string; }; }
 
 const DUMMY_PASSWORD_HASH = `scrypt$${'0'.repeat(32)}$${'0'.repeat(128)}`;
@@ -37,6 +37,8 @@ export class LoginUseCase {
         new AuthLoginFailedEvent('00000000-0000-0000-0000-000000000000', undefined, {
           username: input.login,
           reason: 'invalid_credentials',
+          ip: input.ip,
+          userAgent: input.userAgent,
         }),
       );
       throw new AuthenticationError();
@@ -49,8 +51,8 @@ export class LoginUseCase {
 
     await this.eventPublisher.publish(
       new AuthLoginSucceededEvent(user.id, user.username, {
-        ip: undefined,
-        userAgent: undefined,
+        ip: input.ip,
+        userAgent: input.userAgent,
       }),
     );
 

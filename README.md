@@ -244,6 +244,7 @@ cp .env.example .env
 | Variável | Uso |
 |---|---|
 | `JWT_SECRET` | Obrigatória. Segredo de assinatura dos tokens JWT. |
+| `AUTH_THROTTLE_LIMIT` | Opcional. Tentativas por minuto, por IP, em `POST /auth/login` e `POST /auth/refresh` (padrão 20); acima disso, a API responde 429. |
 | `DATABASE_*` | Conexão com o PostgreSQL. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Envio de e-mails pelo Resend. Sem chave, a aplicação funciona normalmente, mas não envia e-mails. |
 | `EMAIL_REDIRECT_TO` | Opcional. Envia todos os e-mails para este endereço em vez do cliente (ex.: avaliação do projeto). |
@@ -593,6 +594,7 @@ O comando sai com código 1 se houver achados `HIGH`/`CRITICAL`. A primeira exec
 A documentação de Domain-Driven Design está em [docs/ddd](docs/ddd/README.md):
 
 - **Event Storming** dos fluxos de criação da OS, acompanhamento da OS e gestão de peças e insumos
+- **Domain Storytelling** do atendimento atual (AS IS) e com o sistema (TO BE)
 - **Modelo de Domínio**: bounded contexts, Context Map, agregados, entidades e objetos de valor
 - **Eventos de Domínio**: catálogo dos eventos publicados pelo código
 - **Linguagem Ubíqua** e **Glossário**
@@ -606,10 +608,12 @@ O índice completo está em [docs/README.md](docs/README.md):
 
 | Documento | Conteúdo |
 |---|---|
+| [Requisitos](docs/requirements/README.md) | Requisitos funcionais e não funcionais, regras de negócio, restrições de projeto e limitações conhecidas |
 | [DDD](docs/ddd/README.md) | Event Storming, modelo de domínio, eventos, Linguagem Ubíqua e glossário |
 | [C4](docs/c4/README.md) | Arquitetura em quatro níveis: contexto, containers, componentes e código |
 | [Modelo de dados](docs/database/README.md) | DER conceitual e DER físico |
 | [ADRs](docs/adr/README.md) | As 14 decisões de arquitetura |
+| [DAS](docs/das/das-001-sistema-gestao-oficina.md) | Design Approval Sheet: escopo, arquitetura, diagrama de sequência, riscos e mitigações e checklist de qualidade |
 | [API](docs/api/README.md) | Swagger, coleção do Postman e usuários de demonstração |
 | [Relatórios](docs/reports/README.md) | Relatórios de testes E2E e evidências de qualidade e segurança |
 

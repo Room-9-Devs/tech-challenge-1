@@ -18,7 +18,7 @@ export class AuthLoginFailedEvent extends DomainEvent {
   constructor(
     readonly entityId: string,
     readonly createdBy: string | undefined,
-    readonly metadata: { username: string; reason: string },
+    readonly metadata: { username: string; reason: string; ip?: string; userAgent?: string },
   ) {
     super();
   }

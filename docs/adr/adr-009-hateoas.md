@@ -2,7 +2,6 @@
 
 - **Status:** Aprovado
 - **Data:** 09/10/2026
-- **Atualização:** 18/10/2026 — padrão estendido às ordens de serviço
 - **Autor:** Felipe Santana
 - **Revisores:** Julio Cavalcanti, Kevin Villanova, Matheus Andrell, Michel Lisboa
 

@@ -4,10 +4,12 @@ Documentação do **Sistema de Gestão da Oficina Mecânica**, o back-end (MVP) 
 
 | Pasta | Conteúdo |
 |---|---|
-| [ddd](ddd/README.md) | Documentação de Domain-Driven Design: Event Storming, modelo de domínio (bounded contexts, Context Map, agregados, entidades e objetos de valor), eventos de domínio, Linguagem Ubíqua, glossário e relação com o código. |
+| [requirements](requirements/README.md) | Requisitos funcionais, regras de negócio, requisitos não funcionais, restrições de projeto e limitações conhecidas, com a rastreabilidade para rotas, ADRs e evidências. |
+| [ddd](ddd/README.md) | Documentação de Domain-Driven Design: Event Storming, Domain Storytelling, modelo de domínio (bounded contexts, Context Map, agregados, entidades e objetos de valor), eventos de domínio, Linguagem Ubíqua, glossário e relação com o código. |
 | [c4](c4/README.md) | Arquitetura no modelo C4: contexto, containers, componentes e código (componente Ordem de Serviço). |
 | [database](database/README.md) | Modelo de dados: DER conceitual e DER físico (PostgreSQL), referências polimórficas, constraints e índices. |
 | [adr](adr/README.md) | Architecture Decision Records: as 14 decisões de arquitetura, como framework, banco de dados, arquitetura, e-mails, HATEOAS, reserva de estoque e análise de vulnerabilidades. |
+| [das](das/das-001-sistema-gestao-oficina.md) | Design Approval Sheet: objetivo, escopo incluído e excluído, tecnologias, arquitetura, diagrama de sequência do fluxo de orçamento, riscos e mitigações e checklist de qualidade. |
 | [api](api/README.md) | Uso da API: Swagger/OpenAPI, coleção do Postman e usuários de demonstração. |
 | [reports](reports/README.md) | Evidências de funcionamento: relatórios de testes E2E, cobertura dos testes e análise de vulnerabilidades. |
 
