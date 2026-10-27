@@ -594,6 +594,7 @@ O comando sai com código 1 se houver achados `HIGH`/`CRITICAL`. A primeira exec
 A documentação de Domain-Driven Design está em [docs/ddd](docs/ddd/README.md):
 
 - **Event Storming** dos fluxos de criação da OS, acompanhamento da OS e gestão de peças e insumos
+- **Domain Storytelling** do atendimento atual (AS IS) e com o sistema (TO BE)
 - **Modelo de Domínio**: bounded contexts, Context Map, agregados, entidades e objetos de valor
 - **Eventos de Domínio**: catálogo dos eventos publicados pelo código
 - **Linguagem Ubíqua** e **Glossário**
