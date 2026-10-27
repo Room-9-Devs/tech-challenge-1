@@ -2,7 +2,6 @@
 
 - **Status:** Aprovado
 - **Data:** 02/10/2026
-- **Atualização:** 14/10/2026 — envio passou a ser disparado por eventos de domínio
 - **Autor:** Julio Cavalcanti
 - **Revisores:** Felipe Santana, Kevin Villanova, Matheus Andrell, Michel Lisboa
 
