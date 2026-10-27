@@ -612,6 +612,7 @@ O índice completo está em [docs/README.md](docs/README.md):
 | [C4](docs/c4/README.md) | Arquitetura em quatro níveis: contexto, containers, componentes e código |
 | [Modelo de dados](docs/database/README.md) | DER conceitual e DER físico |
 | [ADRs](docs/adr/README.md) | As 14 decisões de arquitetura |
+| [DAS](docs/das/das-001-sistema-gestao-oficina.md) | Design Approval Sheet: escopo, arquitetura, diagrama de sequência, riscos e mitigações e checklist de qualidade |
 | [API](docs/api/README.md) | Swagger, coleção do Postman e usuários de demonstração |
 | [Relatórios](docs/reports/README.md) | Relatórios de testes E2E e evidências de qualidade e segurança |
 
