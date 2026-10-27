@@ -64,7 +64,7 @@ Cliente, Atendente, Mecânico e Administrador, conforme o [Diagrama de Contexto]
 
 ## Execução
 
-Os containers da solução são orquestrados via **Docker Compose** ([docker-compose.yml](../../docker-compose.yml)), na rede `app-network`, com as variáveis de ambiente lidas de `backend/.env` (modelo em `backend/.env.example`). Os containers usam o fuso `America/Sao_Paulo`.
+Os containers da solução são orquestrados via **Docker Compose** ([docker-compose.yml](../../docker-compose.yml)), na rede `app-network`, com as variáveis de ambiente lidas de `backend/.env` (modelo em `backend/.env.example`). Os containers usam o fuso `America/Sao_Paulo`. O [Diagrama de Implantação](05-deployment.md) mostra os nós, as imagens, as portas e os volumes.
 
 - `backend`: API, construída a partir do `backend/Dockerfile` (`node:24-alpine`, executada sem root). Roda em modo de desenvolvimento (`start:dev`, com watch), com o código montado como volume. Só sobe depois que o banco está saudável (healthcheck).
 - `postgres`: imagem `postgres:18-alpine`, com volume persistente `postgres_data`.
@@ -90,6 +90,7 @@ Variáveis de ambiente relevantes para os containers:
 ## Referências
 
 - [C4 — Nível 1: Diagrama de Contexto](01-system-context.md)
+- [C4 — Diagrama de Implantação](05-deployment.md)
 - [ADR-001 — Escolha do Framework do Backend](../adr/adr-001-framework-backend.md)
 - [ADR-002 — Escolha do Banco de Dados Principal](../adr/adr-002-banco-dados.md)
 - [ADR-003 — Escolha da Arquitetura da Aplicação](../adr/adr-003-arquitetura.md)
