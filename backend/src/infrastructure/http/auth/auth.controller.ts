@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Patch, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
 import { LoginUseCase } from '@/application/use-cases/auth/login.use-case';
 import { LogoutUseCase } from '@/application/use-cases/auth/logout.use-case';
@@ -15,19 +16,25 @@ export class AuthController {
   constructor(private readonly login: LoginUseCase, private readonly refresh: RefreshTokenUseCase, private readonly logout: LogoutUseCase, private readonly changePassword: ChangePasswordUseCase) { }
 
   @Post('login')
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna os tokens de acesso e de atualização.' })
   @ApiBody({ type: LoginRequestDto })
   @ApiResponse({ status: HttpStatus.OK, description: 'Tokens de autenticação retornados.', type: LoginResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Credenciais inválidas.' })
-  loginUser(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> { return this.login.execute(dto); }
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Limite de tentativas por minuto excedido.' })
+  loginUser(@Req() request: Request, @Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
+    return this.login.execute({ ...dto, ip: request.ip, userAgent: request.headers['user-agent'] });
+  }
 
   @Post('refresh')
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Atualizar token', description: 'Rotaciona o refresh token e retorna um novo token de acesso.' })
   @ApiBody({ type: RefreshTokenRequestDto })
   @ApiResponse({ status: HttpStatus.OK, description: 'Tokens atualizados.', type: RefreshTokenResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Refresh token inválido ou expirado.' })
+  @ApiResponse({ status: HttpStatus.TOO_MANY_REQUESTS, description: 'Limite de tentativas por minuto excedido.' })
   refreshToken(@Body() dto: RefreshTokenRequestDto): Promise<RefreshTokenResponseDto> { return this.refresh.execute(dto.refreshToken); }
 
   @Post('logout')

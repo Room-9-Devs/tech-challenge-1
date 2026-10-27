@@ -79,6 +79,7 @@ Variáveis de ambiente relevantes para os containers:
 | Variável | Uso |
 |---|---|
 | `JWT_SECRET` | Obrigatória. A API não sobe sem ela. |
+| `AUTH_THROTTLE_LIMIT` | Opcional. Tentativas por minuto, por IP, no login e na renovação de token (padrão 20). |
 | `DATABASE_*` | Conexão com o PostgreSQL. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Envio de e-mails pelo Resend. |
 | `EMAIL_REDIRECT_TO` | Opcional. Envia todos os e-mails para este endereço em vez do cliente (ex.: avaliação do projeto). |

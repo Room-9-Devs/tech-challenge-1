@@ -244,6 +244,7 @@ cp .env.example .env
 | Variável | Uso |
 |---|---|
 | `JWT_SECRET` | Obrigatória. Segredo de assinatura dos tokens JWT. |
+| `AUTH_THROTTLE_LIMIT` | Opcional. Tentativas por minuto, por IP, em `POST /auth/login` e `POST /auth/refresh` (padrão 20); acima disso, a API responde 429. |
 | `DATABASE_*` | Conexão com o PostgreSQL. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Envio de e-mails pelo Resend. Sem chave, a aplicação funciona normalmente, mas não envia e-mails. |
 | `EMAIL_REDIRECT_TO` | Opcional. Envia todos os e-mails para este endereço em vez do cliente (ex.: avaliação do projeto). |
