@@ -10,8 +10,9 @@ Diagramas de arquitetura do **Sistema de Gestão da Oficina Mecânica** no [mode
 | 2 — Containers | [02-container.md](02-container.md) | [PNG](02-container.png) | As unidades executáveis: a API (NestJS) e o banco (PostgreSQL), com as tecnologias, a comunicação e a execução via Docker Compose. |
 | 3 — Componentes | [03-component.md](03-component.md) | [PNG](03-component.png) | Os componentes da API por bounded context, as regras de acesso por papel, os eventos de domínio e as transações. |
 | 4 — Código | [04-code.md](04-code.md) | [Agregado](04-code-agregado.png) · [Mudança de status](04-code-mudanca-status.png) | As classes do componente Ordem de Serviço: o agregado e o fluxo de mudança de status, do controller ao banco e ao e-mail. |
+| Complementar — Implantação | [05-deployment.md](05-deployment.md) | [PNG](05-deployment.png) | Onde os containers são executados: Docker Compose local (imagens, portas, volumes e rede), GitHub Actions e serviços externos. |
 
-A ordem de leitura recomendada é do nível 1 ao 4. Cada documento traz a explicação dos elementos e as referências para os ADRs e para a documentação DDD.
+A ordem de leitura recomendada é do nível 1 ao 4; o diagrama de implantação complementa o nível 2. Cada documento traz a explicação dos elementos e as referências para os ADRs e para a documentação DDD.
 
 > **Nível 4 parcial.** No modelo C4, o nível de código é opcional e recomendado só para os componentes mais importantes, porque muda junto com o código. Por isso ele cobre apenas a **Ordem de Serviço**, o domínio principal do sistema.
 
@@ -22,6 +23,7 @@ A ordem de leitura recomendada é do nível 1 ao 4. Cada documento traz a explic
 | 1 e 2 | `C4Context` / `C4Container` | Sintaxe C4 nativa do Mermaid, com posicionamento ajustado por `UpdateRelStyle`. |
 | 3 | `flowchart` com as cores do C4 | Com muitas relações, o `C4Component` gera sobreposições; o `flowchart` organiza o layout automaticamente. |
 | 4 | `classDiagram` (UML) | Estereótipos `<<Aggregate Root>>`, `<<Entity>>`, `<<port>>` etc. identificam o papel de cada classe. |
+| Implantação | `C4Deployment` | Sintaxe C4 nativa do Mermaid, com nós aninhados e posicionamento ajustado por `UpdateRelStyle`. |
 
 Os diagramas ficam em blocos Mermaid dentro dos `.md`, renderizados pelo próprio GitHub. Os PNGs são exportações desses blocos, para consulta fora do GitHub e para a entrega.
 

@@ -163,7 +163,7 @@ Eventos de estoque do filtro de ar (ordem cronológica, via `GET /events/stock/:
 4. **Cancelamento devolve o saldo** — `cancelled` em `awaiting_approval` restaura `available` sem alterar `quantity` e sem movement.
 5. **Preço congelado** — `unitPrice` capturado do catálogo na adição do item.
 6. **Travas de papel e pagamento** — conforme seção 6.
-7. **Maquina de estados e validações de entrada** — transição ilegal e `reason` ausente rejeitados.
+7. **Máquina de estados e validações de entrada** — transição ilegal e `reason` ausente rejeitados.
 8. **Auditoria completa** — 11 eventos de OS no cenário A + eventos de estoque nos três cenários, todos com timestamp, autor e metadata.
 
 ## 9. Requisições de referência (reexecução)

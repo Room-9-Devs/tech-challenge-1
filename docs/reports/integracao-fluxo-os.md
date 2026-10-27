@@ -3,8 +3,7 @@
 > **Data da execução:** 22/10/2026
 > **Branch:** `test/integration-work-order-flows` (2 commits à frente da `develop`: testes + relatório)
 > **Ambiente:** Windows 11, Node.js v24.13.0, Jest 29.7 (`ts-jest`), PostgreSQL `postgres:18-alpine` em Docker (`localhost:5433`, database isolado `app_test`)
-> **Método:** use cases reais (sem HTTP, sem Nest TestingModule, sem Resend/FIPE/seeds) instanciados contra um schema Postgres temporário `regression_*` com **todas as 17 migrations** aplicadas; toda verificação de estado é feita **relerindo o banco por SQL** (`database.query`), provando commit e rollback reais.
-> **Especificação:** `docs/plano-testes-integracao.md` (testes do fluxo de trabalho — OS, orçamento, estoque e isolamento entre clientes)
+> **Método:** use cases reais (sem HTTP, sem Nest TestingModule, sem Resend/FIPE/seeds) instanciados contra um schema Postgres temporário `regression_*` com **todas as 17 migrations** aplicadas; toda verificação de estado é feita **relendo o banco por SQL** (`database.query`), provando commit e rollback reais.
 
 ---
 
@@ -29,7 +28,7 @@
 | `não grava item quando a quantidade passa do disponível` | Item de 6 unidades com estoque 5 rejeita com `InsufficientStockError` e **nada vaza**: 0 itens gravados, OS em `received`, estoque intacto 5/0 (rollback). | ✅ (135 ms) |
 | `a segunda reserva falha e não grava awaiting_approval` | Concorrência: duas OS incluem 3 unidades do mesmo produto (incluir não reserva), a OS A reserva no envio; o envio da OS B rejeita (`InsufficientStockError`) **dentro da transação** que gravaria o status — rollback completo: B fica em `under_diagnosis`, A permanece `awaiting_approval`, estoque 5/3, 0 movements da B e exatamente **1** evento `stock.reserved`. | ✅ (324 ms) |
 | `trava os itens depois do envio do orçamento` | Novo item após `awaiting_approval` rejeita com `Os itens só podem ser alterados antes do envio do orçamento`; a OS mantém exatamente **1** item e reserva 0 (item de serviço). | ✅ (224 ms) |
-| `recusa a transição ilegal de received para completed` | Pular etapas rejeita com `InvalidWorkOrderError` (`Não é permitido alterar a OS de received para completed`); status relido permanece `received`. *Obs.: o plano original pedia `received → in_progress`, mas o gate de pagamento de `in_progress` roda antes do mapa de transições e lança `WorkOrderConflictError` (já coberto no passo 7 do fluxo feliz); a intenção do teste — transição ilegal interrompida com `InvalidWorkOrderError` e status intacto — é preservada.* | ✅ (142 ms) |
+| `recusa a transição ilegal de received para completed` | Pular etapas rejeita com `InvalidWorkOrderError` (`Não é permitido alterar a OS de received para completed`); status relido permanece `received`. *Obs.: o teste usa `received → completed`, e não `received → in_progress`, porque o gate de pagamento de `in_progress` roda antes do mapa de transições e lança `WorkOrderConflictError` (já coberto no passo 7 do fluxo feliz).* | ✅ (142 ms) |
 | `cliente não vê OS de outro cliente` | Isolamento por cliente: a listagem do cliente retorna **apenas** a própria OS (`result.data` paginado); `findWorkOrder` na OS alheia lança `WorkOrderAccessDeniedError`; na própria, resolve com `clientId` correto. | ✅ (200 ms) |
 
 ## 3. Como o teste trabalha (harness)

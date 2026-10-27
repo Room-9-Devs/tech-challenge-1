@@ -7,6 +7,7 @@ import { FakeRefreshTokenService, FakeTokenService } from '../../../../fakes/fak
 import { makeUser } from '../../../../fakes/user-fixture';
 import { AuthenticationError } from '@/domain/errors/authentication.error';
 import { FakeDomainEventPublisher } from '../../../../fakes/fake-domain-event-publisher';
+import { AuthLoginFailedEvent, AuthLoginSucceededEvent } from '@/domain/events/auth.events';
 
 describe('LoginUseCase', () => {
   let users: FakeUserRepository;
@@ -46,5 +47,20 @@ describe('LoginUseCase', () => {
 
   it('rejects unknown usernames with the same error as wrong passwords', async () => {
     await expect(useCase.execute({ login: 'ghost.silveira', password: 'password123' })).rejects.toThrow(AuthenticationError);
+  });
+
+  it('records the request origin in the login events', async () => {
+    const events = new FakeDomainEventPublisher();
+    const loginUseCase = new LoginUseCase(users, new FakePasswordHasher(), new FakeRoleRepository(), refreshTokens, new FakeRefreshTokenService(), new FakeTokenService(), events);
+    const origin = { ip: '203.0.113.10', userAgent: 'PostmanRuntime/7.43.0' };
+
+    await loginUseCase.execute({ login: 'jose@example.com', password: 'password123', ...origin });
+    await expect(loginUseCase.execute({ login: 'jose@example.com', password: 'wrong-password', ...origin })).rejects.toThrow(AuthenticationError);
+
+    const [succeeded, failed] = events.getPublishedEvents() as [AuthLoginSucceededEvent, AuthLoginFailedEvent];
+    expect(succeeded.eventType).toBe('auth.login.succeeded');
+    expect(succeeded.metadata).toEqual(origin);
+    expect(failed.eventType).toBe('auth.login.failed');
+    expect(failed.metadata).toEqual(expect.objectContaining(origin));
   });
 });

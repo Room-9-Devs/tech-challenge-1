@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ENV_FILE_PATH, requireEnvironmentVariable } from './config/environment';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { EmailModule } from './infrastructure/services/email/email.module';
@@ -115,6 +116,13 @@ const DEFAULT_WORK_ORDER_APPROVAL_TTL_HOURS = 72;
         expiresIn: (process.env.JWT_EXPIRES_IN ||
           '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
       },
+    }),
+    // Limite de tentativas por IP nas rotas de autenticação (aplicado pelo ThrottlerGuard no AuthController)
+    ThrottlerModule.forRoot({
+      throttlers: [
+        { ttl: 60_000, limit: Number(process.env.AUTH_THROTTLE_LIMIT) || 20 },
+      ],
+      errorMessage: 'Muitas tentativas. Aguarde um minuto e tente novamente.',
     }),
     EmailModule,
   ],
