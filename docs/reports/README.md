@@ -36,4 +36,5 @@ A análise é feita com o Trivy, no GitHub Actions ([`.github/workflows/trivy.ym
 
 | Relatório | Data | O que comprova | Resultado |
 |---|---|---|---|
+| [Análise de segurança frente ao OWASP Top 10](analise-owasp-top-10.md) | 27/10/2026 | Mitigações de cada um dos dez riscos conferidas no código (controle de acesso, criptografia, injeção, autenticação, logs e SSRF) e checklist de JWT. | ⚠️ 6 atendidos e 4 com ressalvas, nenhum sem mitigação |
 | [Análise de vulnerabilidades com Trivy](analise-vulnerabilidades-trivy.md) | 27/10/2026 | Dependências (`package-lock.json`), *secrets*, configuração do `Dockerfile` e imagem Docker do backend (SO e pacotes Node.js), além das correções feitas desde a primeira análise. | ✅ 0 `HIGH`/`CRITICAL` com correção disponível |
