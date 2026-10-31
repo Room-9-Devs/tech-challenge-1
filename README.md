@@ -619,7 +619,7 @@ O índice completo está em [docs/README.md](docs/README.md):
 
 ## Vídeo da entrega
 
-Link do vídeo no YouTube: _a ser adicionado_.
+Link do vídeo no YouTube: <https://www.youtube.com/watch?v=Lu7A1fC89Cc>
 
 ## Detalhes de implementação
 
